@@ -32,8 +32,9 @@ mv kafka_producer.go      \
    metadata.go       \
 	 ../producer
 
+mv utils_test.go util_test.go
 cp util.go       \
-   utils_test.go \
+   util_test.go  \
 	 LICENSE       \
 	 ../connector
 
@@ -41,6 +42,7 @@ cp LICENSE \
    ../log
 
 rm README.md
+
 
 cd ..
 
