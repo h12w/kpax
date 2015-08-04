@@ -41,8 +41,8 @@ cp util.go       \
 cp LICENSE \
    ../log
 
-rm README.md
-rm .travis.yml
+#rm README.md
+#rm .travis.yml
 
 cd ..
 
