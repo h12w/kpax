@@ -37,7 +37,7 @@ func TestProducerSend1(t *testing.T) {
 		AckTimeoutMs:    2000,
 		Linger:          1 * time.Second,
 	}
-	producer := NewKafkaProducer(producerConfig, ByteSerializer, StringSerializer, connector)
+	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
 	metadataChan := producer.Send(&ProducerRecord{Topic: "siesta", Value: "hello world"})
 
 	select {
@@ -66,7 +66,7 @@ func TestProducerSend1000(t *testing.T) {
 		AckTimeoutMs:    2000,
 		Linger:          1 * time.Second,
 	}
-	producer := NewKafkaProducer(producerConfig, ByteSerializer, StringSerializer, connector)
+	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
 	metadataChannels := make([]<-chan *RecordMetadata, 0)
 	for i := 0; i < 1000; i++ {
 		metadataChannels = append(metadataChannels, producer.Send(&ProducerRecord{Topic: "siesta", Value: fmt.Sprintf("%d", i)}))
@@ -99,7 +99,7 @@ func TestProducerRequiredAcks0(t *testing.T) {
 		RequiredAcks:    0,
 		Linger:          1 * time.Second,
 	}
-	producer := NewKafkaProducer(producerConfig, ByteSerializer, StringSerializer, connector)
+	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
 	metadataChannels := make([]<-chan *RecordMetadata, 0)
 	for i := 0; i < 100; i++ {
 		metadataChannels = append(metadataChannels, producer.Send(&ProducerRecord{Topic: "siesta", Value: fmt.Sprintf("%d", i)}))
@@ -133,7 +133,7 @@ func TestProducerFlushTimeout(t *testing.T) {
 		RequiredAcks:    0,
 		Linger:          1 * time.Second,
 	}
-	producer := NewKafkaProducer(producerConfig, ByteSerializer, StringSerializer, connector)
+	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
 	metadataChannels := make([]<-chan *RecordMetadata, 0)
 	for i := 0; i < 100; i++ {
 		metadataChannels = append(metadataChannels, producer.Send(&ProducerRecord{Topic: "siesta", Value: fmt.Sprintf("%d", i)}))

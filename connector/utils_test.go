@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-package client
+package connector
 
 import (
 	crand "crypto/rand"
@@ -135,7 +135,7 @@ func testConnector(t *testing.T) *DefaultConnector {
 	config := NewConnectorConfig()
 	config.BrokerList = []string{"localhost:9092"}
 
-	connector, err := NewDefaultConnector(config)
+	connector, err := New(config)
 	if err != nil {
 		t.Fatal(err)
 	}

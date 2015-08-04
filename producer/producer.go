@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"h12.me/kafka/client"
+	"h12.me/kafka/connector"
 )
 
 type ProducerRecord struct {
@@ -99,11 +99,11 @@ type KafkaProducer struct {
 	metrics         map[string]Metric
 	accumulator     *RecordAccumulator
 	metricTags      map[string]string
-	connector       client.Connector
+	connector       connector.Connector
 	metadata        *Metadata
 }
 
-func NewKafkaProducer(config *ProducerConfig, keySerializer Serializer, valueSerializer Serializer, connector client.Connector) *KafkaProducer {
+func New(config *ProducerConfig, keySerializer Serializer, valueSerializer Serializer, connector connector.Connector) *KafkaProducer {
 	log.Println("Starting the Kafka producer")
 	producer := &KafkaProducer{}
 	producer.config = config

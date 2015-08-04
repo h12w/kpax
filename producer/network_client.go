@@ -4,7 +4,7 @@ import (
 	"math"
 	"net"
 
-	"h12.me/kafka/client"
+	"h12.me/kafka/connector"
 	"h12.me/kafka/proto"
 )
 
@@ -71,7 +71,7 @@ func (ccs *ClusterConnectionStates) connectionDelay(nodeId string, now int64) in
 }
 
 type NetworkClient struct {
-	connector               client.Connector
+	connector               connector.Connector
 	metadata                Metadata
 	connectionStates        *ClusterConnectionStates
 	socketSendBuffer        int
@@ -90,7 +90,7 @@ type NetworkClient struct {
 type NetworkClientConfig struct {
 }
 
-func NewNetworkClient(config NetworkClientConfig, connector client.Connector, producerConfig *ProducerConfig) *NetworkClient {
+func NewNetworkClient(config NetworkClientConfig, connector connector.Connector, producerConfig *ProducerConfig) *NetworkClient {
 	client := &NetworkClient{}
 	client.connector = connector
 	client.requiredAcks = producerConfig.RequiredAcks
@@ -141,7 +141,7 @@ func (nc *NetworkClient) send(topic string, partition int32, batch []*ProducerRe
 	}
 }
 
-func listenForResponse(topic string, partition int32, batch []*ProducerRecord, responseChan <-chan *client.RawResponseAndError) {
+func listenForResponse(topic string, partition int32, batch []*ProducerRecord, responseChan <-chan *connector.RawResponseAndError) {
 	response := <-responseChan
 	if response.Err != nil {
 		for _, record := range batch {

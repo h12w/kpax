@@ -17,7 +17,7 @@
 
 // Siesta is a low-level Apache Kafka client in Go.
 
-package client
+package connector
 
 import (
 	"errors"
@@ -223,7 +223,7 @@ type DefaultConnector struct {
 }
 
 // NewDefaultConnector creates a new DefaultConnector with a given ConnectorConfig. May return an error if the passed config is invalid.
-func NewDefaultConnector(config *ConnectorConfig) (*DefaultConnector, error) {
+func New(config *ConnectorConfig) (*DefaultConnector, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}

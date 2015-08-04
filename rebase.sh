@@ -2,9 +2,9 @@
 
 set -e
 
-rm -r -f proto log client producer
+rm -r -f proto log connector producer
 mkdir log
-mkdir client
+mkdir connector
 mkdir producer
 
 wget https://github.com/stealthly/siesta/archive/master.zip
@@ -17,7 +17,7 @@ mv connector.go      \
    connector_test.go \
    conn.go           \
    conn_test.go      \
-	 ../client
+	 ../connector
 
 mv logger.go \
    ../log
@@ -35,7 +35,7 @@ mv kafka_producer.go      \
 cp util.go       \
    utils_test.go \
 	 LICENSE       \
-	 ../client
+	 ../connector
 
 cp LICENSE \
    ../log
@@ -52,62 +52,64 @@ for f in log/*.go; do
 	sed -i.bak 's/package siesta/package log/' $f
 done
 
-for f in client/*.go; do
-	sed -i.bak 's/package siesta/package client/' $f
+for f in connector/*.go; do
+	sed -i.bak 's/package siesta/package connector/' $f
 done
 
 for f in producer/*.go; do
 	sed -i.bak 's/package siesta/package producer/' $f
 done
 
-gofmt -w -r 'MetadataResponse -> proto.MetadataResponse' client/*.go
-gofmt -w -r 'FetchResponse -> proto.FetchResponse' client/*.go
-gofmt -w -r 'Broker -> proto.Broker' client/*.go
-gofmt -w -r 'DecodingError -> proto.DecodingError' client/*.go
-gofmt -w -r 'Response -> proto.Response' client/*.go
-gofmt -w -r 'Request -> proto.Request' client/*.go producer/*.go
-gofmt -w -r 'OffsetRequest -> proto.OffsetRequest' client/*.go
-gofmt -w -r 'FetchRequest -> proto.FetchRequest' client/*.go
-gofmt -w -r 'OffsetResponse -> proto.OffsetResponse' client/*.go
-gofmt -w -r 'NewBinaryEncoder-> proto.NewBinaryEncoder' client/*.go producer/*.go
-gofmt -w -r 'NewBinaryDecoder -> proto.NewBinaryDecoder' client/*.go producer/*.go
-gofmt -w -r 'NewOffsetFetchRequest -> proto.NewOffsetFetchRequest' client/*.go
-gofmt -w -r 'OffsetFetchResponse -> proto.OffsetFetchResponse' client/*.go
-gofmt -w -r 'NewMetadataRequest -> proto.NewMetadataRequest' client/*.go
-gofmt -w -r 'ErrReplicaNotAvailable-> proto.ErrReplicaNotAvailable' client/*.go
-gofmt -w -r 'NewConsumerMetadataRequest-> proto.NewConsumerMetadataRequest' client/*.go
-gofmt -w -r 'ConsumerMetadataResponse-> proto.ConsumerMetadataResponse' client/*.go
-gofmt -w -r 'NewOffsetCommitRequest-> proto.NewOffsetCommitRequest' client/*.go
-gofmt -w -r 'OffsetCommitResponse-> proto.OffsetCommitResponse' client/*.go
-gofmt -w -r 'NewRequestHeader-> proto.NewRequestHeader' client/*.go producer/*.go
-gofmt -w -r 'TopicMetadata-> proto.TopicMetadata' client/*.go
-gofmt -w -r 'Message-> proto.Message' producer/*.go client/*.go
-gofmt -w -r 'ErrNoError -> proto.ErrNoError' client/*.go producer/*.go
+gofmt -w -r 'MetadataResponse -> proto.MetadataResponse' connector/*.go
+gofmt -w -r 'FetchResponse -> proto.FetchResponse' connector/*.go
+gofmt -w -r 'Broker -> proto.Broker' connector/*.go
+gofmt -w -r 'DecodingError -> proto.DecodingError' connector/*.go
+gofmt -w -r 'Response -> proto.Response' connector/*.go
+gofmt -w -r 'Request -> proto.Request' connector/*.go producer/*.go
+gofmt -w -r 'OffsetRequest -> proto.OffsetRequest' connector/*.go
+gofmt -w -r 'FetchRequest -> proto.FetchRequest' connector/*.go
+gofmt -w -r 'OffsetResponse -> proto.OffsetResponse' connector/*.go
+gofmt -w -r 'NewBinaryEncoder-> proto.NewBinaryEncoder' connector/*.go producer/*.go
+gofmt -w -r 'NewBinaryDecoder -> proto.NewBinaryDecoder' connector/*.go producer/*.go
+gofmt -w -r 'NewOffsetFetchRequest -> proto.NewOffsetFetchRequest' connector/*.go
+gofmt -w -r 'OffsetFetchResponse -> proto.OffsetFetchResponse' connector/*.go
+gofmt -w -r 'NewMetadataRequest -> proto.NewMetadataRequest' connector/*.go
+gofmt -w -r 'ErrReplicaNotAvailable-> proto.ErrReplicaNotAvailable' connector/*.go
+gofmt -w -r 'NewConsumerMetadataRequest-> proto.NewConsumerMetadataRequest' connector/*.go
+gofmt -w -r 'ConsumerMetadataResponse-> proto.ConsumerMetadataResponse' connector/*.go
+gofmt -w -r 'NewOffsetCommitRequest-> proto.NewOffsetCommitRequest' connector/*.go
+gofmt -w -r 'OffsetCommitResponse-> proto.OffsetCommitResponse' connector/*.go
+gofmt -w -r 'NewRequestHeader-> proto.NewRequestHeader' connector/*.go producer/*.go
+gofmt -w -r 'TopicMetadata-> proto.TopicMetadata' connector/*.go
+gofmt -w -r 'Message-> proto.Message' producer/*.go connector/*.go
+gofmt -w -r 'ErrNoError -> proto.ErrNoError' connector/*.go producer/*.go
 gofmt -w -r 'ProduceRequest-> proto.ProduceRequest' producer/*.go
 gofmt -w -r 'ProduceResponse-> proto.ProduceResponse' producer/*.go
 
-gofmt -w -r 'Errorf -> log.Errorf' client/*.go
-gofmt -w -r 'Debugf -> log.Debugf' client/*.go
-gofmt -w -r 'Warnf -> log.Warnf' client/*.go
-gofmt -w -r 'Tracef -> log.Tracef' client/*.go
-gofmt -w -r 'Infof -> log.Infof' client/*.go
+gofmt -w -r 'Errorf -> log.Errorf' connector/*.go
+gofmt -w -r 'Debugf -> log.Debugf' connector/*.go
+gofmt -w -r 'Warnf -> log.Warnf' connector/*.go
+gofmt -w -r 'Tracef -> log.Tracef' connector/*.go
+gofmt -w -r 'Infof -> log.Infof' connector/*.go
 
-gofmt -w -r 'Connector-> client.Connector' producer/*.go
-gofmt -w -r 'BrokerLink-> client.BrokerLink' producer/*.go
+gofmt -w -r 'Connector-> connector.Connector' producer/*.go
+gofmt -w -r 'BrokerLink-> connector.BrokerLink' producer/*.go
 
 gofmt -w -r 'decodingErr.err -> decodingErr.Error()' producer/*.go
-gofmt -w -r 'rawResponseAndError -> RawResponseAndError' client/*.go
-gofmt -w -r 'rawResponseAndError -> client.RawResponseAndError' producer/*.go
-sed -i.bak 's/	bytes \[\]byte/	Bytes \[\]byte/' client/connector.go
-sed -i.bak 's/	link  BrokerLink/	Link  BrokerLink/' client/connector.go
-sed -i.bak 's/	err   error/	Err   error/' client/connector.go
-gofmt -w -r 'response.err -> response.Err' client/*.go producer/*.go
-gofmt -w -r 'response.link -> response.Link' client/*.go producer/*.go
-gofmt -w -r 'response.bytes -> response.Bytes' client/*.go producer/*.go
+gofmt -w -r 'rawResponseAndError -> RawResponseAndError' connector/*.go
+gofmt -w -r 'rawResponseAndError -> connector.RawResponseAndError' producer/*.go
+sed -i.bak 's/	bytes \[\]byte/	Bytes \[\]byte/' connector/connector.go
+sed -i.bak 's/	link  BrokerLink/	Link  BrokerLink/' connector/connector.go
+sed -i.bak 's/	err   error/	Err   error/' connector/connector.go
+gofmt -w -r 'response.err -> response.Err' connector/*.go producer/*.go
+gofmt -w -r 'response.link -> response.Link' connector/*.go producer/*.go
+gofmt -w -r 'response.bytes -> response.Bytes' connector/*.go producer/*.go
+gofmt -w -r 'NewKafkaProducer -> New' producer/*.go
+gofmt -w -r 'NewDefaultConnector -> New' connector/*.go
 
 goimports -w log/*.go
 goimports -w proto/*.go
-goimports -w client/*.go
+goimports -w connector/*.go
 goimports -w producer/*.go
 
 cd producer
@@ -117,5 +119,5 @@ cd ..
 
 rm proto/*.bak
 rm log/*.bak
-rm client/*.bak
+rm connector/*.bak
 rm producer/*.bak
