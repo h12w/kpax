@@ -1,9 +1,10 @@
-package client
+package producer
 
 import (
 	"math"
 	"net"
 
+	"h12.me/kafka/client"
 	"h12.me/kafka/proto"
 )
 
@@ -70,7 +71,7 @@ func (ccs *ClusterConnectionStates) connectionDelay(nodeId string, now int64) in
 }
 
 type NetworkClient struct {
-	connector               Connector
+	connector               client.Connector
 	metadata                Metadata
 	connectionStates        *ClusterConnectionStates
 	socketSendBuffer        int
@@ -89,7 +90,7 @@ type NetworkClient struct {
 type NetworkClientConfig struct {
 }
 
-func NewNetworkClient(config NetworkClientConfig, connector Connector, producerConfig *ProducerConfig) *NetworkClient {
+func NewNetworkClient(config NetworkClientConfig, connector client.Connector, producerConfig *ProducerConfig) *NetworkClient {
 	client := &NetworkClient{}
 	client.connector = connector
 	client.requiredAcks = producerConfig.RequiredAcks
@@ -140,15 +141,15 @@ func (nc *NetworkClient) send(topic string, partition int32, batch []*ProducerRe
 	}
 }
 
-func listenForResponse(topic string, partition int32, batch []*ProducerRecord, responseChan <-chan *rawResponseAndError) {
+func listenForResponse(topic string, partition int32, batch []*ProducerRecord, responseChan <-chan *client.RawResponseAndError) {
 	response := <-responseChan
-	if response.err != nil {
+	if response.Err != nil {
 		for _, record := range batch {
-			record.metadataChan <- &RecordMetadata{Error: response.err}
+			record.metadataChan <- &RecordMetadata{Error: response.Err}
 		}
 	}
 
-	decoder := proto.NewBinaryDecoder(response.bytes)
+	decoder := proto.NewBinaryDecoder(response.Bytes)
 	produceResponse := new(proto.ProduceResponse)
 	decodingErr := produceResponse.Read(decoder)
 	if decodingErr != nil {

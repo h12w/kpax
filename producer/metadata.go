@@ -1,19 +1,21 @@
-package client
+package producer
 
 import (
 	"fmt"
 	"sync"
 	"time"
+
+	"h12.me/kafka/client"
 )
 
 type Metadata struct {
-	connector      Connector
+	connector      client.Connector
 	metadataExpire time.Duration
 	cache          map[string]*metadataEntry
 	refreshLock    sync.Mutex
 }
 
-func NetMetadata(connector Connector, metadataExpire time.Duration) *Metadata {
+func NetMetadata(connector client.Connector, metadataExpire time.Duration) *Metadata {
 	return &Metadata{
 		connector:      connector,
 		metadataExpire: metadataExpire,

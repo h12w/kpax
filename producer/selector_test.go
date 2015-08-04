@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-package client
+package producer
 
 import (
 	"testing"
@@ -26,7 +26,7 @@ func TestSelector(t *testing.T) {
 	selectorConfig := DefaultSelectorConfig()
 	selector := NewSelector(selectorConfig)
 
-	link := newBrokerLink(&proto.Broker{ID: 1, Host: "localhost", Port: 9092},
+	link := newBrokerLink(&Broker{ID: 1, Host: "localhost", Port: 9092},
 		true,
 		1*time.Minute,
 		5)

@@ -111,7 +111,7 @@ func testOffsetStorage(t *testing.T, topicName string, connector *DefaultConnect
 }
 
 func testProduce(t *testing.T, topicName string, numMessages int, connector *DefaultConnector) {
-	produceRequest := new(proto.ProduceRequest)
+	produceRequest := new(ProduceRequest)
 	produceRequest.AckTimeoutMs = 1000
 	produceRequest.RequiredAcks = 1
 	for i := 0; i < numMessages; i++ {
@@ -127,7 +127,7 @@ func testProduce(t *testing.T, topicName string, numMessages int, connector *Def
 	bytes, err := connector.syncSendAndReceive(leader, produceRequest)
 	assertFatal(t, err, nil)
 
-	produceResponse := new(proto.ProduceResponse)
+	produceResponse := new(ProduceResponse)
 	decodingErr := connector.decode(bytes, produceResponse)
 	assertFatal(t, decodingErr, (*proto.DecodingError)(nil))
 

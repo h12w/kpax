@@ -13,13 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-package client
+package producer
 
 import (
 	"io"
 	"net"
 	"time"
 
+	"h12.me/kafka/client"
 	"h12.me/kafka/proto"
 )
 
@@ -94,8 +95,8 @@ func (s *Selector) Close() {
 	close(s.responses)
 }
 
-func (s *Selector) Send(link BrokerLink, request proto.Request) <-chan *rawResponseAndError {
-	responseChan := make(chan *rawResponseAndError, 1) //make this buffered so we don't block if noone reads the response
+func (s *Selector) Send(link client.BrokerLink, request proto.Request) <-chan *client.RawResponseAndError {
+	responseChan := make(chan *client.RawResponseAndError, 1) //make this buffered so we don't block if noone reads the response
 	s.requests <- &NetworkRequest{link, request, responseChan}
 
 	return responseChan
@@ -107,13 +108,13 @@ func (s *Selector) requestDispatcher() {
 		id, conn, err := link.GetConnection()
 		if err != nil {
 			link.Failed()
-			request.responseChan <- &rawResponseAndError{nil, link, err}
+			request.responseChan <- &client.RawResponseAndError{nil, link, err}
 			continue
 		}
 
 		if err := s.send(id, conn, request.request); err != nil {
 			link.Failed()
-			request.responseChan <- &rawResponseAndError{nil, link, err}
+			request.responseChan <- &client.RawResponseAndError{nil, link, err}
 			continue
 		}
 
@@ -132,13 +133,13 @@ func (s *Selector) responseDispatcher() {
 		bytes, err := s.receive(conn)
 		if err != nil {
 			link.Failed()
-			responseChan <- &rawResponseAndError{nil, link, err}
+			responseChan <- &client.RawResponseAndError{nil, link, err}
 			continue
 		}
 
 		link.Succeeded()
 		link.ReturnConnection(conn)
-		responseChan <- &rawResponseAndError{bytes, link, err}
+		responseChan <- &client.RawResponseAndError{bytes, link, err}
 	}
 }
 
@@ -177,7 +178,7 @@ func (s *Selector) receive(conn *net.TCPConn) ([]byte, error) {
 
 //TODO better struct name
 type NetworkRequest struct {
-	link         BrokerLink
+	link         client.BrokerLink
 	request      proto.Request
-	responseChan chan *rawResponseAndError
+	responseChan chan *client.RawResponseAndError
 }

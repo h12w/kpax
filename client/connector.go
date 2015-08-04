@@ -616,30 +616,30 @@ func (dc *DefaultConnector) sendToAllLinks(links []*brokerLink, request proto.Re
 		return nil, errors.New("Empty broker list")
 	}
 
-	responses := make(chan *rawResponseAndError, len(links))
+	responses := make(chan *RawResponseAndError, len(links))
 	for i := 0; i < len(links); i++ {
 		link := links[i]
 		go func() {
 			bytes, err := dc.syncSendAndReceive(link, request)
-			responses <- &rawResponseAndError{bytes, link, err}
+			responses <- &RawResponseAndError{bytes, link, err}
 		}()
 	}
 
-	var response *rawResponseAndError
+	var response *RawResponseAndError
 	for i := 0; i < len(links); i++ {
 		response = <-responses
-		if response.err == nil {
-			if checkResult := check(response.bytes); checkResult != nil {
+		if response.Err == nil {
+			if checkResult := check(response.Bytes); checkResult != nil {
 				return checkResult, nil
 			}
 
-			response.err = errors.New("Check result did not pass")
+			response.Err = errors.New("Check result did not pass")
 		}
 
 		//		Infof(dc, "Could not process request with broker %s:%d", response.link.broker.Host, response.link.broker.Port)
 	}
 
-	return nil, response.err
+	return nil, response.Err
 }
 
 func (dc *DefaultConnector) syncSendAndReceive(link *brokerLink, request proto.Request) ([]byte, error) {
@@ -825,8 +825,8 @@ func correlationIDGenerator(out chan int32, stop chan bool) {
 	}
 }
 
-type rawResponseAndError struct {
-	bytes []byte
-	link  BrokerLink
-	err   error
+type RawResponseAndError struct {
+	Bytes []byte
+	Link  BrokerLink
+	Err   error
 }
