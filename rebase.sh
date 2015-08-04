@@ -42,7 +42,7 @@ cp LICENSE \
    ../log
 
 rm README.md
-
+rm .travis.yml
 
 cd ..
 
