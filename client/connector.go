@@ -17,7 +17,7 @@
 
 // Siesta is a low-level Apache Kafka client in Go.
 
-package proto
+package client
 
 import (
 	"errors"
@@ -28,6 +28,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"h12.me/kafka/log"
+	"h12.me/kafka/proto"
 )
 
 // InvalidOffset is a constant that is used to denote an invalid or uninitialized offset.
@@ -37,14 +40,14 @@ const InvalidOffset int64 = -1
 type Connector interface {
 	// GetTopicMetadata is primarily used to discover leaders for given topics and how many partitions these topics have.
 	// Passing it an empty topic list will retrieve metadata for all topics in a cluster.
-	GetTopicMetadata(topics []string) (*MetadataResponse, error)
+	GetTopicMetadata(topics []string) (*proto.MetadataResponse, error)
 
 	// GetAvailableOffset issues an offset request to a specified topic and partition with a given offset time.
 	// More on offset time here - https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol#AGuideToTheKafkaProtocol-OffsetRequest
 	GetAvailableOffset(topic string, partition int32, offsetTime int64) (int64, error)
 
 	// Fetch issues a single fetch request to a broker responsible for a given topic and partition and returns a FetchResponse that contains messages starting from a given offset.
-	Fetch(topic string, partition int32, offset int64) (*FetchResponse, error)
+	Fetch(topic string, partition int32, offset int64) (*proto.FetchResponse, error)
 
 	// GetOffset gets the offset for a given group, topic and partition from Kafka. A part of new offset management API.
 	GetOffset(group string, topic string, partition int32) (int64, error)
@@ -242,13 +245,13 @@ func (dc *DefaultConnector) String() string {
 
 // GetTopicMetadata is primarily used to discover leaders for given topics and how many partitions these topics have.
 // Passing it an empty topic list will retrieve metadata for all topics in a cluster.
-func (dc *DefaultConnector) GetTopicMetadata(topics []string) (*MetadataResponse, error) {
+func (dc *DefaultConnector) GetTopicMetadata(topics []string) (*proto.MetadataResponse, error) {
 	for i := 0; i <= dc.config.MetadataRetries; i++ {
 		if metadata, err := dc.getMetadata(topics); err == nil {
 			return metadata, nil
 		}
 
-		Debugf(dc, "GetTopicMetadata for %s failed after %d try", topics, i)
+		log.Debugf(dc, "GetTopicMetadata for %s failed after %d try", topics, i)
 		time.Sleep(dc.config.MetadataBackoff)
 	}
 
@@ -257,18 +260,18 @@ func (dc *DefaultConnector) GetTopicMetadata(topics []string) (*MetadataResponse
 
 // GetAvailableOffset issues an offset request to a specified topic and partition with a given offset time.
 func (dc *DefaultConnector) GetAvailableOffset(topic string, partition int32, offsetTime int64) (int64, error) {
-	request := new(OffsetRequest)
+	request := new(proto.OffsetRequest)
 	request.AddPartitionOffsetRequestInfo(topic, partition, offsetTime, 1)
 	response, err := dc.sendToAllAndReturnFirstSuccessful(request, dc.offsetValidator)
 	if response != nil {
-		return response.(*OffsetResponse).PartitionErrorAndOffsets[topic][partition].Offsets[0], err
+		return response.(*proto.OffsetResponse).PartitionErrorAndOffsets[topic][partition].Offsets[0], err
 	}
 
 	return -1, err
 }
 
 // Fetch issues a single fetch request to a broker responsible for a given topic and partition and returns a FetchResponse that contains messages starting from a given offset.
-func (dc *DefaultConnector) Fetch(topic string, partition int32, offset int64) (*FetchResponse, error) {
+func (dc *DefaultConnector) Fetch(topic string, partition int32, offset int64) (*proto.FetchResponse, error) {
 	link := dc.getLeader(topic, partition)
 	if link == nil {
 		leader, err := dc.tryGetLeader(topic, partition, dc.config.MetadataRetries)
@@ -278,7 +281,7 @@ func (dc *DefaultConnector) Fetch(topic string, partition int32, offset int64) (
 		link = leader
 	}
 
-	request := new(FetchRequest)
+	request := new(proto.FetchRequest)
 	request.MinBytes = dc.config.FetchMinBytes
 	request.MaxWait = dc.config.FetchMaxWaitTime
 	request.AddFetch(topic, partition, offset, dc.config.FetchSize)
@@ -288,12 +291,12 @@ func (dc *DefaultConnector) Fetch(topic string, partition int32, offset int64) (
 		return nil, err
 	}
 
-	decoder := NewBinaryDecoder(bytes)
-	response := new(FetchResponse)
+	decoder := proto.NewBinaryDecoder(bytes)
+	response := new(proto.FetchResponse)
 	decodingErr := response.Read(decoder)
 	if decodingErr != nil {
 		dc.removeLeader(topic, partition)
-		Errorf(dc, "Could not decode a FetchResponse. Reason: %s", decodingErr.Reason())
+		log.Errorf(dc, "Could not decode a FetchResponse. Reason: %s", decodingErr.Reason())
 		return nil, decodingErr.Error()
 	}
 
@@ -307,16 +310,16 @@ func (dc *DefaultConnector) GetOffset(group string, topic string, partition int3
 		return InvalidOffset, err
 	}
 
-	request := NewOffsetFetchRequest(group)
+	request := proto.NewOffsetFetchRequest(group)
 	request.AddOffset(topic, partition)
 	bytes, err := dc.syncSendAndReceive(coordinator, request)
 	if err != nil {
 		return InvalidOffset, err
 	}
-	response := new(OffsetFetchResponse)
+	response := new(proto.OffsetFetchResponse)
 	decodingErr := dc.decode(bytes, response)
 	if decodingErr != nil {
-		Errorf(dc, "Could not decode an OffsetFetchResponse. Reason: %s", decodingErr.Reason())
+		log.Errorf(dc, "Could not decode an OffsetFetchResponse. Reason: %s", decodingErr.Reason())
 		return InvalidOffset, decodingErr.Error()
 	}
 
@@ -327,7 +330,7 @@ func (dc *DefaultConnector) GetOffset(group string, topic string, partition int3
 
 	if offset, exists := topicOffsets[partition]; !exists {
 		return InvalidOffset, fmt.Errorf("OffsetFetchResponse does not contain information about requested partition")
-	} else if offset.Error != ErrNoError {
+	} else if offset.Error != proto.ErrNoError {
 		return InvalidOffset, offset.Error
 	} else {
 		return offset.Offset, nil
@@ -341,7 +344,7 @@ func (dc *DefaultConnector) CommitOffset(group string, topic string, partition i
 			return nil
 		}
 
-		Debugf(dc, "Failed to commit offset %d for group %s, topic %s, partition %d after %d try", offset, group, topic, partition, i)
+		log.Debugf(dc, "Failed to commit offset %d for group %s, topic %s, partition %d after %d try", offset, group, topic, partition, i)
 		time.Sleep(dc.config.CommitOffsetBackoff)
 	}
 
@@ -398,25 +401,25 @@ func (dc *DefaultConnector) refreshMetadata(topics []string) {
 				panic(fmt.Sprintf("incorrect port in broker connection string: %s", broker))
 			}
 
-			dc.bootstrapLinks = append(dc.bootstrapLinks, newBrokerLink(&Broker{ID: -1, Host: hostPort[0], Port: int32(port)},
+			dc.bootstrapLinks = append(dc.bootstrapLinks, newBrokerLink(&proto.Broker{ID: -1, Host: hostPort[0], Port: int32(port)},
 				dc.config.KeepAlive,
 				dc.config.KeepAliveTimeout,
 				dc.config.MaxConnectionsPerBroker))
 		}
 	}
 
-	response, err := dc.sendToAllLinks(dc.links, NewMetadataRequest(topics), dc.topicMetadataValidator(topics))
+	response, err := dc.sendToAllLinks(dc.links, proto.NewMetadataRequest(topics), dc.topicMetadataValidator(topics))
 	if err != nil {
-		Warnf(dc, "Could not get topic metadata from all known brokers, trying bootstrap brokers...")
-		if response, err = dc.sendToAllLinks(dc.bootstrapLinks, NewMetadataRequest(topics), dc.topicMetadataValidator(topics)); err != nil {
-			Errorf(dc, "Could not get topic metadata from all known brokers")
+		log.Warnf(dc, "Could not get topic metadata from all known brokers, trying bootstrap brokers...")
+		if response, err = dc.sendToAllLinks(dc.bootstrapLinks, proto.NewMetadataRequest(topics), dc.topicMetadataValidator(topics)); err != nil {
+			log.Errorf(dc, "Could not get topic metadata from all known brokers")
 			return
 		}
 	}
-	dc.refreshLeaders(response.(*MetadataResponse))
+	dc.refreshLeaders(response.(*proto.MetadataResponse))
 }
 
-func (dc *DefaultConnector) refreshLeaders(response *MetadataResponse) {
+func (dc *DefaultConnector) refreshLeaders(response *proto.MetadataResponse) {
 	brokers := make(map[int32]*brokerLink)
 	for _, broker := range response.Brokers {
 		brokers[broker.ID] = newBrokerLink(broker, dc.config.KeepAlive, dc.config.KeepAliveTimeout, dc.config.MaxConnectionsPerBroker)
@@ -432,17 +435,17 @@ func (dc *DefaultConnector) refreshLeaders(response *MetadataResponse) {
 			if leader, exists := brokers[partitionMetadata.Leader]; exists {
 				dc.putLeader(metadata.Topic, partitionMetadata.PartitionID, leader)
 			} else {
-				Warnf(dc, "Topic Metadata response has no leader present for topic %s, parition %d", metadata.Topic, partitionMetadata.PartitionID)
+				log.Warnf(dc, "Topic Metadata response has no leader present for topic %s, parition %d", metadata.Topic, partitionMetadata.PartitionID)
 				//TODO: warn about incomplete broker list
 			}
 		}
 	}
 }
 
-func (dc *DefaultConnector) getMetadata(topics []string) (*MetadataResponse, error) {
-	response, err := dc.sendToAllAndReturnFirstSuccessful(NewMetadataRequest(topics), dc.topicMetadataValidator(topics))
+func (dc *DefaultConnector) getMetadata(topics []string) (*proto.MetadataResponse, error) {
+	response, err := dc.sendToAllAndReturnFirstSuccessful(proto.NewMetadataRequest(topics), dc.topicMetadataValidator(topics))
 	if response != nil {
-		return response.(*MetadataResponse), err
+		return response.(*proto.MetadataResponse), err
 	}
 
 	return nil, err
@@ -470,7 +473,7 @@ func (dc *DefaultConnector) getLeader(topic string, partition int32) *brokerLink
 }
 
 func (dc *DefaultConnector) putLeader(topic string, partition int32, leader *brokerLink) {
-	Tracef(dc, "putLeader for topic %s, partition %d - %s", topic, partition, leader.broker)
+	log.Tracef(dc, "putLeader for topic %s, partition %d - %s", topic, partition, leader.broker)
 	if _, exists := dc.leaders[topic]; !exists {
 		dc.leaders[topic] = make(map[int32]*brokerLink)
 	}
@@ -502,7 +505,7 @@ func (dc *DefaultConnector) refreshOffsetCoordinator(group string) error {
 			return nil
 		}
 
-		Debugf(dc, "Failed to get consumer coordinator for group %s after %d try", group, i)
+		log.Debugf(dc, "Failed to get consumer coordinator for group %s after %d try", group, i)
 		time.Sleep(dc.config.ConsumerMetadataBackoff)
 	}
 
@@ -510,14 +513,14 @@ func (dc *DefaultConnector) refreshOffsetCoordinator(group string) error {
 }
 
 func (dc *DefaultConnector) tryRefreshOffsetCoordinator(group string) error {
-	request := NewConsumerMetadataRequest(group)
+	request := proto.NewConsumerMetadataRequest(group)
 
 	response, err := dc.sendToAllAndReturnFirstSuccessful(request, dc.consumerMetadataValidator)
 	if err != nil {
-		Infof(dc, "Could not get consumer metadata from all known brokers")
+		log.Infof(dc, "Could not get consumer metadata from all known brokers")
 		return err
 	}
-	dc.offsetCoordinators[group] = response.(*ConsumerMetadataResponse).Coordinator.ID
+	dc.offsetCoordinators[group] = response.(*proto.ConsumerMetadataResponse).Coordinator.ID
 
 	return nil
 }
@@ -532,7 +535,7 @@ func (dc *DefaultConnector) getOffsetCoordinator(group string) (*brokerLink, err
 		coordinatorID = dc.offsetCoordinators[group]
 	}
 
-	Debugf(dc, "Offset coordinator for group %s: %d", group, coordinatorID)
+	log.Debugf(dc, "Offset coordinator for group %s: %d", group, coordinatorID)
 
 	var brokerLink *brokerLink
 	for _, link := range dc.links {
@@ -555,7 +558,7 @@ func (dc *DefaultConnector) tryCommitOffset(group string, topic string, partitio
 		return err
 	}
 
-	request := NewOffsetCommitRequest(group)
+	request := proto.NewOffsetCommitRequest(group)
 	request.AddOffset(topic, partition, offset, time.Now().Unix(), "")
 
 	bytes, err := dc.syncSendAndReceive(coordinator, request)
@@ -563,10 +566,10 @@ func (dc *DefaultConnector) tryCommitOffset(group string, topic string, partitio
 		return err
 	}
 
-	response := new(OffsetCommitResponse)
+	response := new(proto.OffsetCommitResponse)
 	decodingErr := dc.decode(bytes, response)
 	if decodingErr != nil {
-		Errorf(dc, "Could not decode an OffsetCommitResponse. Reason: %s", decodingErr.Reason())
+		log.Errorf(dc, "Could not decode an OffsetCommitResponse. Reason: %s", decodingErr.Reason())
 		return decodingErr.Error()
 	}
 
@@ -577,25 +580,25 @@ func (dc *DefaultConnector) tryCommitOffset(group string, topic string, partitio
 
 	if partitionError, exist := topicErrors[partition]; !exist {
 		return fmt.Errorf("OffsetCommitResponse does not contain information about requested partition")
-	} else if partitionError != ErrNoError {
+	} else if partitionError != proto.ErrNoError {
 		return partitionError
 	}
 
 	return nil
 }
 
-func (dc *DefaultConnector) decode(bytes []byte, response Response) *DecodingError {
-	decoder := NewBinaryDecoder(bytes)
+func (dc *DefaultConnector) decode(bytes []byte, response proto.Response) *proto.DecodingError {
+	decoder := proto.NewBinaryDecoder(bytes)
 	decodingErr := response.Read(decoder)
 	if decodingErr != nil {
-		Errorf(dc, "Could not decode a response. Reason: %s", decodingErr.Reason())
+		log.Errorf(dc, "Could not decode a response. Reason: %s", decodingErr.Reason())
 		return decodingErr
 	}
 
 	return nil
 }
 
-func (dc *DefaultConnector) sendToAllAndReturnFirstSuccessful(request Request, check func([]byte) Response) (Response, error) {
+func (dc *DefaultConnector) sendToAllAndReturnFirstSuccessful(request proto.Request, check func([]byte) proto.Response) (proto.Response, error) {
 	if len(dc.links) == 0 {
 		dc.refreshMetadata(nil)
 	}
@@ -608,7 +611,7 @@ func (dc *DefaultConnector) sendToAllAndReturnFirstSuccessful(request Request, c
 	return response, err
 }
 
-func (dc *DefaultConnector) sendToAllLinks(links []*brokerLink, request Request, check func([]byte) Response) (Response, error) {
+func (dc *DefaultConnector) sendToAllLinks(links []*brokerLink, request proto.Request, check func([]byte) proto.Response) (proto.Response, error) {
 	if len(links) == 0 {
 		return nil, errors.New("Empty broker list")
 	}
@@ -639,7 +642,7 @@ func (dc *DefaultConnector) sendToAllLinks(links []*brokerLink, request Request,
 	return nil, response.err
 }
 
-func (dc *DefaultConnector) syncSendAndReceive(link *brokerLink, request Request) ([]byte, error) {
+func (dc *DefaultConnector) syncSendAndReceive(link *brokerLink, request proto.Request) ([]byte, error) {
 	id, conn, err := link.GetConnection()
 	if err != nil {
 		link.Failed()
@@ -662,10 +665,10 @@ func (dc *DefaultConnector) syncSendAndReceive(link *brokerLink, request Request
 	return bytes, err
 }
 
-func (dc *DefaultConnector) send(correlationID int32, conn *net.TCPConn, request Request) error {
-	writer := NewRequestHeader(correlationID, dc.config.ClientID, request)
+func (dc *DefaultConnector) send(correlationID int32, conn *net.TCPConn, request proto.Request) error {
+	writer := proto.NewRequestHeader(correlationID, dc.config.ClientID, request)
 	bytes := make([]byte, writer.Size())
-	encoder := NewBinaryEncoder(bytes)
+	encoder := proto.NewBinaryEncoder(bytes)
 	writer.Write(encoder)
 
 	conn.SetWriteDeadline(time.Now().Add(dc.config.WriteTimeout))
@@ -681,7 +684,7 @@ func (dc *DefaultConnector) receive(conn *net.TCPConn) ([]byte, error) {
 		return nil, err
 	}
 
-	decoder := NewBinaryDecoder(header)
+	decoder := proto.NewBinaryDecoder(header)
 	length, err := decoder.GetInt32()
 	if err != nil {
 		return nil, err
@@ -695,9 +698,9 @@ func (dc *DefaultConnector) receive(conn *net.TCPConn) ([]byte, error) {
 	return response, nil
 }
 
-func (dc *DefaultConnector) topicMetadataValidator(topics []string) func(bytes []byte) Response {
-	return func(bytes []byte) Response {
-		response := new(MetadataResponse)
+func (dc *DefaultConnector) topicMetadataValidator(topics []string) func(bytes []byte) proto.Response {
+	return func(bytes []byte) proto.Response {
+		response := new(proto.MetadataResponse)
 		err := dc.decode(bytes, response)
 		if err != nil {
 			return nil
@@ -705,21 +708,21 @@ func (dc *DefaultConnector) topicMetadataValidator(topics []string) func(bytes [
 
 		if len(topics) > 0 {
 			for _, topic := range topics {
-				var topicMetadata *TopicMetadata
+				var topicMetadata *proto.TopicMetadata
 				for _, topicMetadata = range response.TopicsMetadata {
 					if topicMetadata.Topic == topic {
 						break
 					}
 				}
 
-				if topicMetadata.Error != ErrNoError {
-					Infof(dc, "Topic metadata err: %s", topicMetadata.Error)
+				if topicMetadata.Error != proto.ErrNoError {
+					log.Infof(dc, "Topic metadata err: %s", topicMetadata.Error)
 					return nil
 				}
 
 				for _, partitionMetadata := range topicMetadata.PartitionsMetadata {
-					if partitionMetadata.Error != ErrNoError && partitionMetadata.Error != ErrReplicaNotAvailable {
-						Infof(dc, "Partition metadata err: %s", partitionMetadata.Error)
+					if partitionMetadata.Error != proto.ErrNoError && partitionMetadata.Error != proto.ErrReplicaNotAvailable {
+						log.Infof(dc, "Partition metadata err: %s", partitionMetadata.Error)
 						return nil
 					}
 				}
@@ -730,25 +733,25 @@ func (dc *DefaultConnector) topicMetadataValidator(topics []string) func(bytes [
 	}
 }
 
-func (dc *DefaultConnector) consumerMetadataValidator(bytes []byte) Response {
-	response := new(ConsumerMetadataResponse)
+func (dc *DefaultConnector) consumerMetadataValidator(bytes []byte) proto.Response {
+	response := new(proto.ConsumerMetadataResponse)
 	err := dc.decode(bytes, response)
-	if err != nil || response.Error != ErrNoError {
+	if err != nil || response.Error != proto.ErrNoError {
 		return nil
 	}
 
 	return response
 }
 
-func (dc *DefaultConnector) offsetValidator(bytes []byte) Response {
-	response := new(OffsetResponse)
+func (dc *DefaultConnector) offsetValidator(bytes []byte) proto.Response {
+	response := new(proto.OffsetResponse)
 	err := dc.decode(bytes, response)
 	if err != nil {
 		return nil
 	}
 	for _, offsets := range response.PartitionErrorAndOffsets {
 		for _, offset := range offsets {
-			if offset.Error != ErrNoError {
+			if offset.Error != proto.ErrNoError {
 				return nil
 			}
 		}
@@ -765,7 +768,7 @@ type BrokerLink interface {
 }
 
 type brokerLink struct {
-	broker                    *Broker
+	broker                    *proto.Broker
 	connectionPool            *connectionPool
 	lastConnectTime           time.Time
 	lastSuccessfulConnectTime time.Time
@@ -774,7 +777,7 @@ type brokerLink struct {
 	stop                      chan bool
 }
 
-func newBrokerLink(broker *Broker, keepAlive bool, keepAliveTimeout time.Duration, maxConnectionsPerBroker int) *brokerLink {
+func newBrokerLink(broker *proto.Broker, keepAlive bool, keepAliveTimeout time.Duration, maxConnectionsPerBroker int) *brokerLink {
 	brokerConnect := fmt.Sprintf("%s:%d", broker.Host, broker.Port)
 	correlationIds := make(chan int32)
 	stop := make(chan bool)

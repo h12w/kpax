@@ -1,8 +1,10 @@
-package proto
+package client
 
 import (
 	"math"
 	"net"
+
+	"h12.me/kafka/proto"
 )
 
 type Node struct {
@@ -115,11 +117,11 @@ func (nc *NetworkClient) send(topic string, partition int32, batch []*ProducerRe
 		}
 	}
 
-	request := new(ProduceRequest)
+	request := new(proto.ProduceRequest)
 	request.RequiredAcks = int16(nc.requiredAcks)
 	request.AckTimeoutMs = nc.ackTimeoutMs
 	for _, record := range batch {
-		request.AddMessage(record.Topic, record.partition, &Message{Key: record.encodedKey, Value: record.encodedValue})
+		request.AddMessage(record.Topic, record.partition, &proto.Message{Key: record.encodedKey, Value: record.encodedValue})
 	}
 	responseChan := nc.selector.Send(leader, request)
 
@@ -132,7 +134,7 @@ func (nc *NetworkClient) send(topic string, partition int32, batch []*ProducerRe
 				Offset:    -1,
 				Topic:     topic,
 				Partition: partition,
-				Error:     ErrNoError,
+				Error:     proto.ErrNoError,
 			}
 		}
 	}
@@ -146,12 +148,12 @@ func listenForResponse(topic string, partition int32, batch []*ProducerRecord, r
 		}
 	}
 
-	decoder := NewBinaryDecoder(response.bytes)
-	produceResponse := new(ProduceResponse)
+	decoder := proto.NewBinaryDecoder(response.bytes)
+	produceResponse := new(proto.ProduceResponse)
 	decodingErr := produceResponse.Read(decoder)
 	if decodingErr != nil {
 		for _, record := range batch {
-			record.metadataChan <- &RecordMetadata{Error: decodingErr.err}
+			record.metadataChan <- &RecordMetadata{Error: decodingErr.Error()}
 		}
 	}
 

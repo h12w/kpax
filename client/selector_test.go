@@ -13,31 +13,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-package proto
+package client
 
 import (
 	"testing"
 	"time"
+
+	"h12.me/kafka/proto"
 )
 
 func TestSelector(t *testing.T) {
 	selectorConfig := DefaultSelectorConfig()
 	selector := NewSelector(selectorConfig)
 
-	link := newBrokerLink(&Broker{ID: 1, Host: "localhost", Port: 9092},
+	link := newBrokerLink(&proto.Broker{ID: 1, Host: "localhost", Port: 9092},
 		true,
 		1*time.Minute,
 		5)
 
-	request1 := new(ProduceRequest)
+	request1 := new(proto.ProduceRequest)
 	request1.RequiredAcks = 1
 	request1.AckTimeoutMs = 2000
-	request1.AddMessage("siesta", 0, &Message{MagicByte: 0, Value: []byte("hello world")})
+	request1.AddMessage("siesta", 0, &proto.Message{MagicByte: 0, Value: []byte("hello world")})
 
-	request2 := new(ProduceRequest)
+	request2 := new(proto.ProduceRequest)
 	request2.RequiredAcks = 1
 	request2.AckTimeoutMs = 2000
-	request2.AddMessage("siesta", 0, &Message{MagicByte: 0, Value: []byte("hello world again")})
+	request2.AddMessage("siesta", 0, &proto.Message{MagicByte: 0, Value: []byte("hello world again")})
 
 	responseChan1 := selector.Send(link, request1)
 	responseChan2 := selector.Send(link, request2)

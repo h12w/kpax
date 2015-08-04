@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package proto
+package client
 
 import (
 	"fmt"
@@ -24,6 +24,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"h12.me/kafka/proto"
 )
 
 var ci = os.Getenv("TRAVIS_CI") != ""
@@ -80,12 +82,12 @@ func testTopicMetadata(t *testing.T, topicName string, connector *DefaultConnect
 	assert(t, broker.Port, int32(9092))
 
 	topicMetadata := findTopicMetadata(t, metadata.TopicsMetadata, topicName)
-	assert(t, topicMetadata.Error, ErrNoError)
+	assert(t, topicMetadata.Error, proto.ErrNoError)
 	assert(t, topicMetadata.Topic, topicName)
 	assertFatal(t, len(topicMetadata.PartitionsMetadata), 1)
 
 	partitionMetadata := topicMetadata.PartitionsMetadata[0]
-	assert(t, partitionMetadata.Error, ErrNoError)
+	assert(t, partitionMetadata.Error, proto.ErrNoError)
 	assert(t, partitionMetadata.ISR, []int32{0})
 	assert(t, partitionMetadata.Leader, int32(0))
 	assert(t, partitionMetadata.PartitionID, int32(0))
@@ -109,11 +111,11 @@ func testOffsetStorage(t *testing.T, topicName string, connector *DefaultConnect
 }
 
 func testProduce(t *testing.T, topicName string, numMessages int, connector *DefaultConnector) {
-	produceRequest := new(ProduceRequest)
+	produceRequest := new(proto.ProduceRequest)
 	produceRequest.AckTimeoutMs = 1000
 	produceRequest.RequiredAcks = 1
 	for i := 0; i < numMessages; i++ {
-		produceRequest.AddMessage(topicName, 0, &Message{
+		produceRequest.AddMessage(topicName, 0, &proto.Message{
 			Key:   []byte(fmt.Sprintf("%d", numMessages-i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		})
@@ -125,16 +127,16 @@ func testProduce(t *testing.T, topicName string, numMessages int, connector *Def
 	bytes, err := connector.syncSendAndReceive(leader, produceRequest)
 	assertFatal(t, err, nil)
 
-	produceResponse := new(ProduceResponse)
+	produceResponse := new(proto.ProduceResponse)
 	decodingErr := connector.decode(bytes, produceResponse)
-	assertFatal(t, decodingErr, (*DecodingError)(nil))
+	assertFatal(t, decodingErr, (*proto.DecodingError)(nil))
 
 	topicBlock, exists := produceResponse.Status[topicName]
 	assertFatal(t, exists, true)
 	partitionBlock, exists := topicBlock[int32(0)]
 	assertFatal(t, exists, true)
 
-	assert(t, partitionBlock.Error, ErrNoError)
+	assert(t, partitionBlock.Error, proto.ErrNoError)
 	assert(t, partitionBlock.Offset, int64(0))
 }
 
@@ -154,7 +156,7 @@ func testConsume(t *testing.T, topicName string, numMessages int, connector *Def
 	}
 }
 
-func findTopicMetadata(t *testing.T, metadata []*TopicMetadata, topic string) *TopicMetadata {
+func findTopicMetadata(t *testing.T, metadata []*proto.TopicMetadata, topic string) *proto.TopicMetadata {
 	for _, topicMetadata := range metadata {
 		if topicMetadata.Topic == topic {
 			return topicMetadata

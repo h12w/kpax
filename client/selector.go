@@ -13,12 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-package proto
+package client
 
 import (
 	"io"
 	"net"
 	"time"
+
+	"h12.me/kafka/proto"
 )
 
 type ConnectionRequest struct {
@@ -92,7 +94,7 @@ func (s *Selector) Close() {
 	close(s.responses)
 }
 
-func (s *Selector) Send(link BrokerLink, request Request) <-chan *rawResponseAndError {
+func (s *Selector) Send(link BrokerLink, request proto.Request) <-chan *rawResponseAndError {
 	responseChan := make(chan *rawResponseAndError, 1) //make this buffered so we don't block if noone reads the response
 	s.requests <- &NetworkRequest{link, request, responseChan}
 
@@ -140,10 +142,10 @@ func (s *Selector) responseDispatcher() {
 	}
 }
 
-func (s *Selector) send(correlationID int32, conn *net.TCPConn, request Request) error {
-	writer := NewRequestHeader(correlationID, s.config.ClientID, request)
+func (s *Selector) send(correlationID int32, conn *net.TCPConn, request proto.Request) error {
+	writer := proto.NewRequestHeader(correlationID, s.config.ClientID, request)
 	bytes := make([]byte, writer.Size())
-	encoder := NewBinaryEncoder(bytes)
+	encoder := proto.NewBinaryEncoder(bytes)
 	writer.Write(encoder)
 
 	conn.SetWriteDeadline(time.Now().Add(s.config.WriteTimeout))
@@ -159,7 +161,7 @@ func (s *Selector) receive(conn *net.TCPConn) ([]byte, error) {
 		return nil, err
 	}
 
-	decoder := NewBinaryDecoder(header)
+	decoder := proto.NewBinaryDecoder(header)
 	length, err := decoder.GetInt32()
 	if err != nil {
 		return nil, err
@@ -176,6 +178,6 @@ func (s *Selector) receive(conn *net.TCPConn) ([]byte, error) {
 //TODO better struct name
 type NetworkRequest struct {
 	link         BrokerLink
-	request      Request
+	request      proto.Request
 	responseChan chan *rawResponseAndError
 }
