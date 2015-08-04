@@ -13,13 +13,13 @@ type ProducerRecord struct {
 	Key   interface{}
 	Value interface{}
 
-	metadataChan chan *RecordMetadata
+	metadataChan chan *RecordError
 	partition    int32
 	encodedKey   []byte
 	encodedValue []byte
 }
 
-type RecordMetadata struct {
+type RecordError struct {
 	Offset    int64
 	Topic     string
 	Partition int32
@@ -73,7 +73,7 @@ func StringSerializer(value interface{}) ([]byte, error) {
 
 type Producer interface {
 	// Send the given record asynchronously and return a channel which will eventually contain the response information.
-	Send(*ProducerRecord) <-chan *RecordMetadata
+	Send(*ProducerRecord) <-chan *RecordError
 
 	// Flush any accumulated records from the producer. Blocks until all sends are complete.
 	Flush()
@@ -138,14 +138,14 @@ func New(config *ProducerConfig, keySerializer Serializer, valueSerializer Seria
 	return producer
 }
 
-func (kp *KafkaProducer) Send(record *ProducerRecord) <-chan *RecordMetadata {
-	metadata := make(chan *RecordMetadata, 1)
+func (kp *KafkaProducer) Send(record *ProducerRecord) <-chan *RecordError {
+	metadata := make(chan *RecordError, 1)
 	kp.send(record, metadata)
 	return metadata
 }
 
-func (kp *KafkaProducer) send(record *ProducerRecord, metadataChan chan *RecordMetadata) {
-	metadata := new(RecordMetadata)
+func (kp *KafkaProducer) send(record *ProducerRecord, metadataChan chan *RecordError) {
+	metadata := new(RecordError)
 
 	serializedKey, err := kp.keySerializer(record.Key)
 	if err != nil {

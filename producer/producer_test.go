@@ -67,7 +67,7 @@ func TestProducerSend1000(t *testing.T) {
 		Linger:          1 * time.Second,
 	}
 	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
-	metadataChannels := make([]<-chan *RecordMetadata, 0)
+	metadataChannels := make([]<-chan *RecordError, 0)
 	for i := 0; i < 1000; i++ {
 		metadataChannels = append(metadataChannels, producer.Send(&ProducerRecord{Topic: "siesta", Value: fmt.Sprintf("%d", i)}))
 	}
@@ -100,7 +100,7 @@ func TestProducerRequiredAcks0(t *testing.T) {
 		Linger:          1 * time.Second,
 	}
 	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
-	metadataChannels := make([]<-chan *RecordMetadata, 0)
+	metadataChannels := make([]<-chan *RecordError, 0)
 	for i := 0; i < 100; i++ {
 		metadataChannels = append(metadataChannels, producer.Send(&ProducerRecord{Topic: "siesta", Value: fmt.Sprintf("%d", i)}))
 	}
@@ -134,7 +134,7 @@ func TestProducerFlushTimeout(t *testing.T) {
 		Linger:          1 * time.Second,
 	}
 	producer := New(producerConfig, ByteSerializer, StringSerializer, connector)
-	metadataChannels := make([]<-chan *RecordMetadata, 0)
+	metadataChannels := make([]<-chan *RecordError, 0)
 	for i := 0; i < 100; i++ {
 		metadataChannels = append(metadataChannels, producer.Send(&ProducerRecord{Topic: "siesta", Value: fmt.Sprintf("%d", i)}))
 	}
