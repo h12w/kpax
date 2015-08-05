@@ -35,14 +35,7 @@ mv kafka_producer.go      \
 mv utils_test.go util_test.go
 cp util.go       \
    util_test.go  \
-	 LICENSE       \
 	 ../connector
-
-cp LICENSE \
-   ../log
-
-#rm README.md
-#rm .travis.yml
 
 cd ..
 
@@ -62,6 +55,7 @@ for f in producer/*.go; do
 	sed -i.bak 's/package siesta/package producer/' $f
 done
 
+# add package prefix
 gofmt -w -r 'MetadataResponse -> proto.MetadataResponse' connector/*.go
 gofmt -w -r 'FetchResponse -> proto.FetchResponse' connector/*.go
 gofmt -w -r 'Broker -> proto.Broker' connector/*.go
@@ -97,6 +91,7 @@ gofmt -w -r 'Infof -> log.Infof' connector/*.go
 gofmt -w -r 'Connector-> connector.Connector' producer/*.go
 gofmt -w -r 'BrokerLink-> connector.BrokerLink' producer/*.go
 
+# fix unexported members
 gofmt -w -r 'decodingErr.err -> decodingErr.Error()' producer/*.go
 gofmt -w -r 'rawResponseAndError -> RawResponseAndError' connector/*.go
 gofmt -w -r 'rawResponseAndError -> connector.RawResponseAndError' producer/*.go
@@ -113,18 +108,23 @@ gofmt -w -r 'RecordMetadata -> RecordError' producer/*.go
 gofmt -w -r 'NewDefaultConnector -> New' connector/*.go
 gofmt -w -r 'NewConnectorConfig -> NewConfig' connector/*.go
 
+# fix importing
 goimports -w log/*.go
 goimports -w proto/*.go
 goimports -w connector/*.go
 goimports -w producer/*.go
 
+# file renaming
 cd producer
 mv kafka_producer.go      producer.go
 mv kafka_producer_test.go producer_test.go
 mv record_accumulator.go  accumulator.go
 cd ..
 
+# cleanup
 rm proto/*.bak
 rm log/*.bak
 rm connector/*.bak
 rm producer/*.bak
+#rm proto/README.md
+#rm proto/.travis.yml
