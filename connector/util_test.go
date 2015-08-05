@@ -132,7 +132,7 @@ func startTCPListener(t *testing.T) net.Listener {
 }
 
 func testConnector(t *testing.T) *DefaultConnector {
-	config := NewConnectorConfig()
+	config := NewConfig()
 	config.BrokerList = []string{"localhost:9092"}
 
 	connector, err := New(config)

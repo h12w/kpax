@@ -120,7 +120,7 @@ type ConnectorConfig struct {
 }
 
 // NewConnectorConfig returns a new ConnectorConfig with sane defaults.
-func NewConnectorConfig() *ConnectorConfig {
+func NewConfig() *ConnectorConfig {
 	return &ConnectorConfig{
 		ReadTimeout:             5 * time.Second,
 		WriteTimeout:            5 * time.Second,

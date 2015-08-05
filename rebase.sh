@@ -106,9 +106,12 @@ sed -i.bak 's/	err   error/	Err   error/' connector/connector.go
 gofmt -w -r 'response.err -> response.Err' connector/*.go producer/*.go
 gofmt -w -r 'response.link -> response.Link' connector/*.go producer/*.go
 gofmt -w -r 'response.bytes -> response.Bytes' connector/*.go producer/*.go
+
+# renaming
 gofmt -w -r 'NewKafkaProducer -> New' producer/*.go
 gofmt -w -r 'RecordMetadata -> RecordError' producer/*.go
 gofmt -w -r 'NewDefaultConnector -> New' connector/*.go
+gofmt -w -r 'NewConnectorConfig -> NewConfig' connector/*.go
 
 goimports -w log/*.go
 goimports -w proto/*.go
