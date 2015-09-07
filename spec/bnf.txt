@@ -90,8 +90,7 @@ ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorP
     CoordinatorHost => string
     CoordinatorPort => int32
 
-v0 (supported in 0.8.1 or later)
-    OffsetCommitRequest => ConsumerGroupId [TopicName [Partition Offset Metadata]]
+    OffsetCommitRequestV0 => ConsumerGroupId [TopicName [Partition Offset Metadata]]
     ConsumerGroupId => string
     TopicName => string
     Partition => int32
@@ -99,19 +98,17 @@ v0 (supported in 0.8.1 or later)
     Metadata => string
 
      
-    v1 (supported in 0.8.2 or later)
     OffsetCommitRequest => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
     ConsumerId => string
-     TopicName => string
+    TopicName => string
     Partition => int32
     Offset => int64
     TimeStamp => int64
     Metadata => string
 
-    v2 (supported in 0.8.3 or later)
-    OffsetCommitRequest => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
+    OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
     ConsumerId => string
@@ -121,7 +118,6 @@ v0 (supported in 0.8.1 or later)
     Offset => int64
     Metadata => string
 
-v0, v1 and v2:
     OffsetCommitResponse => [TopicName [Partition ErrorCode]]]
     TopicName => string
     Partition => int32
