@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>A Guide To The Kafka Protocol - Apache Kafka - Apache Software Foundation</title>
+    <meta content="IE=EDGE,chrome=IE7" http-equiv="X-UA-Compatible">
+    <meta charset="UTF-8">
+    <meta content="/confluence" id="confluence-context-path" name="confluence-context-path">
+    <meta content="https://cwiki.apache.org/confluence" id="confluence-base-url" name="confluence-base-url">
+    <meta content="57b0666f55853e031f04807988a69cd8473013ff" id="atlassian-token" name="atlassian-token">
+    <meta content="KAFKA" id="confluence-space-key" name="confluence-space-key">
+    <script type="text/javascript">
+    var contextPath = '/confluence';
+    </script>
+    <meta content="1441611140302" name="confluence-request-time">
+    <meta content="" name="ajs-is-space-admin">
+    <meta content="" name="ajs-has-space-config">
+    <style>
+.ia-fixed-sidebar, .ia-splitter-left {width: 285px;}.theme-default .ia-splitter #main {margin-left: 285px;}.ia-fixed-sidebar {visibility: hidden;}
+    </style>
+    <meta content="true" name="ajs-use-keyboard-shortcuts">
+    <meta content="$discoveredList" name="ajs-discovered-plugin-features">
+    <meta content="38450baaed51271899c8e867d2a48ca9" name="ajs-keyboardshortcut-hash">
+    <meta content="false" name="ajs-is-confluence-admin">
+    <meta content="10000" name="ajs-connection-timeout">
+    <meta content="LicenseType&lt;COMMUNITY&gt;" name="gliffy-license-type">
+    <meta content="${pluginLicenseManager.userCount}" name="gliffy-license-quantity">
+    <script title="gliffy-webpanel-footer" type="text/x-template">
+    <div class="gliffy-webpanel-footer"><span>This Confluence installation runs a Free Gliffy License - Evaluate the <a href="http://www.gliffy.com/products/confluence-plugin/">Gliffy Confluence Plugin</a> for your Wiki!</span></div>
+    </script>
+    <meta content="30743483" name="ajs-page-id">
+    <meta content="30743483" name="ajs-latest-page-id">
+    <meta content="page" name="ajs-content-type">
+    <meta content="A Guide To The Kafka Protocol" name="ajs-page-title">
+    <meta content="Index" name="ajs-parent-page-title">
+    <meta content="27821303" name="ajs-parent-page-id">
+    <meta content="KAFKA" name="ajs-space-key">
+    <meta content="Apache Kafka" name="ajs-space-name">
+    <meta content="0" name="ajs-jira-metadata-count">
+    <meta content="" name="ajs-from-page-title">
+    <meta content="false" name="ajs-can-remove-page">
+    <meta content="view" name="ajs-browse-page-tree-mode">
+    <meta content="false" name="ajs-shared-drafts">
+    <meta content="/confluence" name="ajs-context-path">
+    <meta content="https://cwiki.apache.org/confluence" name="ajs-base-url">
+    <meta content="5.8.4" name="ajs-version-number">
+    <meta content="5982" name="ajs-build-number">
+    <meta content="" name="ajs-remote-user">
+    <meta content="" name="ajs-remote-user-key">
+    <meta content="" name="ajs-current-user-fullname">
+    <meta content="" name="ajs-current-user-avatar-url">
+    <meta content="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/_" name="ajs-static-resource-url-prefix">
+    <meta content="20971520" name="ajs-global-settings-attachment-max-size">
+    <meta content="en_GB" name="ajs-user-locale">
+    <meta content="confluence-inline-comments-resolved,notification.plugin.api.enabled.com.atlassian.confluence.plugins.sharepage.api.ShareContentEvent,notification.plugin.api.enabled.com.atlassian.confluence.plugins.mentions.api.ConfluenceMentionEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.security.ForgotPasswordEvent,pdf-preview,notification.plugin.api.enabled.com.atlassian.confluence.plugins.tasklist.event.SendTaskEmailEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.page.async.PageMovedEvent,previews.sharing,previews.versions,notification.plugin.api.enabled.com.atlassian.confluence.plugins.files.notifications.event.FileContentUpdateEvent,file-annotations,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.attachment.AttachmentBatchUploadCompletedEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.comment.CommentCreateEvent,notification.plugin.api.enabled.com.atlassian.confluence.efi.emails.events.OnboardingLessUsersEvent,notification.plugin.api.enabled.com.atlassian.confluence.plugins.files.notifications.event.FileContentRemoveEvent,atlassian.aui.raphael.disabled,previews.conversion-service,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.comment.CommentUpdateEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.follow.FollowEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.page.async.PageEditedEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.blogpost.BlogPostCreateEvent,previews.trigger-all-file-types,notification.plugin.api.enabled.com.atlassian.confluence.plugins.inlinecomments.events.InlineCommentResolveEvent,notification.plugin.api.enabled.com.atlassian.confluence.event.events.like.LikeCreatedEvent,notification.plugin.api.enabled.com.atlassian.confluence.plugins.inlinecomments.events.InlineCommentCreateEvent,previews.sharing.pushstate,confluence-inline-comments-rich-editor,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.blogpost.BlogPostUpdateEvent,file-annotations.likes,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.page.async.PageCreatedEvent,notification.plugin.api.enabled.com.atlassian.confluence.plugins.files.notifications.event.FileContentMentionUpdateEvent,notification.plugin.api.enabled.com.atlassian.confluence.efi.emails.events.OnboardingNoSpaceCreatedEvent,notification.plugin.api.enabled.com.atlassian.confluence.plugins.hipchat.api.events.HipChatUserMapped,notification.plugin.api.enabled.com.atlassian.confluence.plugins.sharepage.api.ShareAttachmentEvent,confluence-inline-comments,confluence-inline-comments-dangling-comment,notification.plugin.api.enabled.com.atlassian.confluence.event.events.content.blogpost.BlogPostMovedEvent" name="ajs-enabled-dark-features">
+    <meta content="57b0666f55853e031f04807988a69cd8473013ff" name="ajs-atl-token">
+    <meta content="VANILLA" name="ajs-confluence-flavour">
+    <meta content="dd MMM yyyy" name="ajs-user-date-pattern">
+    <meta content="MMM dd, yyyy" name="ajs-date.format">
+    <link href="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/_/favicon.ico" rel="shortcut icon">
+    <link href="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/_/favicon.ico" rel="icon" type="image/x-icon">
+    <link href="/confluence/opensearch/osd.action" rel="search" title="Apache Software Foundation" type="application/opensearchdescription+xml">
+    <meta content="false" name="ajs-create-issue-metadata-show-discovery">
+    <script>
+window.WRM=window.WRM||{};window.WRM._unparsedData=window.WRM._unparsedData||{};
+    WRM._unparsedData["com.atlassian.plugins.atlassian-plugins-webresource-plugin:context-path.context-path"]="\"/confluence\"";
+    WRM._unparsedData["com.atlassian.plugins.atlassian-nps-plugin:atlassian-nps-plugin-resources.is-server-instance-data-provider"]="true";
+    WRM._unparsedData["com.atlassian.plugins.browser.metrics.browser-metrics-plugin:browser-metrics.feature-data-provider-legacy"]="true";
+    WRM._unparsedData["com.atlassian.plugins.atlassian-plugins-webresource-rest:web-resource-manager.resource-base-url-pattern"]="\"(?:/confluence(?:/s/.*?/_)?/download)\"";
+    WRM._unparsedData["com.atlassian.confluence.plugins.confluence-license-banner:confluence-license-banner-resources.license-details"]="{\"daysBeforeLicenseExpiry\":0,\"daysBeforeMaintenanceExpiry\":0,\"showLicenseExpiryBanner\":false,\"showMaintenanceExpiryBanner\":false,\"renewUrl\":null,\"salesEmail\":null}";
+    WRM._unparsedData["com.atlassian.confluence.plugins.confluence-hipchat-integration-plugin:discovery-javascript-data.link-active"]="{\"linkActive\":true,\"conditionsMet\":true,\"admin\":false}";
+    WRM._unparsedData["com.atlassian.plugins.atlassian-nps-plugin:nps-acknowledgement-resources.analytics-enabled-data-provider"]="\"true\"";
+    WRM._unparsedData["com.atlassian.plugins.atlassian-nps-plugin:nps-acknowledgement-resources.sen-data-provider"]="\"SEN-2015076\"";
+    WRM._unparsedData["com.atlassian.confluence.plugins.confluence-feature-discovery-plugin:confluence-feature-discovery-plugin-resources.test-mode"]="false";
+    WRM._unparsedData["com.atlassian.plugins.browser.metrics.browser-metrics-plugin:api.feature-data-provider"]="true";
+    </script>
+    <link href="/confluence/s/2e51e60e83eadbb79c5004bd9c4ac765-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/68/_/download/superbatch/css/batch.css?build-number=5982" media="all" rel="stylesheet" type="text/css"><!--[if lt IE 9]>
+<link type="text/css" rel="stylesheet" href="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/68/_/download/superbatch/css/batch.css?conditionalComment=lt+IE+9" media="all">
+<![endif]-->
+    <!--[if lte IE 9]>
+<link type="text/css" rel="stylesheet" href="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/68/_/download/superbatch/css/batch.css?conditionalComment=lte+IE+9" media="all">
+<![endif]-->
+    <link href="/confluence/s/9b6bdeb7fddc0a2f5337e313f4e85615-T/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/07e6f1a38b151d3b6402da7ac73708e7/_/download/contextbatch/css/page,viewcontent,atl.general,main,pagebanner,atl.comments/batch.css?highlightactions=true&amp;locale=en-GB&amp;flavour=VANILLA" media="all" rel="stylesheet" type="text/css"><!--[if lt IE 9]>
+<link type="text/css" rel="stylesheet" href="/confluence/s/6c0981174e94142364564819dc0d1413-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/07e6f1a38b151d3b6402da7ac73708e7/_/download/contextbatch/css/page,viewcontent,atl.general,main,pagebanner,atl.comments/batch.css?conditionalComment=lt+IE+9&amp;locale=en-GB" media="all">
+<![endif]-->
+    <link href="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.8.6/_/download/batch/org.randombits.confluence.toc:toc-plugin-styles/org.randombits.confluence.toc:toc-plugin-styles.css" media="all" rel="stylesheet" type="text/css">
+    <link href="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.1.5/_/download/batch/com.atlassian.confluence.ext.newcode-macro-plugin:syntaxhighlighter/com.atlassian.confluence.ext.newcode-macro-plugin:syntaxhighlighter.css" media="all" rel="stylesheet" type="text/css">
+    <link href="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.1.5/_/download/batch/com.atlassian.confluence.ext.newcode-macro-plugin:sh-theme-default/com.atlassian.confluence.ext.newcode-macro-plugin:sh-theme-default.css" media="all" rel="stylesheet" type="text/css">
+    <link href="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/3/_/styles/colors.css?spaceKey=KAFKA" media="all" rel="stylesheet" type="text/css">
+    <link href="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/1.0/_/download/resources/com.atlassian.confluence.themes.default:styles/default-theme.css" media="all" rel="stylesheet" type="text/css">
+    <script src="/confluence/s/b5b7f3c4a47ebde54b884c3070e3bb8c-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/68/_/download/superbatch/js/batch.js?atlassian.aui.raphael.disabled=true&amp;locale=en-GB&amp;build-number=5982" type="text/javascript"></script>
+    <script src="/confluence/s/efa0dd658bc195093cae08c54dc2c998-T/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/07e6f1a38b151d3b6402da7ac73708e7/_/download/contextbatch/js/page,viewcontent,atl.general,main,pagebanner,atl.comments/batch.js?highlightactions=true&amp;analytics-uploadable=true&amp;flavour=VANILLA&amp;nps-acknowledged=true&amp;analytics-enabled=true&amp;locale=en-GB&amp;anonymous-access-enabled=true&amp;is-server-instance=true&amp;hostenabled=true" type="text/javascript"></script>
+    <script src="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.8.6/_/download/batch/org.randombits.confluence.toc:client-side-toc-resources/org.randombits.confluence.toc:client-side-toc-resources.js" type="text/javascript"></script>
+    <script src="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.8.6/_/download/batch/org.randombits.confluence.toc:toc-plugin-analytics/org.randombits.confluence.toc:toc-plugin-analytics.js" type="text/javascript"></script>
+    <script src="/confluence/s/6c0981174e94142364564819dc0d1413-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.1.5/_/download/batch/com.atlassian.confluence.ext.newcode-macro-plugin:syntaxhighlighter/com.atlassian.confluence.ext.newcode-macro-plugin:syntaxhighlighter.js?locale=en-GB" type="text/javascript"></script>
+    <script src="/confluence/s/d41d8cd98f00b204e9800998ecf8427e-CDN/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/2.1.5/_/download/batch/com.atlassian.confluence.ext.newcode-macro-plugin:syntaxhighlighter-brushes/com.atlassian.confluence.ext.newcode-macro-plugin:syntaxhighlighter-brushes.js" type="text/javascript"></script>
+    <meta content="Apache Software Foundation" name="ajs-site-title">
+    <link href="https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol" rel="canonical">
+    <link href="https://cwiki.apache.org/confluence/x/uxvVAQ" rel="shortlink">
+    <meta content="[KAFKA:A Guide To The Kafka Protocol]" name="wikilink">
+    <meta content="81" name="page-version">
+</head>
+
+<body class="theme-default aui-layout aui-theme-default" id="com-atlassian-confluence" onload="placeFocus()">
+    <div id='stp-licenseStatus-banner'>
+    </div>
+
+
+    <ul class="assistive" id="assistive-skip-links">
+        <li>
+            <a href="#title-heading">Skip to content</a>
+        </li>
+
+
+        <li>
+            <a href="#breadcrumbs">Skip to breadcrumbs</a>
+        </li>
+
+
+        <li>
+            <a href="#header-menu-bar">Skip to header menu</a>
+        </li>
+
+
+        <li>
+            <a href="#navigation">Skip to action menu</a>
+        </li>
+
+
+        <li>
+            <a href="#quick-search-query">Skip to quick search</a>
+        </li>
+    </ul>
+
+
+    <div id="page">
+        <div id="full-height-container">
+            <div id="header-precursor">
+                <div class="cell">
+                    <style type="text/css">
+#preview #previewArea iframe {
+
+                    overflow: visible;
+                    }
+                    </style>
+                </div>
+            </div>
+
+
+            <header id="header">
+                <nav class="aui-header aui-dropdown2-trigger-group">
+                    <div class="aui-header-inner">
+                        <div class="aui-header-before">
+                            <a class=" aui-dropdown2-trigger app-switcher-trigger" data-aui-trigger="" href="#app-switcher"><span class="aui-icon aui-icon-small aui-iconfont-appswitcher">Linked Applications</span></a>
+
+                            <div class="aui-dropdown2 aui-style-default" id="app-switcher">
+                                <div class="app-switcher-loading">
+                                    Loading&hellip;
+                                </div>
+                            </div>
+                            <script>
+(function (NL) {
+                            var initialise = function () {
+                            // For some milestones of AUI, the atlassian soy namespace was renamed to aui. Handle that here by ensuring that window.atlassian is defined.
+                            window.atlassian = window.atlassian || window.aui;
+                            new NL.AppSwitcher({
+                            dropdownContents: '#app-switcher'
+                            });
+                            };
+                            if (NL.AppSwitcher) {
+                            initialise();
+                            } else {
+                            NL.onInit = initialise;
+                            }
+                            }(window.NL = (window.NL || {})));
+                            window.NL.isUserAdmin = false
+                            </script>
+                        </div>
+
+
+                        <div class="aui-header-primary">
+                            <h1 class="aui-header-logo aui-header-logo-custom" id="logo"><a href="/confluence/"><img alt="Apache Software Foundation" src="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/_/images/logo/confluence-logo.png"></a>
+                            </h1>
+
+
+                            <ul class="aui-nav">
+                                <li>
+                                    <a class=" aui-nav-imagelink" href="/confluence/spacedirectory/view.action" id="space-directory-link" title="Spaces"><span>Spaces</span></a>
+                                </li>
+                            </ul>
+                        </div>
+
+
+                        <div class="aui-header-secondary">
+                            <ul class="aui-nav">
+                                <li>
+                                    <form action="/confluence/dosearchsite.action" class="aui-quicksearch dont-default-focus header-quicksearch" id="quick-search" method="get" name="quick-search">
+                                        <fieldset>
+                                            <label class="assistive" for="quick-search-query">Quick Search</label><input accesskey="q" autocomplete="off" class="text app-search search quick-search-query" id="quick-search-query" name="queryString" placeholder="Search" title="Quick Search" type="text"><input class="quick-search-submit" id="quick-search-submit" type="submit" value="Search">
+
+                                            <div class="aui-dd-parent quick-nav-drop-down">
+                                            </div>
+                                        </fieldset>
+                                    </form>
+                                </li>
+
+
+                                <li>
+                                    <a class="aui-nav-link aui-dropdown2-trigger" href="#" id="help-menu-link" title="Help"><span class="aui-icon aui-icon-small aui-iconfont-help">Help</span></a>
+
+                                    <nav class="aui-dropdown2 aui-style-default" id="help-menu-link-content">
+                                        <div class="aui-dropdown2-section">
+                                            <ul class="aui-list-truncate section-leading first" id="help-menu-link-leading">
+                                                <li>
+                                                    <a class="" href="https://docs.atlassian.com/confluence/docs-58/Getting+Help+And+Support" id="confluence-help-link" target="_blank" title="Visit the Confluence documentation home">Online Help</a>
+                                                </li>
+
+
+                                                <li>
+                                                    <a class="" href="/confluence" id="keyboard-shortcuts-link" title="View available keyboard shortcuts">Keyboard Shortcuts</a>
+                                                </li>
+
+
+                                                <li>
+                                                    <a class="" href="/confluence/dashboard/configurerssfeed.action" id="feed-builder-link" title="Create your custom RSS feed.">Feed Builder</a>
+                                                </li>
+
+
+                                                <li>
+                                                    <a class="" href="https://docs.atlassian.com/confluence/docs-58/whatsnew/iframe" id="whats-new-menu-link" title="">What’s new</a>
+                                                </li>
+
+
+                                                <li>
+                                                    <a class="" href="https://docs.atlassian.com/confluence/docs-58/whatsnew/iframe" id="whats-new-menu-link" title="">What’s new</a>
+                                                </li>
+
+
+                                                <li>
+                                                    <a class=" user-item administration-link" href="/confluence" id="gadget-directory-link" title="Browse gadgets provided by Confluence">Available Gadgets</a>
+                                                </li>
+
+
+                                                <li>
+                                                    <a class="" href="/confluence/aboutconfluencepage.action" id="confluence-about-link" title="Get more information about Confluence">About Confluence</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </nav>
+                                </li>
+
+
+                                <li>
+                                </li>
+
+
+                                <li>
+                                </li>
+
+
+                                <li>
+                                </li>
+
+
+                                <li>
+                                    <a class=" user-item login-link" href="/confluence/login.action?os_destination=%2Fdisplay%2FKAFKA%2FA%2BGuide%2BTo%2BThe%2BKafka%2BProtocol" id="login-link" title="">Log in</a>
+                                </li>
+
+
+                                <li>
+                                    <a class=" user-item signup-link" href="/confluence/signup.action" id="signup-link" title="">Sign up</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- .aui-header-inner-->
+                </nav>
+                <!-- .aui-header -->
+                <br class="clear">
+            </header>
+
+
+            <div class="ia-splitter">
+                <div class="ia-splitter-left">
+                    <div class="ia-fixed-sidebar">
+                        <div class="acs-side-bar ia-scrollable-section">
+                            <div class="acs-side-bar-space-info tipsy-enabled" data-configure-tooltip="Edit space details">
+                                <div class="avatar">
+                                    <div class="space-logo" data-entity-type="confluence.space" data-key="KAFKA" data-name="Apache Kafka">
+                                        <div class="avatar-img-container">
+                                            <div class="avatar-img-wrapper">
+                                                <a href="/confluence/display/KAFKA" title="Apache Kafka"><img alt="Apache Kafka" class="avatar-img" src="/confluence/download/attachments/27821302/KAFKA?version=2&amp;modificationDate=1391968911000&amp;api=v2"></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="name">
+                                    <a href="/confluence/display/KAFKA" title="Apache Kafka">Apache Kafka</a>
+                                </div>
+
+
+                                <div class="flyout-handle icon">
+                                </div>
+                            </div>
+
+
+                            <div class="acs-side-bar-content">
+                                <div class="acs-nav-wrapper">
+                                    <div class="acs-nav" data-has-create-permission="false" data-nav-type="pages" data-quick-links-state="null">
+                                        <div class="acs-nav-sections">
+                                            <div class="main-links-section">
+                                                <ul class="acs-nav-list">
+                                                    <li class="acs-nav-item wiki current-item" data-collector-key="spacebar-pages">
+                                                        <a class="acs-nav-item-link tipsy-enabled" data-collapsed-tooltip="Pages" href="/confluence/collector/pages.action?key=KAFKA"><span class="icon"></span><span class="acs-nav-item-label">Pages</span></a>
+                                                    </li>
+
+
+                                                    <li class="acs-nav-item blog" data-collector-key="spacebar-blogs">
+                                                        <a class="acs-nav-item-link tipsy-enabled" data-collapsed-tooltip="Blog" href="/confluence/pages/viewrecentblogposts.action?key=KAFKA"><span class="icon"></span><span class="acs-nav-item-label">Blog</span></a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+
+                                            <div class="quick-links-wrapper">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="ia-secondary-container tipsy-enabled" data-tree-type="pages">
+                                    <div class="ia-secondary-header">
+                                        <h5 class="ia-secondary-header-title pages"><span class="label">Child pages</span>
+                                        </h5>
+                                    </div>
+
+
+                                    <div class="ia-secondary-parent-content">
+                                        <ul class="parent ia-secondary-header-title wiki">
+                                            <li class="parent-item">
+                                                <a class="parent-item-link" href="/confluence/display/KAFKA/Index" title="Index"><span class="icon"></span><span class="label">Index</span></a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+
+                                    <div class="ia-secondary-current-content">
+                                        <ul class="ia-secondary-currentPage-title wiki current-item">
+                                            <li><span class="icon"></span><span class="label">A Guide To The Kafka Protocol</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+
+                                    <div class="ia-secondary-content">
+                                        <div class="contextual-nav-child-pages">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="hidden">
+                                <a href="/confluence/collector/pages.action?key=KAFKA" id="space-pages-link"></a><script title="logo-config-content" type="text/x-template">
+<h2>Space Details</h2><div class="personal-space-logo-hint">Your profile picture is used as the logo for your personal space. <a href="/confluence/users/profile/editmyprofilepicture.action" target="_blank">Change your profile picture</a>.</div>
+                                </script>
+                            </div>
+                        </div>
+
+
+                        <div class="space-tools-section">
+                            <div class="hidden" id="space-tools-menu-additional-items">
+                                <div data-class="" data-href="/confluence/pages/reorderpages.action?key=KAFKA" data-label="Browse pages">
+                                    Browse pages
+                                </div>
+                            </div>
+
+
+                            <div id="space-tools-dd-dummy">
+                            </div>
+                            <a class="aui-button aui-button-subtle aui-dropdown2-trigger tipsy-enabled" id="space-tools-menu-trigger"><span class="aui-icon aui-icon-small aui-iconfont-configure">Configure</span><span class="label">Space tools</span></a><a class="expand-collapse-trigger"></a>
+                        </div>
+                    </div>
+                </div>
+                <!-- \#header -->
+
+
+                <div class=" aui-page-panel" id="main">
+                    <div id="main-header">
+                        <div class="content-navigation view" id="navigation">
+                            <ul class="ajs-menu-bar">
+                                <li class="normal ajs-menu-item">
+                                    <a class="action aui-dropdown2-trigger-arrowless aui-button aui-button-subtle ajs-menu-title aui-dropdown2-trigger" data-container="#navigation" href="#" id="action-menu-link"><span><span class="aui-icon aui-icon-small aui-iconfont-more"></span></span></a>
+
+                                    <div class="aui-dropdown2 aui-style-default" id="action-menu">
+                                        <ul class="section-primary first aui-dropdown2-section" id="action-menu-primary">
+                                            <li>
+                                                <a accesskey="t" class="action-view-attachments" href="/confluence/pages/viewpageattachments.action?pageId=30743483" id="view-attachments-link" rel="nofollow" title="View Attachments"><span>A<span style="text-decoration: underline">t</span>tachments (0)</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="action-view-history" href="/confluence/pages/viewpreviousversions.action?pageId=30743483" id="action-view-history-link" rel="nofollow" title=""><span>Page History</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="action-page-permissions" href="/confluence/pages/viewinfo.action?pageId=30743483" id="action-page-permissions-link" rel="nofollow" title="Edit restrictions"><span>Restrictions</span></a>
+                                            </li>
+                                        </ul>
+
+
+                                        <ul class="section-secondary aui-dropdown2-section" id="action-menu-secondary">
+                                            <li>
+                                                <a class="action-view-info" href="/confluence/pages/viewinfo.action?pageId=30743483" id="view-page-info-link" rel="nofollow" title=""><span>Page Information</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="" href="/confluence" id="view-resolved-comments" rel="nofollow" title=""><span>Resolved comments</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="" href="/confluence/pages/viewinfo.action?pageId=30743483" id="link-to-page-link" rel="nofollow" title="Link to this Page"><span>Link to this Page…</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="" href="/confluence/pages/reorderpages.action?key=KAFKA&amp;openId=30743483#selectedPageInHierarchy" id="view-in-hierarchy-link" rel="nofollow" title=""><span>View in Hierarchy</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="action-view-source popup-link" href="/confluence/plugins/viewsource/viewpagesrc.action?pageId=30743483" id="action-view-source-link" rel="nofollow" title=""><span>View Source</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="" href="/confluence/plugins/aptis/deleteAllComments/ask-user.action?pageId=30743483" id="delete-all-comments-link-link" rel="nofollow" title=""><span>Delete comments</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="" href="/confluence/spaces/flyingpdf/pdfpageexport.action?pageId=30743483" id="action-export-pdf-link" rel="nofollow" title=""><span>Export to PDF</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="" href="/confluence/pages/viewpage.action?pageId=30743483" id="com-k15t-confluence-scroll-epub-launcher" rel="nofollow" title=""><span>Export to EPUB</span></a>
+                                            </li>
+
+
+                                            <li>
+                                                <a class="action-export-word" href="/confluence/exportword?pageId=30743483" id="action-export-word-link" rel="nofollow" title=""><span>Export to Word</span></a>
+                                            </li>
+                                        </ul>
+
+
+                                        <ul class="section-modify aui-dropdown2-section" id="action-menu-modify">
+                                            <li>
+                                                <a class="" href="/confluence/plugins/treecopy/setnames.action?pageId=30743483" id="treecopy-action" rel="nofollow" title=""><span>Copy Page Tree</span></a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+
+                        <div class="pagetitle with-breadcrumbs" id="title-heading">
+                            <div id="breadcrumb-section">
+                                <ol id="breadcrumbs">
+                                    <li class="first"><span class=""><a href="/confluence/collector/pages.action?key=KAFKA">Pages</a></span>
+                                    </li>
+
+
+                                    <li><span class=""><a href="/confluence/display/KAFKA/Index">Index</a></span>
+                                    </li>
+                                </ol>
+                            </div>
+                            <a class="assistive" href="#page-banner-end">Skip to end of banner</a>
+
+                            <div class="assistive" id="page-banner-start">
+                            </div>
+
+
+                            <div id="page-metadata-banner">
+                                <ul class="banner">
+                                    <li class="noprint" id="system-content-items">
+                                        <a class="hidden" href="" id="content-metadata-page-restrictions" title="Restrictions apply"><img class="page-banner-item-icon" src="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/_/download/resources/com.atlassian.confluence.plugins.confluence-page-banner:page-banner-resources/images/red_padlock.png" style="height: 16px; width: 16px;"></a>
+                                    </li>
+
+
+                                    <li class="page-metadata-item noprint has-button" id="content-metadata-jira-wrapper">
+                                        <a class="aui-button aui-button-subtle content-metadata-jira tipsy-disabled hidden" href="" id="content-metadata-jira" title=""><img class="page-banner-item-icon" src="/confluence/s/en_GB/5982/f2b47fb3d636c8bc9fd0b11c0ec6d0ae18646be7.1/_/download/resources/com.atlassian.confluence.plugins.confluence-jira-metadata:confluence-jira-metadata-resources/img/icon-jira-link.png" style="height: 16px; width: 16px;"><span>JIRA links</span></a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <a class="assistive" href="#page-banner-start">Go to start of banner</a>
+
+                            <div class="assistive" id="page-banner-end">
+                            </div>
+
+
+                            <h1 class="with-breadcrumbs" id="title-text"><a href="/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol">A Guide To The Kafka Protocol</a>
+                            </h1>
+                        </div>
+                    </div>
+                    <!-- \#main-header -->
+
+
+                    <div id="sidebar-container">
+                    </div>
+                    <!-- \#sidebar-container -->
+
+
+                    <div class="page view" id="content">
+                        <div id="action-messages">
+                        </div>
+                        <script title="searchResultsGrid" type="text/x-template">
+<table class="aui">
+                        <thead>
+                        <tr class="header">
+                        <th class="search-result-title">Page Title</th>
+                        <th class="search-result-space">Space</th>
+                        <th class="search-result-date">Updated</th>
+                        </tr>
+                        </thead>
+                        </table>
+                        </script> <script title="searchResultsGridCount" type="text/x-template">
+<p class="search-result-count">{0}</p>
+                        </script> <script title="searchResultsGridRow" type="text/x-template">
+<tr class="search-result">
+                        <td class="search-result-title"><a href="{1}" class="content-type-{2}"><span>{0}</span></a></td>
+                        <td class="search-result-space"><a class="space" href="/confluence/display/{4}/" title="{3}">{3}</a></td>
+                        <td class="search-result-date"><span class="date" title="{6}">{5}</span></td>
+                        </tr>
+                        </script> <a class="assistive" href="#page-metadata-end">Skip to end of metadata</a>
+
+                        <div class="assistive" id="page-metadata-start">
+                        </div>
+
+
+                        <div class="page-metadata">
+                            <ul>
+                                <li class="page-metadata-modification-info">Created by <span class='author'><a class="url fn" href="%20/confluence/display/~jkreps">Jay Kreps</a></span>, last modified by <span class='editor'><a class="url fn" href="%20/confluence/display/~eapache">Evan Huus</a></span> on <a class='last-modified' href='/confluence/pages/diffpagesbyversion.action?pageId=30743483&amp;selectedPageVersions=80&amp;selectedPageVersions=81' title='Mar 27, 2015 14:16'>Mar 27, 2015</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <a class="assistive" href="#page-metadata-start">Go to start of metadata</a>
+
+                        <div class="assistive" id="page-metadata-end">
+                        </div>
+
+
+                        <div class="wiki-content" id="main-content">
+                            <p>
+                            </p>
+
+
+                            <div class="toc-macro client-side-toc-macro" data-headerelements="H1,H2,H3,H4,H5,H6,H7">
+                            </div>
+                            <p>
+
+                            <h3 id="AGuideToTheKafkaProtocol-Introduction">Introduction</h3>
+
+
+                            <p>This document covers the protocol implemented in Kafka 0.8 and beyond. It is meant to give a readable guide to the protocol that covers the available requests, their binary format, and the proper way to make use of them to implement a client. This document assumes you understand the basic design and terminology described <a class="external-link" href="https://kafka.apache.org/documentation.html#design" rel="nofollow">here</a>.</p>
+
+
+                            <p>The <a href="/confluence/display/KAFKA/Wire+Format">protocol used in 0.7</a> and earlier is similar to this, but we chose to make a one time (we hope) break in&nbsp;compatibility&nbsp;to be able to clean up cruft and generalize things.</p>
+
+
+                            <h3 id="AGuideToTheKafkaProtocol-Overview">Overview</h3>
+
+
+                            <p>The Kafka protocol is fairly simple, there are only six client requests APIs.</p>
+
+
+                            <ol>
+                                <li>Metadata - Describes the currently available brokers, their host and port information, and gives information about which broker hosts which partitions.</li>
+
+
+                                <li>Send - Send messages to a broker</li>
+
+
+                                <li>Fetch - Fetch messages from a broker, one which fetches data, one which gets cluster metadata, and one which gets offset information about a topic.</li>
+
+
+                                <li>Offsets - Get information about the available offsets for a given topic partition.</li>
+
+
+                                <li>Offset Commit - Commit a set of offsets for a consumer group</li>
+
+
+                                <li>Offset Fetch - Fetch a set of offsets for a consumer group</li>
+                            </ol>
+
+
+                            <p>Each of these will be described in detail below.</p>
+
+
+                            <h3 id="AGuideToTheKafkaProtocol-Preliminaries">Preliminaries</h3>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-Network">Network</h4>
+
+
+                            <p>Kafka uses a binary protocol over TCP. The protocol defines all apis as request response message pairs. All messages are size delimited and are made up of the following primitive types.</p>
+
+
+                            <p>The client initiates a socket connection and then writes a sequence of request messages and reads back the corresponding response message. No handshake is required on connection or disconnection. TCP is happier if you maintain persistent connections used for many requests to amortize the cost of the TCP handshake, but beyond this penalty connecting is pretty cheap.</p>
+
+
+                            <p>The client will likely need to maintain a connection to multiple brokers, as data is partitioned and the clients will need to talk to the server that has their data. However it should not generally be necessary to maintain multiple connections to a single broker from a single client instance (i.e. connection pooling).</p>
+
+
+                            <p>The server guarantees that on a single TCP connection, requests will be processed in the order they are sent and responses will return in that order as well. The broker's request processing allows only a single in-flight request per connection in order to guarantee this ordering. Note that clients can (and ideally should) use non-blocking IO to implement request pipelining and achieve higher throughput. i.e., clients can send requests even while awaiting responses for preceding requests since the outstanding requests will be buffered in the underlying OS socket buffer. All requests are initiated by the client, and result in a corresponding response message from the server except where noted.</p>
+
+
+                            <p>The server has a configurable maximum limit on request size and any request that exceeds this limit will result in the socket being disconnected.</p>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-Partitioningandbootstrapping">Partitioning and bootstrapping</h4>
+
+
+                            <p>Kafka is a partitioned system so not all servers have the complete data set. Instead recall that topics are split into a pre-defined number of partitions, P, and each partition is replicated with some replication factor, N. Topic partitions themselves are just ordered &quot;commit logs&quot; numbered 0, 1, ..., P.</p>
+
+
+                            <p>All systems of this nature have the question of how a particular piece of data is assigned to a particular partition. Kafka clients directly control this assignment, the brokers themselves enforce no particular semantics of which messages <em>should</em> be published to a particular partition. Rather, to publish messages the client directly addresses messages to a particular partition, and when fetching messages, fetches from a particular partition.&nbsp;If two clients want to use the same partitioning scheme they must use the same method to compute the mapping of key to partition.</p>
+
+
+                            <p>These requests to publish or fetch data must be sent to the broker that is currently acting as the leader for a given partition. This condition is enforced by the broker, so a request for a particular partition to the wrong broker will result in an the&nbsp;NotLeaderForPartition error code (described below).&nbsp;</p>
+
+
+                            <p>How can the client find out which topics exist, what partitions they have, and which brokers currently host those partitions so that it can direct its requests to the right hosts? This information is dynamic, so you can't just configure each client with some static mapping file. Instead all Kafka brokers can answer a metadata request that describes the current state of the cluster: what topics there are, which partitions those topics have, which broker is the leader for those partitions, and the host and port information for these brokers.</p>
+
+
+                            <p>In other words, the client needs to somehow find one broker and that broker will tell the client about all the other brokers that exist and what partitions they host. This first broker may itself go down so the best practice for a client implementation is to take a list of two or three urls to bootstrap from. The user can then choose to use a load balancer or just statically configure two or three of their kafka hosts in the clients.</p>
+
+
+                            <p>The client does not need to keep polling to see if the cluster has changed; it can fetch metadata once when it is instantiated cache that metadata until it receives an error indicating that the metadata is out of date. This error can come in two forms: (1) a socket error indicating the client cannot communicate with a particular broker, (2) an error code in the response to a request indicating that this broker no longer hosts the partition for which data was requested.</p>
+
+
+                            <ol>
+                                <li>Cycle through a list of &quot;bootstrap&quot; kafka urls until we find one we can connect to. Fetch cluster metadata.</li>
+
+
+                                <li>Process fetch or produce requests, directing them to the appropriate broker based on the topic/partitions they send to or fetch from.</li>
+
+
+                                <li>If we get an appropriate error, refresh the metadata and try again.</li>
+                            </ol>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-PartitioningStrategies">Partitioning Strategies</h4>
+
+
+                            <p>As mentioned above the assignment of messages to partitions is something the producing client controls. That said, how should this functionality be exposed to the end-user?</p>
+
+
+                            <p>Partitioning really serves two purposes in Kafka:</p>
+
+
+                            <ol>
+                                <li>It balances data and request load over brokers</li>
+
+
+                                <li>It serves as a way to divvy up processing among consumer processes while allowing local state and preserving order within the partition. We call this semantic partitioning.</li>
+                            </ol>
+
+
+                            <p>For a given use case you may care about only one of these or both.</p>
+
+
+                            <p>To accomplish simple load balancing a simple approach would be for the client to just round robin requests over all brokers. Another alternative, in an environment where there are many more producers than brokers, would be to have each client chose a single partition at random and publish to that. This later strategy will result in far fewer TCP connections.</p>
+
+
+                            <p>Semantic partitioning means using some key in the message to assign messages to partitions. For example if you were processing a click message stream you might want to partition the stream by the user id so that all data for a particular user would go to a single consumer. To accomplish this the client can take a key associated with the message and use some hash of this key to choose the partition to which to deliver the message.</p>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-Batching">Batching</h4>
+
+
+                            <p>Our apis encourage batching small things together for efficiency. We have found this is a very significant performance win. Both our API to send messages and our API to fetch messages always work with a sequence of messages not a single message to encourage this. A clever client can make use of this and support an &quot;asynchronous&quot; mode in which it batches together messages sent individually and sends them in larger clumps. We go even further with this and allow the batching across multiple topics and partitions, so a produce request may contain data to append to many partitions and a fetch request may pull data from many partitions all at once.</p>
+
+
+                            <p>The client implementer can choose to ignore this and send everything one at a time if they like.</p>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-VersioningandCompatibility">Versioning and Compatibility</h4>
+
+
+                            <p>The protocol is designed to enable incremental evolution in a backward compatible fashion. Our versioning is on a per-api basis, each version consisting of a request and response pair. Each request contains an API key that identifies the API being invoked and a version number that indicates the format of the request and the expected format of the response.</p>
+
+
+                            <p>The intention is that clients would implement a particular version of the protocol, and indicate this version in their requests. Our goal is primarily to allow API evolution in an environment where downtime is not allowed and clients and servers cannot all be changed at once.</p>
+
+
+                            <p>The server will reject requests with a version it does not support, and will always respond to the client with exactly the protocol format it expects based on the version it included in its request. The intended upgrade path is that new features would first be rolled out on the server (with the older clients not making use of them) and then as newer clients are deployed these new features would gradually be taken advantage of.</p>
+
+
+                            <p>Currently all versions are baselined at 0, as we evolve these APIs we will indicate the format for each version individually.</p>
+
+
+                            <h3 id="AGuideToTheKafkaProtocol-TheProtocol">The Protocol</h3>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-ProtocolPrimitiveTypes">Protocol Primitive Types</h4>
+
+
+                            <p>The protocol is built out of the following primitive types.</p>
+
+
+                            <p><span style="text-decoration: underline;">Fixed Width Primitives</span>
+                            </p>
+
+
+                            <p><em>int8, int16, int32, int64</em>&nbsp;- Signed integers with the given precision (in bits) stored in big endian order.</p>
+
+
+                            <p><span style="text-decoration: underline;">Variable Length Primitives</span>
+                            </p>
+
+
+                            <p>bytes, string - These types consist of a signed integer giving a length N followed by N bytes of content. A length of -1 indicates null. string uses an int16 for its size, and bytes uses an int32.</p>
+
+
+                            <p><span style="text-decoration: underline;">Arrays</span>
+                            </p>
+
+
+                            <p>This is a notation for handling repeated structures. These will always be encoded as an int32 size containing the length N followed by N repetitions of the structure which can itself be made up of other primitive types. In the BNF grammars below we will show an array of a structure foo as [foo].</p>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-Notesonreadingtherequestformatgrammars">Notes on reading the request format grammars</h4>
+
+
+                            <p>The&nbsp;<a class="external-link" href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form" rel="nofollow">BNF</a>s below give an exact context free grammar for the request and response binary format. For each API I will give the request and response together followed by all the sub-definitions. The BNF is intentionally not compact in order to give human-readable name (for example I define a production for ErrorCode even though it is just an int16 in order to give it a symbolic name). As always in a BNF a sequence of productions indicates concatenation, so the MetadataRequest given below would be a sequence of bytes containing first a VersionId, then a ClientId, and then an array of TopicNames (each of which has its own definition). Productions are always given in camel case and primitive types in lower case. When there are multiple possible productions these are&nbsp;separated&nbsp;with '|' and may be enclosed in parenthesis for grouping. The top-level definition is always given first and subsequent sub-parts are indented.</p>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-CommonRequestandResponseStructure">Common Request and Response Structure</h4>
+
+
+                            <p>All requests and responses originate from the following grammar which will be incrementally describe through the rest of this document:</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[RequestOrResponse =&gt; Size (RequestMessage | ResponseMessage)
+                                    Size =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MessageSize</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The MessageSize field gives the size of the subsequent request or response message in bytes. The client can read requests by first reading this 4 byte size as an integer N, and then reading and parsing the subsequent N bytes of the request.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-Requests">Requests</h6>
+
+
+                            <p>Requests all have the following format:</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[RequestMessage =&gt; ApiKey ApiVersion CorrelationId ClientId RequestMessage
+                                    ApiKey =&gt; int16
+                                    ApiVersion =&gt; int16
+                                    CorrelationId =&gt; int32
+                                    ClientId =&gt; string
+                                    RequestMessage =&gt; MetadataRequest | ProduceRequest | FetchRequest | OffsetRequest | OffsetCommitRequest | OffsetFetchRequest
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>ApiKey</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is a numeric id for the API being invoked (i.e. is it a metadata request, a produce request, a fetch request, etc).</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>ApiVersion</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is a numeric version number for this api. We version each API and this version number allows the server to properly interpret the request as the protocol evolves. Responses will always be in the format corresponding to the request version. Currently the supported version for all APIs is 0.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>CorrelationId</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is a user-supplied integer. It will be passed back in the response by the server, unmodified. It is useful for matching request and response between the client and server.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>ClientId</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is a user supplied identifier for the client application. The user can use any identifier they like and it will be used when logging errors, monitoring aggregates, etc. For example, one might want to monitor not just the requests per second overall, but the number coming from each client application (each of which could reside on multiple servers). This id acts as a logical grouping across all requests from a particular client.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <p>The various request and response messages will be described below.</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-Responses">Responses</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[Response =&gt; CorrelationId ResponseMessage
+                                    CorrelationId =&gt; int32
+                                    ResponseMessage =&gt; MetadataResponse | ProduceResponse | FetchResponse | OffsetResponse | OffsetCommitResponse | OffsetFetchResponse
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>CorrelationId</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The server passes back whatever integer the client supplied as the correlation in the request.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <p>The response will always match the paired request (e.g. we will send a MetadataResponse in return to a MetadataRequest).</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-Messagesets">Message sets</h6>
+
+
+                            <p>One structure common to both the produce and fetch requests is the message set format. A message in kafka is a key-value pair with a small amount of associated metadata. A message set is just a sequence of messages with offset and size information. This format happens to be used both for the on-disk storage on the broker and the on-the-wire format.</p>
+
+
+                            <p>A message set is also the unit of compression in Kafka, and we allow messages to recursively contain compressed message sets to allow batch compression.</p>
+
+
+                            <p>N.B., MessageSets are not preceded by an int32 like other array elements in the protocol.</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[MessageSet =&gt; [Offset MessageSize Message]
+                                    Offset =&gt; int64
+                                    MessageSize =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <p>Message format</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[Message =&gt; Crc MagicByte Attributes Key Value
+                                    Crc =&gt; int32
+                                    MagicByte =&gt; int8
+                                    Attributes =&gt; int8
+                                    Key =&gt; bytes
+                                    Value =&gt; bytes
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Offset</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is the offset used in kafka as the log sequence number. When the producer is sending messages it doesn't actually know the offset and can fill in any value here it likes.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Crc</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The CRC is the CRC32 of the remainder of the message bytes. This is used to check the integrity of the message on the broker and consumer.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MagicByte</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is a version id used to allow backwards compatible evolution of the message binary format. The current value is 0.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Attributes</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This byte holds metadata attributes about the message. The lowest 2 bits contain the compression codec used for the message. The other bits should be set to 0.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Key</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The key is an optional message key that was used for partition assignment. The key can be null.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Value</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The value is the actual message contents as an opaque byte array. Kafka supports recursive messages in which case this may itself contain a message set. The message can be null.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-Compression">Compression</h6>
+
+
+                            <p>Kafka supports compressing messages for additional efficiency, however this is more complex than just compressing a raw message. Because individual messages may not have sufficient redundancy to enable good compression ratios, compressed messages must be sent in special batches (although you may use a batch of one if you truly wish to compress a message on its own). The messages to be sent are wrapped (uncompressed) in a MessageSet structure, which is then compressed and stored in the Value field of a single &quot;Message&quot; with the appropriate compression codec set. The receiving system parses the actual MessageSet from the decompressed value. The outer MessageSet should contain only one compressed &quot;Message&quot; (see <a class="external-link" href="https://issues.apache.org/jira/browse/KAFKA-1718" rel="nofollow">KAFKA-1718</a> for details).</p>
+
+
+                            <p>Kafka currently supports two compression codecs with the following codec numbers:</p>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Compression</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Codec</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>None</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>0</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>GZIP</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>1</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Snappy</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>2</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-TheAPIs">The APIs</h4>
+
+
+                            <p>This section gives details on each of the individual APIs, their usage, their binary format, and the meaning of their fields.</p>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-MetadataAPI">Metadata API</h5>
+
+
+                            <p>This API answers the following questions:</p>
+
+
+                            <ul>
+                                <li>What topics exist?</li>
+
+
+                                <li>How many partitions does each topic have?</li>
+
+
+                                <li>Which broker is currently the leader for each partition?</li>
+
+
+                                <li>What is the host and port for each of these brokers?</li>
+                            </ul>
+
+
+                            <p>This is the only request that can be addressed to any broker in the cluster.</p>
+
+
+                            <p>Since there may be many topics the client can give an optional list of topic names in order to only return metadata for a subset of topics.</p>
+
+
+                            <p>The metadata returned is at the partition level, but grouped together by topic for convenience and to avoid redundancy. For each partition the metadata contains the information for the leader as well as for all the replicas and the list of replicas that are currently in-sync.</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-TopicMetadataRequest">Topic Metadata Request</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[TopicMetadataRequest =&gt; [TopicName]
+                                    TopicName =&gt; string
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>TopicName</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The topics to produce metadata for. If empty the request will yield metadata for all topics.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-MetadataResponse">Metadata Response</h6>
+
+
+                            <p>The response contains metadata for each partition, with partitions grouped together by topic. This metadata refers to brokers by their broker id. The brokers each have a host and port.</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[MetadataResponse =&gt; [Broker][TopicMetadata]
+                                    Broker =&gt; NodeId Host Port  (any number of brokers may be returned)
+                                    NodeId =&gt; int32
+                                    Host =&gt; string
+                                    Port =&gt; int32
+                                    TopicMetadata =&gt; TopicErrorCode TopicName [PartitionMetadata]
+                                    TopicErrorCode =&gt; int16
+                                    PartitionMetadata =&gt; PartitionErrorCode PartitionId Leader Replicas Isr
+                                    PartitionErrorCode =&gt; int16
+                                    PartitionId =&gt; int32
+                                    Leader =&gt; int32
+                                    Replicas =&gt; [int32]
+                                    Isr =&gt; [int32]
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Leader</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The node id for the kafka broker currently acting as leader for this partition. If no leader exists because we are in the middle of a leader election this id will be -1.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Replicas</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The set of alive nodes that currently acts as slaves for the leader for this partition.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Isr</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The set subset of the replicas that are &quot;caught up&quot; to the leader</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Broker</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The node id, hostname, and port information for a kafka broker</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-ProduceAPI">Produce API</h5>
+
+
+                            <p>The produce API is used to send message sets to the server. For efficiency it allows sending message sets intended for many topic partitions in a single request.</p>
+
+
+                            <p>The produce API uses the generic message set format, but since no offset has been assigned to the messages at the time of the send the producer is free to fill in that field in any way it likes.</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-ProduceRequest">Produce Request</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[ProduceRequest =&gt; RequiredAcks Timeout [TopicName [Partition MessageSetSize MessageSet]]
+                                    RequiredAcks =&gt; int16
+                                    Timeout =&gt; int32
+                                    Partition =&gt; int32
+                                    MessageSetSize =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>RequiredAcks</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This field indicates how many acknowledgements the servers should receive before responding to the request. If it is 0 the server will not send any response (this is the only case where the server will not reply to a request). If it is 1, the server will wait the data is written to the local log before sending a response. If it is -1 the server will block until the message is committed by all in sync replicas before sending a response. For any number &gt; 1 the server will block waiting for this number of acknowledgements to occur (but the server will never wait for more acknowledgements than there are in-sync replicas).</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Timeout</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This provides a maximum time in milliseconds the server can await the receipt of the number of acknowledgements in RequiredAcks. The timeout is not an exact limit on the request time for a few reasons: (1) it does not include network latency, (2) the timer begins at the beginning of the processing of this request so if many requests are queued due to server overload that wait time will not be included, (3) we will not terminate a local write so if the local write time exceeds this timeout it will not be respected. To get a hard timeout of this type the client should use the socket timeout.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>TopicName</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The topic that data is being published to.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Partition</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The partition that data is being published to.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MessageSetSize</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The size, in bytes, of the message set that follows.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MessageSet</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>A set of messages in the standard format described above.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-ProduceResponse">Produce Response</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[ProduceResponse =&gt; [TopicName [Partition ErrorCode Offset]]
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    ErrorCode =&gt; int16
+                                    Offset =&gt; int64
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Topic</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The topic this response entry corresponds to.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Partition</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The partition this response entry corresponds to.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>ErrorCode</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The error from this partition, if any. Errors are given on a per-partition basis because a given partition may be unavailable or maintained on a different host, while others may have successfully accepted the produce request.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Offset</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The offset assigned to the first message in the message set appended to this partition.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-FetchAPI">Fetch API</h5>
+
+
+                            <p>The fetch API is used to fetch a chunk of one or more logs for some topic-partitions. Logically one specifies the topics, partitions, and starting offset at which to begin the fetch and gets back a chunk of messages. In general, the return messages will have offsets larger than or equal to the starting offset. However, with compressed messages, it's possible for the returned messages to have offsets smaller than the starting offset. The number of such messages is typically small and the caller is responsible for filtering out those messages.</p>
+
+
+                            <p>Fetch requests follow a long poll model so they can be made to block for a period of time if sufficient data is not immediately available.</p>
+
+
+                            <p>As an optimization the server is allowed to return a partial message at the end of the message set. Clients should handle this case.</p>
+
+
+                            <p>One thing to note is that the fetch API requires specifying the partition to consume from. The question is how should a consumer know what partitions to consume from? In particular how can you balance the partitions over a set of consumers acting as a group so that each consumer gets a subset of partitions. We have done this assignment dynamically using zookeeper for the scala and java client. The downside of this approach is that it requires a fairly fat client and a zookeeper connection. We haven't yet created a Kafka API to allow this functionality to be moved to the server side and accessed more conveniently. A simple consumer client can be implemented by simply requiring that the partitions be specified in config, though this will not allow dynamic reassignment of partitions should that consumer fail. We hope to address this gap in the next major release.</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-FetchRequest">Fetch Request</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[FetchRequest =&gt; ReplicaId MaxWaitTime MinBytes [TopicName [Partition FetchOffset MaxBytes]]
+                                    ReplicaId =&gt; int32
+                                    MaxWaitTime =&gt; int32
+                                    MinBytes =&gt; int32
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    FetchOffset =&gt; int64
+                                    MaxBytes =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>ReplicaId</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The replica id indicates the node id of the replica initiating this request. Normal client consumers should always specify this as -1 as they have no node id. Other brokers set this to be their own node id. The value -2 is accepted to allow a non-broker to issue fetch requests as if it were a replica broker for debugging purposes.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MaxWaitTime</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The max wait time is the maximum amount of time in milliseconds to block waiting if&nbsp;insufficient&nbsp;data is available at the time the request is issued.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MinBytes</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is the minimum number of bytes of messages that must be available to give a response. If the client sets this to 0 the server will always respond immediately, however if there is no new data since their last request they will just get back empty message sets. If this is set to 1, the server will respond as soon as at least one partition has at least 1 byte of data or the specified timeout occurs. By setting higher values in combination with the timeout the consumer can tune for throughput and trade a little additional latency for reading only large chunks of data (e.g. setting MaxWaitTime to 100 ms and setting MinBytes to 64k would allow the server to wait up to 100ms to try to accumulate 64k of data before responding).</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>TopicName</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The name of the topic.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Partition</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The id of the partition the fetch is for.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>FetchOffset</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The offset to begin this fetch from.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MaxBytes</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The maximum bytes to include in the message set for this partition. This helps bound the size of the response.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-FetchResponse">Fetch Response</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[FetchResponse =&gt; [TopicName [Partition ErrorCode HighwaterMarkOffset MessageSetSize MessageSet]]
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    ErrorCode =&gt; int16
+                                    HighwaterMarkOffset =&gt; int64
+                                    MessageSetSize =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>TopicName</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The name of the topic this response entry is for.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Partition</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The id of the partition this response is for.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>HighwaterMarkOffset</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The offset at the end of the log for this partition. This can be used by the client to determine how many messages behind the end of the log they are.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MessageSetSize</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The size in bytes of the message set for this partition</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MessageSet</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The message data fetched from this partition, in the format described above.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-OffsetAPI">Offset API</h5>
+
+
+                            <p>This API describes the valid offset range available for a set of topic-partitions. As with the produce and fetch APIs requests must be directed to the broker that is currently the leader for the partitions in question. This can be determined using the metadata API.</p>
+
+
+                            <p>The response contains the starting offset of each segment for the requested partition as well as the &quot;log end offset&quot; i.e. the offset of the next message that would be appended to the given partition.</p>
+
+
+                            <p>We agree that this API is slightly funky.</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-OffsetRequest">Offset Request</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[OffsetRequest =&gt; ReplicaId [TopicName [Partition Time MaxNumberOfOffsets]]
+                                    ReplicaId =&gt; int32
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    Time =&gt; int64
+                                    MaxNumberOfOffsets =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Field</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Decription</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Time</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>Used to ask for all messages before a certain time (ms). There are two special values. Specify -1 to receive the latest offset (i.e. the offset of the next coming message) and -2 to receive the earliest available offset. Note that because offsets are pulled in descending order, asking for the earliest offset will always return you a single element.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-OffsetResponse">Offset Response</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[OffsetResponse =&gt; [TopicName [PartitionOffsets]]
+                                    PartitionOffsets =&gt; Partition ErrorCode [Offset]
+                                    Partition =&gt; int32
+                                    ErrorCode =&gt; int16
+                                    Offset =&gt; int64
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-OffsetCommit/FetchAPI">Offset Commit/Fetch API</h5>
+
+
+                            <p>These APIs allow for centralized management of offsets. Read more <a href="/confluence/display/KAFKA/Offset+Management">Offset Management</a>. As per comments on <a class="external-link" href="https://issues.apache.org/jira/browse/KAFKA-993" rel="nofollow">KAFKA-993</a> these API calls are not fully functional in releases until Kafka 0.8.1.1. It will be available in the 0.8.2 release.</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-ConsumerMetadataRequest">Consumer Metadata Request</h6>
+
+
+                            <p>The offsets for a given consumer group are maintained by a specific broker called the offset coordinator. i.e., a consumer needs to issue its offset commit and fetch requests to this specific broker. It can discover the current offset coordinator by issuing a consumer metadata request.</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[ConsumerMetadataRequest =&gt; ConsumerGroup
+                                    ConsumerGroup =&gt; string]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-ConsumerMetadataResponse">Consumer Metadata Response</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[ConsumerMetadataResponse =&gt; ErrorCode CoordinatorId CoordinatorHost CoordinatorPort
+                                    ErrorCode =&gt; int16
+                                    CoordinatorId =&gt; int32
+                                    CoordinatorHost =&gt; string
+                                    CoordinatorPort =&gt; int32]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-OffsetCommitRequest">Offset Commit Request</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[v0 (supported in 0.8.1 or later)
+                                    OffsetCommitRequest =&gt; ConsumerGroupId [TopicName [Partition Offset Metadata]]
+                                    ConsumerGroupId =&gt; string
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    Offset =&gt; int64
+                                     Metadata =&gt; string
+
+                                     
+                                    v1 (supported in 0.8.2 or later)
+                                    OffsetCommitRequest =&gt; ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
+                                    ConsumerGroupId =&gt; string
+                                    ConsumerGroupGenerationId =&gt; int32
+                                    ConsumerId =&gt; string
+                                     TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    Offset =&gt; int64
+                                    TimeStamp =&gt; int64
+                                    Metadata =&gt; string
+
+                                    v2 (supported in 0.8.3 or later)
+                                    OffsetCommitRequest =&gt; ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
+                                    ConsumerGroupId =&gt; string
+                                    ConsumerGroupGenerationId =&gt; int32
+                                    ConsumerId =&gt; string
+                                    RetentionTime =&gt; int64
+                                     TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    Offset =&gt; int64
+                                    Metadata =&gt; string]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <p>In v0 and v1, the time stamp of each partition is defined as the commit time stamp, and the offset coordinator will retain the committed offset until its commit time stamp + offset retention time specified in the broker config; if the time stamp field is not set, brokers will set the commit time as the receive time before committing the offset, users can explicitly set the commit time stamp if they want to retain the committed offset longer on the broker than the configured offset retention time.</p>
+
+
+                            <p>In v2, we removed the time stamp field but add a global retention time field (see <a class="external-link" href="https://issues.apache.org/jira/browse/KAFKA-1634" rel="nofollow">KAFKA-1634</a> for details); brokers will then always set the commit time stamp as the receive time, but the committed offset can be retained until its commit time stamp + user specified retention time in the commit request. If the retention time is not set, the broker offset retention time will be used as default.</p>
+
+
+                            <p>&nbsp;</p>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-OffsetCommitResponse">Offset Commit Response</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[v0, v1 and v2:
+                                    OffsetCommitResponse =&gt; [TopicName [Partition ErrorCode]]]
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    ErrorCode =&gt; int16
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-OffsetFetchRequest">Offset Fetch Request</h6>
+
+
+                            <p>Per the comment on <span class="jira-issue resolved"><a class="jira-issue-key" href="https://issues.apache.org/jira/browse/KAFKA-1841"><img class="icon" src="https://issues.apache.org/jira/images/icons/issuetypes/bug.png">KAFKA-1841</a> - <span class="summary">OffsetCommitRequest API - timestamp field is not versioned</span> <!-- The new status lozengens support for JIRA 6.2 or later. Otherwise we use the icon.-->
+                             <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-success jira-macro-single-issue-export-pdf">Resolved</span></span> , v0 and v1 are identical on the wire, but v0 (supported in 0.8.1 or later) reads offsets from zookeeper, while v1 (supported in 0.8.2 or later) reads offsets from kafka.</p>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[OffsetFetchRequest =&gt; ConsumerGroup [TopicName [Partition]]
+                                    ConsumerGroup =&gt; string
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <h6 id="AGuideToTheKafkaProtocol-OffsetFetchResponse">Offset Fetch Response</h6>
+
+
+                            <div class="code panel pdl" style="border-width: 1px;">
+                                <div class="codeContent panelContent pdl">
+                                    <script class="brush: java; gutter: false; theme: Default" type="syntaxhighlighter">
+<![CDATA[OffsetFetchResponse =&gt; [TopicName [Partition Offset Metadata ErrorCode]]
+                                    TopicName =&gt; string
+                                    Partition =&gt; int32
+                                    Offset =&gt; int64
+                                    Metadata =&gt; string
+                                    ErrorCode =&gt; int16
+                                    ]]>
+                                    </script>
+                                </div>
+                            </div>
+
+
+                            <p>Note that if there is no offset associated with a topic-partition under that consumer group the broker does not set an error code (since it is not really an error), but returns empty metadata and sets the offset field to -1.</p>
+
+
+                            <h4 id="AGuideToTheKafkaProtocol-Constants">Constants</h4>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-ApiKeys">Api Keys</h5>
+
+
+                            <p>The following are the numeric codes that the ApiKey in the request can take for each of the above request types.</p>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>API name</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>ApiKey Value</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>ProduceRequest</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>0</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>FetchRequest</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>1</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>OffsetRequest</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>2</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MetadataRequest</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>3</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Non-user facing control APIs</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>4-7</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>OffsetCommitRequest</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>8</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>OffsetFetchRequest</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>9</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd" colspan="1">ConsumerMetadataRequest</td>
+
+                                            <td class="confluenceTd" colspan="1">10</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h5 id="AGuideToTheKafkaProtocol-ErrorCodes">Error Codes</h5>
+
+
+                            <p>We use numeric codes to indicate what problem occurred on the server. These can be translated by the client into exceptions or whatever the appropriate error handling mechanism in the client language. Here is a table of the error codes currently in use:</p>
+
+
+                            <div class="table-wrap">
+                                <table class="confluenceTable">
+                                    <tbody>
+                                        <tr>
+                                            <th class="confluenceTh">
+                                                <p>Error</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Code</p>
+                                            </th>
+
+                                            <th class="confluenceTh">
+                                                <p>Description</p>
+                                            </th>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>NoError</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>0</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>No error--it worked!</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>Unknown</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>-1</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>An unexpected server error</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>OffsetOutOfRange</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>1</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The requested offset is outside the range of offsets maintained by the server for the given topic/partition.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>InvalidMessage</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>2</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This indicates that a message contents does not match its CRC</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>UnknownTopicOrPartition</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>3</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This request is for a topic or partition that does not exist on this broker.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>InvalidMessageSize</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>4</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The message has a negative size</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>LeaderNotAvailable</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>5</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This error is thrown if we are in the middle of a leadership election and there is currently no leader for this partition and hence it is unavailable for writes.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>NotLeaderForPartition</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>6</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This error is thrown if the client attempts to send messages to a replica that is not the leader for some partition. It indicates that the clients metadata is out of date.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>RequestTimedOut</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>7</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This error is thrown if the request exceeds the user-specified time limit in the request.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>BrokerNotAvailable</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>8</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>This is not a client facing error and is used mostly by tools when a broker is not alive.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p><span>ReplicaNotAvailable</span>
+                                                </p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>9</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>If replica is expected on a broker, but is not (this can be safely ignored).</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>MessageSizeTooLarge</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>10</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>The server has a configurable maximum message size to avoid unbounded memory allocation. This error is thrown if the client attempt to produce a message larger than this maximum.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>StaleControllerEpochCode</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>11</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>Internal error code for broker-to-broker communication.</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd">
+                                                <p>OffsetMetadataTooLargeCode</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>12</p>
+                                            </td>
+
+                                            <td class="confluenceTd">
+                                                <p>If you specify a string larger than configured maximum for offset metadata</p>
+                                            </td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd" colspan="1">OffsetsLoadInProgressCode</td>
+
+                                            <td class="confluenceTd" colspan="1">14</td>
+
+                                            <td class="confluenceTd" colspan="1">The broker returns this error code for an offset fetch request if it is still loading offsets (after a leader change for that offsets topic partition).</td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd" colspan="1">ConsumerCoordinatorNotAvailableCode</td>
+
+                                            <td class="confluenceTd" colspan="1">15</td>
+
+                                            <td class="confluenceTd" colspan="1">The broker returns this error code for consumer metadata requests or offset commit requests if the offsets topic has not yet been created.</td>
+                                        </tr>
+
+
+                                        <tr>
+                                            <td class="confluenceTd" colspan="1">NotCoordinatorForConsumerCode</td>
+
+                                            <td class="confluenceTd" colspan="1">16</td>
+
+                                            <td class="confluenceTd" colspan="1">The broker returns this error code if it receives an offset fetch or commit request for a consumer group that it is not a coordinator for.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <h3 id="AGuideToTheKafkaProtocol-SomeCommonPhilosophicalQuestions">Some Common Philosophical Questions</h3>
+
+
+                            <p>Some people have asked why we don't use HTTP. There are a number of reasons, the best is that client implementors can make use of some of the more advanced TCP features--the ability to multiplex requests, the ability to simultaneously poll many connections, etc. We have also found HTTP libraries in many languages to be surprisingly shabby.</p>
+
+
+                            <p>Others have asked if maybe we shouldn't support many different protocols. Prior experience with this was that it makes it very hard to add and test new features if they have to be ported across many protocol implementations. Our feeling is that most users don't really see multiple protocols as a feature, they just want a good reliable client in the language of their choice.</p>
+
+
+                            <p>Another question is why we don't adopt XMPP, STOMP, AMQP or an existing protocol. The answer to this varies by protocol, but in general the problem is that the protocol does determine large parts of the implementation and we couldn't do what we are doing if we didn't have control over the protocol. Our belief is that it is possible to do better than existing messaging systems have in providing a truly distributed messaging system, and to do this we need to build something that works differently.</p>
+
+
+                            <p>A final question is why we don't use a system like Protocol Buffers or Thrift to define our request messages. These packages excel at helping you to managing lots and lots of serialized messages. However we have only a few messages. Support across languages is somewhat spotty (depending on the package). Finally the mapping between binary log format and wire protocol is something we manage somewhat carefully and this would not be possible with these systems. Finally we prefer the style of versioning APIs explicitly and checking this to inferring new values as nulls as it allows more nuanced control of&nbsp;compatibility.</p>
+                        </div>
+                        <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/">
+         <rdf:Description
+    rdf:about="https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol"
+    dc:identifier="https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol"
+    dc:title="A Guide To The Kafka Protocol"
+    trackback:ping="https://cwiki.apache.org/confluence/rpc/trackback/30743483"/>
+</rdf:RDF>
+-->
+
+
+                        <div class="pageSection group" id="labels-section">
+                            <div class="labels-section-content content-column">
+                                <div class="labels-content">
+                                    <ul class="label-list label-list-right">
+                                        <li class="no-labels-message">No labels</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="pageSection group" id="comments-section">
+                        </div>
+                    </div>
+
+
+                    <div class="hidden" id="space-tools-web-items">
+                        <div data-href="/confluence/spaces/viewspacesummary.action?key=KAFKA" data-label="Overview">
+                            Overview
+                        </div>
+
+
+                        <div data-href="/confluence/pages/reorderpages.action?key=KAFKA" data-label="Content Tools">
+                            Content Tools
+                        </div>
+
+
+                        <div data-href="/confluence/spaces/snippeterrors.action?key=KAFKA" data-label="Add-ons">
+                            Add-ons
+                        </div>
+                    </div>
+                </div>
+                <!-- \#main -->
+
+
+                <div id="footer">
+                    <section class="footer-body">
+                        <p class="license license-opensource">Powered by a free <b>Atlassian Confluence Open Source Project License</b> granted to Apache Software Foundation. <a href="http://www.atlassian.com/c/conf/11461">Evaluate Confluence today</a>.<br></p>
+
+
+                        <ul id="poweredby">
+                            <li class="noprint">Powered by <a class="hover-footer-link" href="http://www.atlassian.com/software/confluence">Atlassian Confluence</a> <span id='footer-build-information'>5.8.4</span>, <a class="hover-footer-link" href="http://www.atlassian.com/software/confluence/overview/team-collaboration-software?utm_source=confluence-footer">Team Collaboration Software</a>
+                            </li>
+
+
+                            <li class="print-only">Printed by Atlassian Confluence 5.8.4, Team Collaboration Software.</li>
+
+
+                            <li class="noprint">
+                                <a class="hover-footer-link" href="https://jira.atlassian.com/browse/CONF">Report a bug</a>
+                            </li>
+
+
+                            <li class="noprint">
+                                <a class="hover-footer-link" href="http://www.atlassian.com/about/connected.jsp?s_kwcid=Confluence-stayintouch">Atlassian News</a>
+                            </li>
+                        </ul>
+
+
+                        <div id="footer-logo">
+                            <a href="http://www.atlassian.com/">Atlassian</a>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <!-- \#full-height-container -->
+    </div>
+    <!-- \#page -->
+</body>
+</html>

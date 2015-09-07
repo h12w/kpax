@@ -2,14 +2,11 @@
 
 set -e
 
-rm -r -f proto log connector producer
-mkdir log
-mkdir connector
-mkdir producer
+mkdir -p connector producer log
 
 wget https://github.com/stealthly/siesta/archive/master.zip
 unzip master.zip
-mv siesta-master proto
+mv siesta-master/* proto
 rm master.zip
 
 cd proto
