@@ -6,7 +6,7 @@ Request => ApiKey ApiVersion CorrelationId ClientId RequestMessage
     ApiVersion => int16
     CorrelationId => int32
     ClientId => string
-    RequestMessage => MetadataRequest | ProduceRequest | FetchRequest | OffsetRequest | OffsetCommitRequest | OffsetFetchRequest
+    RequestMessage => TopicMetadataRequest | ConsumerMetadataRequest | ProduceRequest | FetchRequest | OffsetRequest | OffsetCommitRequest | OffsetFetchRequest
 
 Response => CorrelationId ResponseMessage
     CorrelationId => int32
@@ -27,7 +27,7 @@ TopicMetadataRequest => [TopicName]
     TopicName => string
 
 MetadataResponse => [Broker][TopicMetadata]
-    Broker => NodeId Host Port  (any number of brokers may be returned)
+    Broker => NodeId Host Port
     NodeId => int32
     Host => string
     Port => int32
@@ -97,7 +97,7 @@ ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorP
     Offset => int64
     Metadata => string
 
-     
+
     OffsetCommitRequest => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
@@ -134,4 +134,3 @@ OffsetFetchResponse => [TopicName [Partition Offset Metadata ErrorCode]]
     Offset => int64
     Metadata => string
     ErrorCode => int16
-
