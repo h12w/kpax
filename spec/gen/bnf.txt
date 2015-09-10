@@ -90,15 +90,14 @@ ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorP
     CoordinatorHost => string
     CoordinatorPort => int32
 
-    OffsetCommitRequestV0 => ConsumerGroupId [TopicName [Partition Offset Metadata]]
+OffsetCommitRequestV0 => ConsumerGroupId [TopicName [Partition Offset Metadata]]
     ConsumerGroupId => string
     TopicName => string
     Partition => int32
     Offset => int64
     Metadata => string
 
-
-    OffsetCommitRequest => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
+OffsetCommitRequestV1 => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
     ConsumerId => string
@@ -108,7 +107,7 @@ ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorP
     TimeStamp => int64
     Metadata => string
 
-    OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
+OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
     ConsumerId => string
@@ -118,7 +117,7 @@ ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorP
     Offset => int64
     Metadata => string
 
-    OffsetCommitResponse => [TopicName [Partition ErrorCode]]]
+OffsetCommitResponse => [TopicName [Partition ErrorCode]]
     TopicName => string
     Partition => int32
     ErrorCode => int16

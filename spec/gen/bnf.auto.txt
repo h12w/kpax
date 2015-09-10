@@ -1,0 +1,141 @@
+RequestOrResponse => Size (RequestMessage | ResponseMessage)
+    Size => int32
+
+RequestMessage => ApiKey ApiVersion CorrelationId ClientId RequestMessage
+    ApiKey => int16
+    ApiVersion => int16
+    CorrelationId => int32
+    ClientId => string
+    RequestMessage => MetadataRequest | ProduceRequest | FetchRequest | OffsetRequest | OffsetCommitRequest | OffsetFetchRequest
+
+Response => CorrelationId ResponseMessage
+    CorrelationId => int32
+    ResponseMessage => MetadataResponse | ProduceResponse | FetchResponse | OffsetResponse | OffsetCommitResponse | OffsetFetchResponse
+
+MessageSet => [Offset MessageSize Message]
+    Offset => int64
+    MessageSize => int32
+
+Message => Crc MagicByte Attributes Key Value
+    Crc => int32
+    MagicByte => int8
+    Attributes => int8
+    Key => bytes
+    Value => bytes
+
+TopicMetadataRequest => [TopicName]
+    TopicName => string
+
+MetadataResponse => [Broker][TopicMetadata]
+    Broker => NodeId Host Port  (any number of brokers may be returned)
+    NodeId => int32
+    Host => string
+    Port => int32
+    TopicMetadata => TopicErrorCode TopicName [PartitionMetadata]
+    TopicErrorCode => int16
+    PartitionMetadata => PartitionErrorCode PartitionId Leader Replicas Isr
+    PartitionErrorCode => int16
+    PartitionId => int32
+    Leader => int32
+    Replicas => [int32]
+    Isr => [int32]
+
+ProduceRequest => RequiredAcks Timeout [TopicName [Partition MessageSetSize MessageSet]]
+    RequiredAcks => int16
+    Timeout => int32
+    Partition => int32
+    MessageSetSize => int32
+
+ProduceResponse => [TopicName [Partition ErrorCode Offset]]
+    TopicName => string
+    Partition => int32
+    ErrorCode => int16
+    Offset => int64
+
+FetchRequest => ReplicaId MaxWaitTime MinBytes [TopicName [Partition FetchOffset MaxBytes]]
+    ReplicaId => int32
+    MaxWaitTime => int32
+    MinBytes => int32
+    TopicName => string
+    Partition => int32
+    FetchOffset => int64
+    MaxBytes => int32
+
+FetchResponse => [TopicName [Partition ErrorCode HighwaterMarkOffset MessageSetSize MessageSet]]
+    TopicName => string
+    Partition => int32
+    ErrorCode => int16
+    HighwaterMarkOffset => int64
+    MessageSetSize => int32
+
+OffsetRequest => ReplicaId [TopicName [Partition Time MaxNumberOfOffsets]]
+    ReplicaId => int32
+    TopicName => string
+    Partition => int32
+    Time => int64
+    MaxNumberOfOffsets => int32
+
+OffsetResponse => [TopicName [PartitionOffsets]]
+    PartitionOffsets => Partition ErrorCode [Offset]
+    Partition => int32
+    ErrorCode => int16
+    Offset => int64
+
+ConsumerMetadataRequest => ConsumerGroup
+    ConsumerGroup => string
+
+ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorPort
+    ErrorCode => int16
+    CoordinatorId => int32
+    CoordinatorHost => string
+    CoordinatorPort => int32
+
+v0 (supported in 0.8.1 or later)
+    OffsetCommitRequest => ConsumerGroupId [TopicName [Partition Offset Metadata]]
+    ConsumerGroupId => string
+    TopicName => string
+    Partition => int32
+    Offset => int64
+     Metadata => string
+
+     
+    v1 (supported in 0.8.2 or later)
+    OffsetCommitRequest => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
+    ConsumerGroupId => string
+    ConsumerGroupGenerationId => int32
+    ConsumerId => string
+     TopicName => string
+    Partition => int32
+    Offset => int64
+    TimeStamp => int64
+    Metadata => string
+
+    v2 (supported in 0.8.3 or later)
+    OffsetCommitRequest => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
+    ConsumerGroupId => string
+    ConsumerGroupGenerationId => int32
+    ConsumerId => string
+    RetentionTime => int64
+     TopicName => string
+    Partition => int32
+    Offset => int64
+    Metadata => string
+
+v0, v1 and v2:
+    OffsetCommitResponse => [TopicName [Partition ErrorCode]]]
+    TopicName => string
+    Partition => int32
+    ErrorCode => int16
+
+OffsetFetchRequest => ConsumerGroup [TopicName [Partition]]
+    ConsumerGroup => string
+    TopicName => string
+    Partition => int32
+
+OffsetFetchResponse => [TopicName [Partition Offset Metadata ErrorCode]]
+    TopicName => string
+    Partition => int32
+    Offset => int64
+    Metadata => string
+    ErrorCode => int16
+
