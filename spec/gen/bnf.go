@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"strings"
 )
 
@@ -33,23 +32,14 @@ func fromBNFToJSON() {
 	fmt.Println(toJSON(nodes))
 }
 
+func fromBNFToGoJSON() {
+	goFile := fromBNFToGoFile()
+	fmt.Println(goFile.JSON())
+}
+
 func fromBNFToGo() {
-	w := os.Stdout
-	decls := parseBNF()
-	declMap := make(map[string]*Decl)
-	for _, decl := range decls {
-		if foundDecl, ok := declMap[decl.Name]; ok && !reflect.DeepEqual(foundDecl, decl) {
-			log.Fatalf("conflict name %s:\n%#v\n%#v", decl.Name, foundDecl, decl)
-		}
-		declMap[decl.Name] = decl
-	}
-	fpl(w, "package proto")
-	for _, decl := range decls {
-		if !decl.Type.simple() {
-			decl.GenDecl(w, declMap)
-			fpl(w, "")
-		}
-	}
+	goFile := fromBNFToGoFile()
+	goFile.Fprint(os.Stdout)
 }
 
 func toJSON(v interface{}) string {

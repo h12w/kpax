@@ -43,7 +43,7 @@ MetadataResponse => [Broker][TopicMetadata]
 
 ProduceRequest => RequiredAcks Timeout [MessageSetInTopic]
     MessageSetInTopic => TopicName [MessageSetInPartition]
-    MessageSetInPartition => [Partition MessageSetSize MessageSet]
+    MessageSetInPartition => Partition MessageSetSize MessageSet
     RequiredAcks => int16
     Timeout => int32
     Partition => int32
@@ -87,8 +87,9 @@ OffsetRequest => ReplicaId [TimeInTopic]
     Time => int64
     MaxNumberOfOffsets => int32
 
-OffsetResponse => [TopicName [PartitionOffsets]]
-    PartitionOffsets => Partition ErrorCode [Offset]
+OffsetResponse => [OffsetsInTopic]
+    OffsetsInTopic => TopicName [OffsetsInPartition]
+    OffsetsInPartition => Partition ErrorCode [Offset]
     Partition => int32
     ErrorCode => int16
     Offset => int64

@@ -3,8 +3,37 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
+	"reflect"
 	"strings"
+
+	"h12.me/gengo"
 )
+
+func fromBNFToGoFile() *gengo.File {
+	decls := parseBNF()
+	declMap := make(map[string]*Decl)
+	for _, decl := range decls {
+		if foundDecl, ok := declMap[decl.Name]; ok && !reflect.DeepEqual(foundDecl, decl) {
+			log.Fatalf("conflict name %s:\n%#v\n%#v", decl.Name, foundDecl, decl)
+		}
+		declMap[decl.Name] = decl
+	}
+	return genGoFile(decls, declMap)
+}
+
+func genGoFile(decls []*Decl, declMap map[string]*Decl) *gengo.File {
+	var goDecls []*gengo.TypeDecl
+	for _, decl := range decls {
+		if !decl.Type.simple() {
+			goDecls = append(goDecls, decl.GenDecl(declMap))
+		}
+	}
+	return &gengo.File{
+		PackageName: "proto",
+		TypeDecls:   goDecls,
+	}
+}
 
 func (n *Node) simple() bool {
 	if len(n.Child) != 1 || n.Child[0].NodeType != LeafNode {
@@ -17,42 +46,54 @@ func (n *Node) simple() bool {
 	return false
 }
 
-func (n *Node) GenType(w io.Writer, m map[string]*Decl) {
+func (n *Node) GenType(m map[string]*Decl) *gengo.Type {
 	switch n.NodeType {
 	case LeafNode:
 		if decl, ok := m[n.Value]; ok && decl.Type.simple() {
-			decl.Type.GenType(w, m)
+			return decl.Type.GenType(m)
 		} else {
-			fp(w, goType(n.Value))
+			return &gengo.Type{Kind: gengo.IdentKind, Ident: goType(n.Value)}
 		}
 	case SeqNode:
 		if len(n.Child) == 1 && n.Child[0].NodeType == LeafNode {
-			n.Child[0].GenType(w, m)
+			return n.Child[0].GenType(m)
 		} else {
-			fpl(w, "struct {")
+			var fields []*gengo.Field
 			for _, c := range n.Child {
-				c.GenField(w, m)
+				fields = append(fields, c.GenField(m))
 			}
-			fp(w, "}")
+			return &gengo.Type{
+				Kind:   gengo.StructKind,
+				Fields: fields,
+			}
 		}
 	case ZeroOrMoreNode:
-		fp(w, "[]")
+		var t *gengo.Type
 		if len(n.Child) == 1 {
-			n.Child[0].GenType(w, m)
+			t = n.Child[0].GenType(m)
 		} else {
-			(&Node{NodeType: SeqNode, Child: n.Child}).GenType(w, m)
+			t = (&Node{NodeType: SeqNode, Child: n.Child}).GenType(m)
 		}
+		t.Kind = gengo.ArrayKind
+		return t
 	case OrNode:
-		fp(w, "T")
+		return &gengo.Type{
+			Kind:  gengo.IdentKind,
+			Ident: "T",
+		}
 	default:
-		fp(w, "-")
+		return &gengo.Type{
+			Kind:  gengo.IdentKind,
+			Ident: "-",
+		}
 	}
 }
 
-func (d *Decl) GenDecl(w io.Writer, m map[string]*Decl) {
-	fp(w, "type %s ", d.Name)
-	d.Type.GenType(w, m)
-	fpl(w, "")
+func (d *Decl) GenDecl(m map[string]*Decl) *gengo.TypeDecl {
+	return &gengo.TypeDecl{
+		Name: d.Name,
+		Type: *d.Type.GenType(m),
+	}
 }
 
 func (d *Decl) typeName() string {
@@ -65,7 +106,7 @@ func (d *Decl) typeName() string {
 	return goType(typ)
 }
 
-func (n *Node) GenField(w io.Writer, m map[string]*Decl) {
+func (n *Node) GenField(m map[string]*Decl) *gengo.Field {
 	var typ *Decl
 	if decl, ok := m[n.Value]; ok {
 		typ = decl
@@ -74,13 +115,19 @@ func (n *Node) GenField(w io.Writer, m map[string]*Decl) {
 	if name == "" && n.NodeType == ZeroOrMoreNode && len(n.Child) == 1 {
 		name = n.Child[0].Value + "s"
 	}
-	fp(w, goName(name)+" ")
 	if typ != nil {
-		fp(w, typ.typeName())
-	} else {
-		n.GenType(w, m)
+		return &gengo.Field{
+			Name: goName(name),
+			Type: gengo.Type{
+				Kind:  gengo.IdentKind,
+				Ident: typ.typeName(),
+			},
+		}
 	}
-	fpl(w, "")
+	return &gengo.Field{
+		Name: goName(name),
+		Type: *n.GenType(m),
+	}
 }
 
 func fp(w io.Writer, format string, v ...interface{}) {
