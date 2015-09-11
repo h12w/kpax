@@ -97,6 +97,8 @@ func goName(s string) string {
 		return strings.TrimSuffix(s, "Id") + "ID"
 	}
 	s = strings.Replace(s, "Crc", "CRC", -1)
+	s = strings.Replace(s, "Api", "API", -1)
+	s = strings.Replace(s, "Isr", "ISR", -1)
 	return s
 }
 

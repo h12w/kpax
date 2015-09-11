@@ -1,3 +1,10 @@
 package proto
 
-type T interface{}
+import (
+	"encoding"
+)
+
+type T interface {
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+}

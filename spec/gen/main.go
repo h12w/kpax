@@ -7,7 +7,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Println("go run gen.go (bnf | json | go)")
+		fmt.Println("gen (bnf | json | go)")
 		return
 	}
 	switch os.Args[1] {

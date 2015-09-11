@@ -6,8 +6,8 @@ type RequestOrResponse struct {
 }
 
 type Request struct {
-	ApiKey         int16
-	ApiVersion     int16
+	APIKey         int16
+	APIVersion     int16
 	CorrelationID  int32
 	ClientID       string
 	RequestMessage RequestMessage
@@ -62,7 +62,7 @@ type PartitionMetadata struct {
 	PartitionID        int32
 	Leader             int32
 	Replicas           int32
-	Isr                int32
+	ISR                int32
 }
 
 type ProduceRequest struct {
