@@ -12,7 +12,8 @@ Response => CorrelationId ResponseMessage
     CorrelationId => int32
     ResponseMessage => MetadataResponse | ProduceResponse | FetchResponse | OffsetResponse | OffsetCommitResponse | OffsetFetchResponse
 
-MessageSet => [Offset MessageSize Message]
+MessageSet => [SizedMessage]
+    SizedMessage => Offset MessageSize Message
     Offset => int64
     MessageSize => int32
 
@@ -40,19 +41,26 @@ MetadataResponse => [Broker][TopicMetadata]
     Replicas => [int32]
     Isr => [int32]
 
-ProduceRequest => RequiredAcks Timeout [TopicName [Partition MessageSetSize MessageSet]]
+ProduceRequest => RequiredAcks Timeout [MessageSetInTopic]
+    MessageSetInTopic => TopicName [MessageSetInPartition]
+    MessageSetInPartition => [Partition MessageSetSize MessageSet]
     RequiredAcks => int16
     Timeout => int32
     Partition => int32
     MessageSetSize => int32
 
-ProduceResponse => [TopicName [Partition ErrorCode Offset]]
+ProduceResponse => [OffsetInTopic]
+    OffsetInTopic => TopicName OffsetInPartitions
+    OffsetInPartitions => [OffsetInPartition]
+    OffsetInPartition => Partition ErrorCode Offset
     TopicName => string
     Partition => int32
     ErrorCode => int16
     Offset => int64
 
-FetchRequest => ReplicaId MaxWaitTime MinBytes [TopicName [Partition FetchOffset MaxBytes]]
+FetchRequest => ReplicaId MaxWaitTime MinBytes [FetchOffsetInTopic]
+    FetchOffsetInTopic => TopicName [FetchOffsetInPartition]
+    FetchOffsetInPartition => Partition FetchOffset MaxBytes
     ReplicaId => int32
     MaxWaitTime => int32
     MinBytes => int32
@@ -61,14 +69,18 @@ FetchRequest => ReplicaId MaxWaitTime MinBytes [TopicName [Partition FetchOffset
     FetchOffset => int64
     MaxBytes => int32
 
-FetchResponse => [TopicName [Partition ErrorCode HighwaterMarkOffset MessageSetSize MessageSet]]
+FetchResponse => [FetchMessageSetInTopic]
+    FetchMessageSetInTopic => TopicName [FetchMessageSetInPartition]
+    FetchMessageSetInPartition => Partition ErrorCode HighwaterMarkOffset MessageSetSize MessageSet
     TopicName => string
     Partition => int32
     ErrorCode => int16
     HighwaterMarkOffset => int64
     MessageSetSize => int32
 
-OffsetRequest => ReplicaId [TopicName [Partition Time MaxNumberOfOffsets]]
+OffsetRequest => ReplicaId [TimeInTopic]
+    TimeInTopic => TopicName [TimeInPartition]
+    TimeInPartition => Partition Time MaxNumberOfOffsets
     ReplicaId => int32
     TopicName => string
     Partition => int32
@@ -90,14 +102,18 @@ ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorP
     CoordinatorHost => string
     CoordinatorPort => int32
 
-OffsetCommitRequestV0 => ConsumerGroupId [TopicName [Partition Offset Metadata]]
+OffsetCommitRequestV0 => ConsumerGroupId [OffsetCommitInTopicV0]
+    OffsetCommitInTopicV0 => TopicName [OffsetCommitInPartitionV0]
+    OffsetCommitInPartitionV0 => Partition Offset Metadata
     ConsumerGroupId => string
     TopicName => string
     Partition => int32
     Offset => int64
     Metadata => string
 
-OffsetCommitRequestV1 => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [TopicName [Partition Offset TimeStamp Metadata]]
+OffsetCommitRequestV1 => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [OffsetCommitInTopicV1]
+    OffsetCommitInTopicV1 => TopicName [OffsetCommitInPartitionV1]
+    OffsetCommitInPartitionV1 => Partition Offset TimeStamp Metadata
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
     ConsumerId => string
@@ -107,7 +123,9 @@ OffsetCommitRequestV1 => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [T
     TimeStamp => int64
     Metadata => string
 
-OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [TopicName [Partition Offset Metadata]]
+OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [OffsetCommitInTopicV2]
+    OffsetCommitInTopicV2 => TopicName [OffsetCOmmitInPartitionV2]
+    OffsetCommitInPartitionV2 => Partition Offset Metadata
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
     ConsumerId => string
@@ -117,17 +135,22 @@ OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId Rete
     Offset => int64
     Metadata => string
 
-OffsetCommitResponse => [TopicName [Partition ErrorCode]]
+OffsetCommitResponse => [ErrorInTopic]
+    ErrorInTopic => TopicName [ErrorInPartition]
+    ErrorInPartition => Partition ErrorCode
     TopicName => string
     Partition => int32
     ErrorCode => int16
 
-OffsetFetchRequest => ConsumerGroup [TopicName [Partition]]
+OffsetFetchRequest => ConsumerGroup [PartitionInTopic]
+    PartitionInTopic => TopicName [Partition]
     ConsumerGroup => string
     TopicName => string
     Partition => int32
 
-OffsetFetchResponse => [TopicName [Partition Offset Metadata ErrorCode]]
+OffsetFetchResponse => [OffsetMetadataInTopic]
+    OffsetMetadataInTopic => TopicName [OffsetMetadataInPartition]
+    OffsetMetadataInPartition => Partition Offset Metadata ErrorCode
     TopicName => string
     Partition => int32
     Offset => int64

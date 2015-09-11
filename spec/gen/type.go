@@ -24,7 +24,12 @@ func (t NodeType) MarshalText() ([]byte, error) {
 }
 
 type Node struct {
-	Name  string   `json:"name,omitempty"`
-	Type  NodeType `json:"type,omitempty"`
-	Child []*Node  `json:"child,omitempty"`
+	NodeType NodeType `json:"node_type,omitempty"`
+	Value    string   `json:"value,omitempty"`
+	Child    []*Node  `json:"child,omitempty"`
+}
+
+type Decl struct {
+	Name string `json:"name"`
+	Type *Node  `json:"type"`
 }

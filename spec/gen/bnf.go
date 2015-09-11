@@ -6,26 +6,26 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 )
 
-func parseBNF() []*Node {
+func parseBNF() []*Decl {
 	f, err := os.Open("bnf.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 
-	var nodes []*Node
+	var decls []*Decl
 	s := bufio.NewScanner(f)
 	for s.Scan() {
 		line := s.Text()
 		if line != "" {
-			node := parseLine(line)
-			nodes = append(nodes, node)
+			decls = append(decls, parseLine(line))
 		}
 	}
-	return nodes
+	return decls
 }
 
 func fromBNFToJSON() {
@@ -34,14 +34,20 @@ func fromBNFToJSON() {
 }
 
 func fromBNFToGo() {
-	nodes := parseBNF()
-	nodeMap := make(map[string]*Node)
-	for _, n := range nodes {
-		nodeMap[n.Name] = n
+	w := os.Stdout
+	decls := parseBNF()
+	declMap := make(map[string]*Decl)
+	for _, decl := range decls {
+		if foundDecl, ok := declMap[decl.Name]; ok && !reflect.DeepEqual(foundDecl, decl) {
+			log.Fatalf("conflict name %s:\n%#v\n%#v", decl.Name, foundDecl, decl)
+		}
+		declMap[decl.Name] = decl
 	}
-	for _, n := range nodes {
-		if !n.simple() {
-			n.GenStruct(os.Stdout, nodeMap)
+	fpl(w, "package proto")
+	for _, decl := range decls {
+		if !decl.Type.simple() {
+			decl.GenDecl(w, declMap)
+			fpl(w, "")
 		}
 	}
 }
@@ -51,12 +57,11 @@ func toJSON(v interface{}) string {
 	return string(buf)
 }
 
-func parseLine(line string) *Node {
+func parseLine(line string) *Decl {
 	m := strings.Split(line, "=>")
 	name, spec := strings.TrimSpace(m[0]), strings.TrimSpace(m[1])
 	n := parseSpec(spec)
-	n.Name = name
-	return n
+	return &Decl{Name: name, Type: n}
 }
 
 func tokenize(def string) []string {
@@ -107,30 +112,35 @@ func (s *nodeStack) pop() (n *Node) {
 func parseSpec(def string) (node *Node) {
 	tokens := tokenize(def)
 	s := nodeStack{}
-	s.push(&Node{Type: SeqNode})
+	s.push(&Node{NodeType: SeqNode})
 	for _, token := range tokens {
 		top := s.top()
 		switch token {
 		case "(":
-			n := &Node{Type: SeqNode}
+			n := &Node{NodeType: SeqNode}
 			top.Child = append(top.Child, n)
 			s.push(n)
 		case ")":
 			s.pop()
 		case "[":
-			n := &Node{Type: ZeroOrMoreNode}
+			n := &Node{NodeType: ZeroOrMoreNode}
 			top.Child = append(top.Child, n)
 			s.push(n)
 		case "]":
 			s.pop()
 		case "|":
-			top.Type = OrNode
+			top.NodeType = OrNode
 		default:
-			top.Child = append(top.Child, &Node{Name: token, Type: LeafNode})
+			top.Child = append(top.Child, &Node{Value: token, NodeType: LeafNode})
 		}
 	}
 	if s.count() == 0 {
 		fmt.Println(toJSON(tokens))
+	}
+	top := s.top()
+	if len(top.Child) == 1 && top.Child[0].Value == "" {
+		top.Child[0].Value = top.Value
+		return top.Child[0]
 	}
 	return s.top()
 }
