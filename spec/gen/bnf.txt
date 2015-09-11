@@ -124,7 +124,7 @@ OffsetCommitRequestV1 => ConsumerGroupId ConsumerGroupGenerationId ConsumerId [O
     Metadata => string
 
 OffsetCommitRequestV2 => ConsumerGroup ConsumerGroupGenerationId ConsumerId RetentionTime [OffsetCommitInTopicV2]
-    OffsetCommitInTopicV2 => TopicName [OffsetCOmmitInPartitionV2]
+    OffsetCommitInTopicV2 => TopicName [OffsetCommitInPartitionV2]
     OffsetCommitInPartitionV2 => Partition Offset Metadata
     ConsumerGroupId => string
     ConsumerGroupGenerationId => int32
