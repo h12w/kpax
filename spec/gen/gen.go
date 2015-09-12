@@ -90,9 +90,18 @@ func (n *Node) GenType(m map[string]*Decl) *gengo.Type {
 }
 
 func (d *Decl) GenDecl(m map[string]*Decl) *gengo.TypeDecl {
+	ut := d.Type.Value
+	for ut != "" {
+		if t, ok := m[ut]; ok && t.Type.Value != "" {
+			ut = t.Type.Value
+		} else {
+			break
+		}
+	}
 	return &gengo.TypeDecl{
-		Name: d.Name,
-		Type: *d.Type.GenType(m),
+		Name:           d.Name,
+		Type:           *d.Type.GenType(m),
+		UnderlyingType: ut,
 	}
 }
 
