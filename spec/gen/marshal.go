@@ -16,55 +16,115 @@ func fromBNFToGoFuncs() {
 	goFile := fromBNFToGoFile()
 	fpl(w, "package proto")
 	fpl(w, "import (")
-	fpl(w, `"bytes"`)
+	fpl(w, `"io"`)
 	fpl(w, ")")
 	for _, decl := range goFile.TypeDecls {
-		genTypeMarshal(w, decl)
+		genMarshalFunc(w, decl)
 		fpl(w, "")
 	}
 }
 
-func genTypeMarshal(w io.Writer, decl *gengo.TypeDecl) {
-	if decl.Type.Kind == gengo.StructKind {
-		fpl(w, "func (t *%s) Marshal() []byte {", decl.Name)
-		for i, f := range decl.Type.Fields {
+func genMarshalFunc(w io.Writer, decl *gengo.TypeDecl) {
+	t := decl.Type
+	switch t.Kind {
+	case gengo.StructKind:
+		fpl(w, "func (t *%s) Marshal(w io.Writer) error {", decl.Name)
+		for i, f := range t.Fields {
 			genFieldMarshal(w, i, f)
 		}
-		fpl(w, "return bytes.Join([][]byte{%s}, nil)", d0ToN(len(decl.Type.Fields)))
+		fpl(w, "return nil")
 		fpl(w, "}")
-	} else {
-		fpl(w, "// type %s", decl.Name)
+		return
+	case gengo.ArrayKind:
+		fpl(w, "func (t %s) Marshal(w io.Writer) error {", decl.Name)
+		marshalValue(w, "t", t.Kind, t.Ident)
+		fpl(w, "return nil")
+		fpl(w, "}")
+		return
+	case gengo.IdentKind:
+		if t.Ident == "T" {
+			fpl(w, "// %s T", decl.Name)
+		} else {
+			fpl(w, "func (t %s) Marshal(w io.Writer) error {", decl.Name)
+			marshalValue(w, "t", t.Kind, t.Ident)
+			fpl(w, "return nil")
+			fpl(w, "}")
+		}
+		return
 	}
+	fpl(w, "// type %s, %v", decl.Name, decl.Type)
+}
+
+func marshalBytes(w io.Writer, bytes string) {
+	fpl(w, "if _, err := w.Write(%s); err != nil {", bytes)
+	fpl(w, "return err")
+	fpl(w, "}")
+}
+
+func marshalMarshaler(w io.Writer, marshaler string) {
+	fpl(w, "if err := %s.Marshal(w); err != nil {", marshaler)
+	fpl(w, "return err")
+	fpl(w, "}")
 }
 
 func d0ToN(n int) string {
 	ss := make([]string, n)
 	for i := range ss {
-		ss[i] = "d" + strconv.Itoa(i)
+		ss[i] = "b" + strconv.Itoa(i)
 	}
 	return strings.Join(ss, ", ")
 }
 
 func genFieldMarshal(w io.Writer, i int, f *gengo.Field) {
-	switch f.Type.Kind {
+	fName := "t." + f.Name
+	if f.Name == "" {
+		fName = "t." + f.Type.Ident
+	}
+	marshalValue(w, fName, f.Type.Kind, f.Type.Ident)
+}
+
+func marshalValue(w io.Writer, name string, kind gengo.Kind, typ string) {
+	switch kind {
 	case gengo.IdentKind:
-		switch f.Type.Ident {
+		switch typ {
 		case "int64":
-			fpl(w, "d%d := %s", i, marshalBigEndian("t."+f.Name, 64))
+			marshalBytes(w, marshalBigEndian(name, 64))
 		case "int32":
-			fpl(w, "d%d := %s", i, marshalBigEndian("t."+f.Name, 32))
+			marshalBytes(w, marshalBigEndian(name, 32))
 		case "int16":
-			fpl(w, "d%d := %s", i, marshalBigEndian("t."+f.Name, 16))
+			marshalBytes(w, marshalBigEndian(name, 16))
 		case "int8":
-			fpl(w, "d%d := %s", i, marshalBigEndian("t."+f.Name, 8))
+			marshalBytes(w, marshalBigEndian(name, 8))
 		case "string":
-			fpl(w, "d%dLen := strlen(t.%s)", i, f.Name)
-			fpl(w, "d%d := append(%s, []byte(t.%s)...)", i, marshalBigEndian(fmt.Sprintf("d%dLen", i), 16), f.Name)
+			fpl(w, "{")
+			fpl(w, "l := int16(len(%s))", name)
+			marshalBytes(w, marshalBigEndian("l", 16))
+			marshalBytes(w, fmt.Sprintf("[]byte(%s)", name))
+			fpl(w, "}")
+		case "[]byte":
+			fpl(w, "{")
+			fpl(w, "l := int32(len(%s))", name)
+			marshalBytes(w, marshalBigEndian("l", 32))
+			marshalBytes(w, fmt.Sprintf("%s", name))
+			fpl(w, "}")
 		default:
-			fpl(w, "d%d := t.Marshal()", i)
+			marshalMarshaler(w, name)
 		}
+	case gengo.ArrayKind:
+		fpl(w, "{")
+		fpl(w, "l := int32(len(%s))", name)
+		marshalBytes(w, marshalBigEndian("l", 32))
+		fpl(w, "for i := range %s {", name)
+		switch typ {
+		case "int8", "int16", "int32", "int64", "string":
+			marshalValue(w, name+"[i]", gengo.IdentKind, typ)
+		default:
+			marshalMarshaler(w, name+"[i]")
+		}
+		fpl(w, "}")
+		fpl(w, "}")
 	default:
-		fpl(w, "// field %v", f.Type.Kind)
+		fpl(w, "// value %s %v", name, kind)
 	}
 }
 

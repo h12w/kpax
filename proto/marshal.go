@@ -1,329 +1,1000 @@
 package proto
 
 import (
-	"bytes"
+	"io"
 )
 
-func (t *RequestOrResponse) Marshal() []byte {
-	d0 := []byte{byte(t.Size >> 24), byte(t.Size >> 16), byte(t.Size >> 8), byte(t.Size)}
-	d1 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *RequestOrResponse) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Size >> 24), byte(t.Size >> 16), byte(t.Size >> 8), byte(t.Size)}); err != nil {
+		return err
+	}
+	if err := t.T.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *Request) Marshal() []byte {
-	d0 := []byte{byte(t.APIKey >> 8), byte(t.APIKey)}
-	d1 := []byte{byte(t.APIVersion >> 8), byte(t.APIVersion)}
-	d2 := []byte{byte(t.CorrelationID >> 24), byte(t.CorrelationID >> 16), byte(t.CorrelationID >> 8), byte(t.CorrelationID)}
-	d3Len := strlen(t.ClientID)
-	d3 := append([]byte{byte(d3Len >> 8), byte(d3Len)}, []byte(t.ClientID)...)
-	d4 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1, d2, d3, d4}, nil)
+func (t *Request) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.APIKey >> 8), byte(t.APIKey)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.APIVersion >> 8), byte(t.APIVersion)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.CorrelationID >> 24), byte(t.CorrelationID >> 16), byte(t.CorrelationID >> 8), byte(t.CorrelationID)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.ClientID))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ClientID)); err != nil {
+			return err
+		}
+	}
+	if err := t.RequestMessage.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-// type RequestMessage
+// RequestMessage T
 
-func (t *Response) Marshal() []byte {
-	d0 := []byte{byte(t.CorrelationID >> 24), byte(t.CorrelationID >> 16), byte(t.CorrelationID >> 8), byte(t.CorrelationID)}
-	d1 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *Response) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.CorrelationID >> 24), byte(t.CorrelationID >> 16), byte(t.CorrelationID >> 8), byte(t.CorrelationID)}); err != nil {
+		return err
+	}
+	if err := t.ResponseMessage.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-// type ResponseMessage
+// ResponseMessage T
 
-// type MessageSet
-
-func (t *SizedMessage) Marshal() []byte {
-	d0 := []byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}
-	d1 := []byte{byte(t.MessageSize >> 24), byte(t.MessageSize >> 16), byte(t.MessageSize >> 8), byte(t.MessageSize)}
-	d2 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t MessageSet) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *Message) Marshal() []byte {
-	d0 := []byte{byte(t.CRC >> 24), byte(t.CRC >> 16), byte(t.CRC >> 8), byte(t.CRC)}
-	d1 := []byte{byte(t.MagicByte)}
-	d2 := []byte{byte(t.Attributes)}
-	d3 := t.Marshal()
-	d4 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1, d2, d3, d4}, nil)
+func (t *SizedMessage) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MessageSize >> 24), byte(t.MessageSize >> 16), byte(t.MessageSize >> 8), byte(t.MessageSize)}); err != nil {
+		return err
+	}
+	if err := t.Message.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-// type TopicMetadataRequest
-
-func (t *MetadataResponse) Marshal() []byte {
-	// field []
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *Message) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.CRC >> 24), byte(t.CRC >> 16), byte(t.CRC >> 8), byte(t.CRC)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MagicByte)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Attributes)}); err != nil {
+		return err
+	}
+	{
+		l := int32(len(t.Key))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write(t.Key); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.Value))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write(t.Value); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (t *Broker) Marshal() []byte {
-	d0 := []byte{byte(t.NodeID >> 24), byte(t.NodeID >> 16), byte(t.NodeID >> 8), byte(t.NodeID)}
-	d1Len := strlen(t.Host)
-	d1 := append([]byte{byte(d1Len >> 8), byte(d1Len)}, []byte(t.Host)...)
-	d2 := []byte{byte(t.Port >> 24), byte(t.Port >> 16), byte(t.Port >> 8), byte(t.Port)}
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t TopicMetadataRequest) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			{
+				l := int16(len(t[i]))
+				if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+					return err
+				}
+				if _, err := w.Write([]byte(t[i])); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
-func (t *TopicMetadata) Marshal() []byte {
-	d0 := []byte{byte(t.TopicErrorCode >> 8), byte(t.TopicErrorCode)}
-	d1Len := strlen(t.TopicName)
-	d1 := append([]byte{byte(d1Len >> 8), byte(d1Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t *MetadataResponse) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t.Brokers))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.Brokers {
+			if err := t.Brokers[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	{
+		l := int32(len(t.TopicMetadatas))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.TopicMetadatas {
+			if err := t.TopicMetadatas[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *PartitionMetadata) Marshal() []byte {
-	d0 := []byte{byte(t.PartitionErrorCode >> 8), byte(t.PartitionErrorCode)}
-	d1 := []byte{byte(t.PartitionID >> 24), byte(t.PartitionID >> 16), byte(t.PartitionID >> 8), byte(t.PartitionID)}
-	d2 := []byte{byte(t.Leader >> 24), byte(t.Leader >> 16), byte(t.Leader >> 8), byte(t.Leader)}
-	d3 := []byte{byte(t.Replicas >> 24), byte(t.Replicas >> 16), byte(t.Replicas >> 8), byte(t.Replicas)}
-	d4 := []byte{byte(t.ISR >> 24), byte(t.ISR >> 16), byte(t.ISR >> 8), byte(t.ISR)}
-	return bytes.Join([][]byte{d0, d1, d2, d3, d4}, nil)
+func (t *Broker) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.NodeID >> 24), byte(t.NodeID >> 16), byte(t.NodeID >> 8), byte(t.NodeID)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.Host))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.Host)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte{byte(t.Port >> 24), byte(t.Port >> 16), byte(t.Port >> 8), byte(t.Port)}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *ProduceRequest) Marshal() []byte {
-	d0 := []byte{byte(t.RequiredAcks >> 8), byte(t.RequiredAcks)}
-	d1 := []byte{byte(t.Timeout >> 24), byte(t.Timeout >> 16), byte(t.Timeout >> 8), byte(t.Timeout)}
-	// field []
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t *TopicMetadata) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.TopicErrorCode >> 8), byte(t.TopicErrorCode)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.PartitionMetadatas))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.PartitionMetadatas {
+			if err := t.PartitionMetadatas[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *MessageSetInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *PartitionMetadata) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.PartitionErrorCode >> 8), byte(t.PartitionErrorCode)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.PartitionID >> 24), byte(t.PartitionID >> 16), byte(t.PartitionID >> 8), byte(t.PartitionID)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Leader >> 24), byte(t.Leader >> 16), byte(t.Leader >> 8), byte(t.Leader)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Replicas >> 24), byte(t.Replicas >> 16), byte(t.Replicas >> 8), byte(t.Replicas)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.ISR >> 24), byte(t.ISR >> 16), byte(t.ISR >> 8), byte(t.ISR)}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *MessageSetInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.MessageSetSize >> 24), byte(t.MessageSetSize >> 16), byte(t.MessageSetSize >> 8), byte(t.MessageSetSize)}
-	d2 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t *ProduceRequest) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.RequiredAcks >> 8), byte(t.RequiredAcks)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Timeout >> 24), byte(t.Timeout >> 16), byte(t.Timeout >> 8), byte(t.Timeout)}); err != nil {
+		return err
+	}
+	{
+		l := int32(len(t.MessageSetInTopics))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.MessageSetInTopics {
+			if err := t.MessageSetInTopics[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-// type ProduceResponse
-
-func (t *OffsetInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	d1 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *MessageSetInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.MessageSetInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.MessageSetInPartitions {
+			if err := t.MessageSetInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-// type OffsetInPartitions
-
-func (t *OffsetInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}
-	d2 := []byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t *MessageSetInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MessageSetSize >> 24), byte(t.MessageSetSize >> 16), byte(t.MessageSetSize >> 8), byte(t.MessageSetSize)}); err != nil {
+		return err
+	}
+	if err := t.MessageSet.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *FetchRequest) Marshal() []byte {
-	d0 := []byte{byte(t.ReplicaID >> 24), byte(t.ReplicaID >> 16), byte(t.ReplicaID >> 8), byte(t.ReplicaID)}
-	d1 := []byte{byte(t.MaxWaitTime >> 24), byte(t.MaxWaitTime >> 16), byte(t.MaxWaitTime >> 8), byte(t.MaxWaitTime)}
-	d2 := []byte{byte(t.MinBytes >> 24), byte(t.MinBytes >> 16), byte(t.MinBytes >> 8), byte(t.MinBytes)}
-	// field []
-	return bytes.Join([][]byte{d0, d1, d2, d3}, nil)
+func (t ProduceResponse) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *FetchOffsetInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	if err := t.OffsetInPartitions.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *FetchOffsetInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.FetchOffset >> 56), byte(t.FetchOffset >> 48), byte(t.FetchOffset >> 32), byte(t.FetchOffset >> 24), byte(t.FetchOffset >> 16), byte(t.FetchOffset >> 8), byte(t.FetchOffset)}
-	d2 := []byte{byte(t.MaxBytes >> 24), byte(t.MaxBytes >> 16), byte(t.MaxBytes >> 8), byte(t.MaxBytes)}
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t OffsetInPartitions) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-// type FetchResponse
-
-func (t *FetchMessageSetInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *FetchMessageSetInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}
-	d2 := []byte{byte(t.HighwaterMarkOffset >> 56), byte(t.HighwaterMarkOffset >> 48), byte(t.HighwaterMarkOffset >> 32), byte(t.HighwaterMarkOffset >> 24), byte(t.HighwaterMarkOffset >> 16), byte(t.HighwaterMarkOffset >> 8), byte(t.HighwaterMarkOffset)}
-	d3 := []byte{byte(t.MessageSetSize >> 24), byte(t.MessageSetSize >> 16), byte(t.MessageSetSize >> 8), byte(t.MessageSetSize)}
-	d4 := t.Marshal()
-	return bytes.Join([][]byte{d0, d1, d2, d3, d4}, nil)
+func (t *FetchRequest) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.ReplicaID >> 24), byte(t.ReplicaID >> 16), byte(t.ReplicaID >> 8), byte(t.ReplicaID)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MaxWaitTime >> 24), byte(t.MaxWaitTime >> 16), byte(t.MaxWaitTime >> 8), byte(t.MaxWaitTime)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MinBytes >> 24), byte(t.MinBytes >> 16), byte(t.MinBytes >> 8), byte(t.MinBytes)}); err != nil {
+		return err
+	}
+	{
+		l := int32(len(t.FetchOffsetInTopics))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.FetchOffsetInTopics {
+			if err := t.FetchOffsetInTopics[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetRequest) Marshal() []byte {
-	d0 := []byte{byte(t.ReplicaID >> 24), byte(t.ReplicaID >> 16), byte(t.ReplicaID >> 8), byte(t.ReplicaID)}
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *FetchOffsetInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.FetchOffsetInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.FetchOffsetInPartitions {
+			if err := t.FetchOffsetInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *TimeInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *FetchOffsetInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.FetchOffset >> 56), byte(t.FetchOffset >> 48), byte(t.FetchOffset >> 32), byte(t.FetchOffset >> 24), byte(t.FetchOffset >> 16), byte(t.FetchOffset >> 8), byte(t.FetchOffset)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MaxBytes >> 24), byte(t.MaxBytes >> 16), byte(t.MaxBytes >> 8), byte(t.MaxBytes)}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *TimeInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.Time >> 56), byte(t.Time >> 48), byte(t.Time >> 32), byte(t.Time >> 24), byte(t.Time >> 16), byte(t.Time >> 8), byte(t.Time)}
-	d2 := []byte{byte(t.MaxNumberOfOffsets >> 24), byte(t.MaxNumberOfOffsets >> 16), byte(t.MaxNumberOfOffsets >> 8), byte(t.MaxNumberOfOffsets)}
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t FetchResponse) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-// type OffsetResponse
-
-func (t *OffsetsInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *FetchMessageSetInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.FetchMessageSetInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.FetchMessageSetInPartitions {
+			if err := t.FetchMessageSetInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetsInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}
-	// field []
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t *FetchMessageSetInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.HighwaterMarkOffset >> 56), byte(t.HighwaterMarkOffset >> 48), byte(t.HighwaterMarkOffset >> 32), byte(t.HighwaterMarkOffset >> 24), byte(t.HighwaterMarkOffset >> 16), byte(t.HighwaterMarkOffset >> 8), byte(t.HighwaterMarkOffset)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MessageSetSize >> 24), byte(t.MessageSetSize >> 16), byte(t.MessageSetSize >> 8), byte(t.MessageSetSize)}); err != nil {
+		return err
+	}
+	if err := t.MessageSet.Marshal(w); err != nil {
+		return err
+	}
+	return nil
 }
 
-// type ConsumerMetadataRequest
-
-func (t *ConsumerMetadataResponse) Marshal() []byte {
-	d0 := []byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}
-	d1 := []byte{byte(t.CoordinatorID >> 24), byte(t.CoordinatorID >> 16), byte(t.CoordinatorID >> 8), byte(t.CoordinatorID)}
-	d2Len := strlen(t.CoordinatorHost)
-	d2 := append([]byte{byte(d2Len >> 8), byte(d2Len)}, []byte(t.CoordinatorHost)...)
-	d3 := []byte{byte(t.CoordinatorPort >> 24), byte(t.CoordinatorPort >> 16), byte(t.CoordinatorPort >> 8), byte(t.CoordinatorPort)}
-	return bytes.Join([][]byte{d0, d1, d2, d3}, nil)
+func (t *OffsetRequest) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.ReplicaID >> 24), byte(t.ReplicaID >> 16), byte(t.ReplicaID >> 8), byte(t.ReplicaID)}); err != nil {
+		return err
+	}
+	{
+		l := int32(len(t.TimeInTopics))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.TimeInTopics {
+			if err := t.TimeInTopics[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitRequestV0) Marshal() []byte {
-	d0Len := strlen(t.ConsumerGroupID)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.ConsumerGroupID)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *TimeInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.TimeInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.TimeInPartitions {
+			if err := t.TimeInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitInTopicV0) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *TimeInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Time >> 56), byte(t.Time >> 48), byte(t.Time >> 32), byte(t.Time >> 24), byte(t.Time >> 16), byte(t.Time >> 8), byte(t.Time)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.MaxNumberOfOffsets >> 24), byte(t.MaxNumberOfOffsets >> 16), byte(t.MaxNumberOfOffsets >> 8), byte(t.MaxNumberOfOffsets)}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *OffsetCommitInPartitionV0) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}
-	d2Len := strlen(t.Metadata)
-	d2 := append([]byte{byte(d2Len >> 8), byte(d2Len)}, []byte(t.Metadata)...)
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t OffsetResponse) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitRequestV1) Marshal() []byte {
-	d0Len := strlen(t.ConsumerGroupID)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.ConsumerGroupID)...)
-	d1 := []byte{byte(t.ConsumerGroupGenerationID >> 24), byte(t.ConsumerGroupGenerationID >> 16), byte(t.ConsumerGroupGenerationID >> 8), byte(t.ConsumerGroupGenerationID)}
-	d2Len := strlen(t.ConsumerID)
-	d2 := append([]byte{byte(d2Len >> 8), byte(d2Len)}, []byte(t.ConsumerID)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1, d2, d3}, nil)
+func (t *OffsetsInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetsInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetsInPartitions {
+			if err := t.OffsetsInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitInTopicV1) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetsInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}); err != nil {
+		return err
+	}
+	{
+		l := int32(len(t.Offsets))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.Offsets {
+			if _, err := w.Write([]byte{byte(t.Offsets[i] >> 56), byte(t.Offsets[i] >> 48), byte(t.Offsets[i] >> 32), byte(t.Offsets[i] >> 24), byte(t.Offsets[i] >> 16), byte(t.Offsets[i] >> 8), byte(t.Offsets[i])}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitInPartitionV1) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}
-	d2 := []byte{byte(t.TimeStamp >> 56), byte(t.TimeStamp >> 48), byte(t.TimeStamp >> 32), byte(t.TimeStamp >> 24), byte(t.TimeStamp >> 16), byte(t.TimeStamp >> 8), byte(t.TimeStamp)}
-	d3Len := strlen(t.Metadata)
-	d3 := append([]byte{byte(d3Len >> 8), byte(d3Len)}, []byte(t.Metadata)...)
-	return bytes.Join([][]byte{d0, d1, d2, d3}, nil)
+func (t ConsumerMetadataRequest) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitRequestV2) Marshal() []byte {
-	d0Len := strlen(t.ConsumerGroup)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.ConsumerGroup)...)
-	d1 := []byte{byte(t.ConsumerGroupGenerationID >> 24), byte(t.ConsumerGroupGenerationID >> 16), byte(t.ConsumerGroupGenerationID >> 8), byte(t.ConsumerGroupGenerationID)}
-	d2Len := strlen(t.ConsumerID)
-	d2 := append([]byte{byte(d2Len >> 8), byte(d2Len)}, []byte(t.ConsumerID)...)
-	d3 := []byte{byte(t.RetentionTime >> 56), byte(t.RetentionTime >> 48), byte(t.RetentionTime >> 32), byte(t.RetentionTime >> 24), byte(t.RetentionTime >> 16), byte(t.RetentionTime >> 8), byte(t.RetentionTime)}
-	// field []
-	return bytes.Join([][]byte{d0, d1, d2, d3, d4}, nil)
+func (t *ConsumerMetadataResponse) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.CoordinatorID >> 24), byte(t.CoordinatorID >> 16), byte(t.CoordinatorID >> 8), byte(t.CoordinatorID)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.CoordinatorHost))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.CoordinatorHost)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte{byte(t.CoordinatorPort >> 24), byte(t.CoordinatorPort >> 16), byte(t.CoordinatorPort >> 8), byte(t.CoordinatorPort)}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *OffsetCommitInTopicV2) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetCommitRequestV0) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.ConsumerGroupID))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ConsumerGroupID)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetCommitInTopicV0s))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetCommitInTopicV0s {
+			if err := t.OffsetCommitInTopicV0s[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetCommitInPartitionV2) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}
-	d2Len := strlen(t.Metadata)
-	d2 := append([]byte{byte(d2Len >> 8), byte(d2Len)}, []byte(t.Metadata)...)
-	return bytes.Join([][]byte{d0, d1, d2}, nil)
+func (t *OffsetCommitInTopicV0) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetCommitInPartitionV0s))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetCommitInPartitionV0s {
+			if err := t.OffsetCommitInPartitionV0s[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-// type OffsetCommitResponse
-
-func (t *ErrorInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetCommitInPartitionV0) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.Metadata))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.Metadata)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (t *ErrorInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetCommitRequestV1) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.ConsumerGroupID))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ConsumerGroupID)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte{byte(t.ConsumerGroupGenerationID >> 24), byte(t.ConsumerGroupGenerationID >> 16), byte(t.ConsumerGroupGenerationID >> 8), byte(t.ConsumerGroupGenerationID)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.ConsumerID))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ConsumerID)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetCommitInTopicV1s))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetCommitInTopicV1s {
+			if err := t.OffsetCommitInTopicV1s[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetFetchRequest) Marshal() []byte {
-	d0Len := strlen(t.ConsumerGroup)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.ConsumerGroup)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetCommitInTopicV1) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetCommitInPartitionV1s))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetCommitInPartitionV1s {
+			if err := t.OffsetCommitInPartitionV1s[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *PartitionInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetCommitInPartitionV1) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.TimeStamp >> 56), byte(t.TimeStamp >> 48), byte(t.TimeStamp >> 32), byte(t.TimeStamp >> 24), byte(t.TimeStamp >> 16), byte(t.TimeStamp >> 8), byte(t.TimeStamp)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.Metadata))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.Metadata)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-// type OffsetFetchResponse
-
-func (t *OffsetMetadataInTopic) Marshal() []byte {
-	d0Len := strlen(t.TopicName)
-	d0 := append([]byte{byte(d0Len >> 8), byte(d0Len)}, []byte(t.TopicName)...)
-	// field []
-	return bytes.Join([][]byte{d0, d1}, nil)
+func (t *OffsetCommitRequestV2) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.ConsumerGroup))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ConsumerGroup)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte{byte(t.ConsumerGroupGenerationID >> 24), byte(t.ConsumerGroupGenerationID >> 16), byte(t.ConsumerGroupGenerationID >> 8), byte(t.ConsumerGroupGenerationID)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.ConsumerID))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ConsumerID)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte{byte(t.RetentionTime >> 56), byte(t.RetentionTime >> 48), byte(t.RetentionTime >> 32), byte(t.RetentionTime >> 24), byte(t.RetentionTime >> 16), byte(t.RetentionTime >> 8), byte(t.RetentionTime)}); err != nil {
+		return err
+	}
+	{
+		l := int32(len(t.OffsetCommitInTopicV2s))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetCommitInTopicV2s {
+			if err := t.OffsetCommitInTopicV2s[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (t *OffsetMetadataInPartition) Marshal() []byte {
-	d0 := []byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}
-	d1 := []byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}
-	d2Len := strlen(t.Metadata)
-	d2 := append([]byte{byte(d2Len >> 8), byte(d2Len)}, []byte(t.Metadata)...)
-	d3 := []byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}
-	return bytes.Join([][]byte{d0, d1, d2, d3}, nil)
+func (t *OffsetCommitInTopicV2) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetCommitInPartitionV2s))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetCommitInPartitionV2s {
+			if err := t.OffsetCommitInPartitionV2s[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *OffsetCommitInPartitionV2) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.Metadata))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.Metadata)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t OffsetCommitResponse) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *ErrorInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.ErrorInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.ErrorInPartitions {
+			if err := t.ErrorInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *ErrorInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *OffsetFetchRequest) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.ConsumerGroup))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.ConsumerGroup)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.PartitionInTopics))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.PartitionInTopics {
+			if err := t.PartitionInTopics[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *PartitionInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.Partitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.Partitions {
+			if _, err := w.Write([]byte{byte(t.Partitions[i] >> 24), byte(t.Partitions[i] >> 16), byte(t.Partitions[i] >> 8), byte(t.Partitions[i])}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t OffsetFetchResponse) Marshal(w io.Writer) error {
+	{
+		l := int32(len(t))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t {
+			if err := t[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *OffsetMetadataInTopic) Marshal(w io.Writer) error {
+	{
+		l := int16(len(t.TopicName))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.TopicName)); err != nil {
+			return err
+		}
+	}
+	{
+		l := int32(len(t.OffsetMetadataInPartitions))
+		if _, err := w.Write([]byte{byte(l >> 24), byte(l >> 16), byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		for i := range t.OffsetMetadataInPartitions {
+			if err := t.OffsetMetadataInPartitions[i].Marshal(w); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *OffsetMetadataInPartition) Marshal(w io.Writer) error {
+	if _, err := w.Write([]byte{byte(t.Partition >> 24), byte(t.Partition >> 16), byte(t.Partition >> 8), byte(t.Partition)}); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte{byte(t.Offset >> 56), byte(t.Offset >> 48), byte(t.Offset >> 32), byte(t.Offset >> 24), byte(t.Offset >> 16), byte(t.Offset >> 8), byte(t.Offset)}); err != nil {
+		return err
+	}
+	{
+		l := int16(len(t.Metadata))
+		if _, err := w.Write([]byte{byte(l >> 8), byte(l)}); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte(t.Metadata)); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte{byte(t.ErrorCode >> 8), byte(t.ErrorCode)}); err != nil {
+		return err
+	}
+	return nil
 }
