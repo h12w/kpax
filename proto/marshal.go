@@ -121,7 +121,7 @@ func (t *TopicMetadataRequest) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *MetadataResponse) Marshal(w *Writer) {
+func (t *TopicMetadataResponse) Marshal(w *Writer) {
 	w.WriteInt32(int32(len(t.Brokers)))
 	for i := range t.Brokers {
 		t.Brokers[i].Marshal(w)
@@ -132,7 +132,7 @@ func (t *MetadataResponse) Marshal(w *Writer) {
 	}
 }
 
-func (t *MetadataResponse) Unmarshal(r *Reader) {
+func (t *TopicMetadataResponse) Unmarshal(r *Reader) {
 	t.Brokers = make([]Broker, int(r.ReadInt32()))
 	for i := range t.Brokers {
 		t.Brokers[i].Unmarshal(r)

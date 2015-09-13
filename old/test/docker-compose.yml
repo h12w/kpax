@@ -9,7 +9,7 @@ kafka:
   links:
     - zookeeper:zk
   environment:
-    KAFKA_ADVERTISED_HOST_NAME: macdocker
+    KAFKA_ADVERTISED_HOST_NAME: docker
     KAFKA_CREATE_TOPICS: "test:1:1"
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock

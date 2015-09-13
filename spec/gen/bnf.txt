@@ -10,7 +10,7 @@ Request => ApiKey ApiVersion CorrelationId ClientId RequestMessage
 
 Response => CorrelationId ResponseMessage
     CorrelationId => int32
-    ResponseMessage => MetadataResponse | ProduceResponse | FetchResponse | OffsetResponse | OffsetCommitResponse | OffsetFetchResponse
+    ResponseMessage => TopicMetadataResponse | ConsumerMetadataResponse | ProduceResponse | FetchResponse | OffsetResponse | OffsetCommitResponse | OffsetFetchResponse
 
 MessageSet => [OffsetMessage]
     OffsetMessage => Offset SizedMessage
@@ -29,7 +29,7 @@ Message => MagicByte Attributes Key Value
 TopicMetadataRequest => [TopicName]
     TopicName => string
 
-MetadataResponse => [Broker][TopicMetadata]
+TopicMetadataResponse => [Broker][TopicMetadata]
     Broker => NodeId Host Port
     NodeId => int32
     Host => string

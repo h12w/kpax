@@ -37,7 +37,7 @@ type Message struct {
 	Value      []byte
 }
 type TopicMetadataRequest []string
-type MetadataResponse struct {
+type TopicMetadataResponse struct {
 	Brokers        []Broker
 	TopicMetadatas []TopicMetadata
 }
