@@ -13,7 +13,7 @@ func fromBNFToGoFuncs() {
 	goFile := fromBNFToGoFile()
 	fpl(w, "package proto")
 	fpl(w, "import (")
-	fpl(w, `"io"`)
+	fpl(w, `"hash/crc32"`)
 	fpl(w, ")")
 	for _, decl := range goFile.TypeDecls {
 		genMarshalFunc(w, decl)
@@ -31,12 +31,22 @@ func genMarshalFunc(w io.Writer, decl *gengo.TypeDecl) {
 	fpl(w, "func (t *%s) Marshal(w *Writer) {", decl.Name)
 	switch t.Kind {
 	case gengo.StructKind:
-		for _, f := range t.Fields {
-			fName := "t." + f.Name
-			if f.Name == "" {
-				fName = "t." + f.Type.Ident
+		if f0 := t.Fields[0]; len(t.Fields) == 2 &&
+			(f0.Name == "Size" || f0.Name == "CRC") {
+			fpl(w, "offset := len(w.B)")
+			marshalField(w, t.Fields[0])
+			fpl(w, "start := len(w.B)")
+			marshalField(w, t.Fields[1])
+			switch f0.Name {
+			case "Size":
+				fpl(w, "w.SetInt32(offset, int32(len(w.B)-start))")
+			case "CRC":
+				fpl(w, "w.SetUint32(offset, crc32.ChecksumIEEE(w.B[start:]))")
 			}
-			marshalValue(w, fName, f.Type.Kind, f.Type.Ident)
+		} else {
+			for _, f := range t.Fields {
+				marshalField(w, f)
+			}
 		}
 	case gengo.ArrayKind:
 		marshalValue(w, "(*t)", t.Kind, t.Ident)
@@ -66,12 +76,19 @@ func genUnmarshalFunc(w io.Writer, decl *gengo.TypeDecl) {
 	case gengo.ArrayKind:
 		unmarshalValue(w, "(*t)", t.Kind, t.Ident, t.Ident)
 	case gengo.IdentKind:
-		fpl(w, "// type %s, %v", decl.Name, decl.Type)
 		unmarshalValue(w, "(*t)", t.Kind, t.Ident, decl.Name)
 	default:
 		fpl(w, "// type %s, %v", decl.Name, decl.Type)
 	}
 	fpl(w, "}")
+}
+
+func marshalField(w io.Writer, f *gengo.Field) {
+	fName := "t." + f.Name
+	if f.Name == "" {
+		fName = "t." + f.Type.Ident
+	}
+	marshalValue(w, fName, f.Type.Kind, f.Type.Ident)
 }
 
 func marshalValue(w io.Writer, name string, kind gengo.Kind, typ string) {

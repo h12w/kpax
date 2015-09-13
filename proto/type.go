@@ -17,14 +17,20 @@ type Response struct {
 	ResponseMessage ResponseMessage
 }
 type ResponseMessage T
-type MessageSet []SizedMessage
+type MessageSet []OffsetMessage
+type OffsetMessage struct {
+	Offset       int64
+	SizedMessage SizedMessage
+}
 type SizedMessage struct {
-	Offset      int64
-	MessageSize int32
-	Message     Message
+	Size       int32
+	CRCMessage CRCMessage
+}
+type CRCMessage struct {
+	CRC     int32
+	Message Message
 }
 type Message struct {
-	CRC        int32
 	MagicByte  int8
 	Attributes int8
 	Key        []byte
@@ -62,9 +68,12 @@ type MessageSetInTopic struct {
 	MessageSetInPartitions []MessageSetInPartition
 }
 type MessageSetInPartition struct {
-	Partition      int32
-	MessageSetSize int32
-	MessageSet     MessageSet
+	Partition       int32
+	SizedMessageSet SizedMessageSet
+}
+type SizedMessageSet struct {
+	Size       int32
+	MessageSet MessageSet
 }
 type ProduceResponse []OffsetInTopic
 type OffsetInTopic struct {
@@ -101,8 +110,7 @@ type FetchMessageSetInPartition struct {
 	Partition           int32
 	ErrorCode           int16
 	HighwaterMarkOffset int64
-	MessageSetSize      int32
-	MessageSet          MessageSet
+	SizedMessageSet     SizedMessageSet
 }
 type OffsetRequest struct {
 	ReplicaID    int32

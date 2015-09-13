@@ -3,7 +3,7 @@ package proto
 import "errors"
 
 var (
-	errUnexpectedEOF = errors.New("unexpected EOF")
+	ErrUnexpectedEOF = errors.New("proto: unexpected EOF")
 )
 
 type T interface {
@@ -30,7 +30,7 @@ func (r *Reader) ReadInt8() int8 {
 		return 0
 	}
 	if r.Offset >= len(r.B) {
-		r.Err = errUnexpectedEOF
+		r.Err = ErrUnexpectedEOF
 		return 0
 	}
 	i := r.Offset
@@ -47,7 +47,7 @@ func (r *Reader) ReadInt16() int16 {
 		return 0
 	}
 	if r.Offset >= len(r.B) {
-		r.Err = errUnexpectedEOF
+		r.Err = ErrUnexpectedEOF
 		return 0
 	}
 	i := r.Offset
@@ -64,7 +64,7 @@ func (r *Reader) ReadInt32() int32 {
 		return 0
 	}
 	if r.Offset >= len(r.B) {
-		r.Err = errUnexpectedEOF
+		r.Err = ErrUnexpectedEOF
 		return 0
 	}
 	i := r.Offset
@@ -81,7 +81,7 @@ func (r *Reader) ReadInt64() int64 {
 		return 0
 	}
 	if r.Offset >= len(r.B) {
-		r.Err = errUnexpectedEOF
+		r.Err = ErrUnexpectedEOF
 		return 0
 	}
 	i := r.Offset
@@ -100,7 +100,7 @@ func (r *Reader) ReadString() string {
 		return ""
 	}
 	if r.Offset >= len(r.B) {
-		r.Err = errUnexpectedEOF
+		r.Err = ErrUnexpectedEOF
 		return ""
 	}
 	l := int(r.ReadInt16())
@@ -119,11 +119,25 @@ func (r *Reader) ReadBytes() []byte {
 		return nil
 	}
 	if r.Offset >= len(r.B) {
-		r.Err = errUnexpectedEOF
+		r.Err = ErrUnexpectedEOF
 		return nil
 	}
 	l := int(r.ReadInt32())
 	i := r.Offset
 	r.Offset += l
 	return r.B[i : i+l]
+}
+
+func (w *Writer) SetInt32(offset int, i int32) {
+	w.B[offset] = byte(i >> 24)
+	w.B[offset+1] = byte(i >> 16)
+	w.B[offset+2] = byte(i >> 8)
+	w.B[offset+3] = byte(i)
+}
+
+func (w *Writer) SetUint32(offset int, i uint32) {
+	w.B[offset] = byte(i >> 24)
+	w.B[offset+1] = byte(i >> 16)
+	w.B[offset+2] = byte(i >> 8)
+	w.B[offset+3] = byte(i)
 }

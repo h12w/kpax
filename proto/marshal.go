@@ -1,8 +1,15 @@
 package proto
 
+import (
+	"hash/crc32"
+)
+
 func (t *RequestOrResponse) Marshal(w *Writer) {
+	offset := len(w.B)
 	w.WriteInt32(t.Size)
+	start := len(w.B)
 	t.T.Marshal(w)
+	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
 func (t *RequestOrResponse) Unmarshal(r *Reader) {
@@ -44,26 +51,49 @@ func (t *MessageSet) Marshal(w *Writer) {
 }
 
 func (t *MessageSet) Unmarshal(r *Reader) {
-	(*t) = make([]SizedMessage, int(r.ReadInt32()))
+	(*t) = make([]OffsetMessage, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *SizedMessage) Marshal(w *Writer) {
+func (t *OffsetMessage) Marshal(w *Writer) {
 	w.WriteInt64(t.Offset)
-	w.WriteInt32(t.MessageSize)
-	t.Message.Marshal(w)
+	t.SizedMessage.Marshal(w)
+}
+
+func (t *OffsetMessage) Unmarshal(r *Reader) {
+	t.Offset = r.ReadInt64()
+	t.SizedMessage.Unmarshal(r)
+}
+
+func (t *SizedMessage) Marshal(w *Writer) {
+	offset := len(w.B)
+	w.WriteInt32(t.Size)
+	start := len(w.B)
+	t.CRCMessage.Marshal(w)
+	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
 func (t *SizedMessage) Unmarshal(r *Reader) {
-	t.Offset = r.ReadInt64()
-	t.MessageSize = r.ReadInt32()
+	t.Size = r.ReadInt32()
+	t.CRCMessage.Unmarshal(r)
+}
+
+func (t *CRCMessage) Marshal(w *Writer) {
+	offset := len(w.B)
+	w.WriteInt32(t.CRC)
+	start := len(w.B)
+	t.Message.Marshal(w)
+	w.SetUint32(offset, crc32.ChecksumIEEE(w.B[start:]))
+}
+
+func (t *CRCMessage) Unmarshal(r *Reader) {
+	t.CRC = r.ReadInt32()
 	t.Message.Unmarshal(r)
 }
 
 func (t *Message) Marshal(w *Writer) {
-	w.WriteInt32(t.CRC)
 	w.WriteInt8(t.MagicByte)
 	w.WriteInt8(t.Attributes)
 	w.WriteBytes(t.Key)
@@ -71,7 +101,6 @@ func (t *Message) Marshal(w *Writer) {
 }
 
 func (t *Message) Unmarshal(r *Reader) {
-	t.CRC = r.ReadInt32()
 	t.MagicByte = r.ReadInt8()
 	t.Attributes = r.ReadInt8()
 	t.Key = r.ReadBytes()
@@ -196,13 +225,24 @@ func (t *MessageSetInTopic) Unmarshal(r *Reader) {
 
 func (t *MessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	w.WriteInt32(t.MessageSetSize)
-	t.MessageSet.Marshal(w)
+	t.SizedMessageSet.Marshal(w)
 }
 
 func (t *MessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	t.MessageSetSize = r.ReadInt32()
+	t.SizedMessageSet.Unmarshal(r)
+}
+
+func (t *SizedMessageSet) Marshal(w *Writer) {
+	offset := len(w.B)
+	w.WriteInt32(t.Size)
+	start := len(w.B)
+	t.MessageSet.Marshal(w)
+	w.SetInt32(offset, int32(len(w.B)-start))
+}
+
+func (t *SizedMessageSet) Unmarshal(r *Reader) {
+	t.Size = r.ReadInt32()
 	t.MessageSet.Unmarshal(r)
 }
 
@@ -338,16 +378,14 @@ func (t *FetchMessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt16(t.ErrorCode)
 	w.WriteInt64(t.HighwaterMarkOffset)
-	w.WriteInt32(t.MessageSetSize)
-	t.MessageSet.Marshal(w)
+	t.SizedMessageSet.Marshal(w)
 }
 
 func (t *FetchMessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode = r.ReadInt16()
 	t.HighwaterMarkOffset = r.ReadInt64()
-	t.MessageSetSize = r.ReadInt32()
-	t.MessageSet.Unmarshal(r)
+	t.SizedMessageSet.Unmarshal(r)
 }
 
 func (t *OffsetRequest) Marshal(w *Writer) {
@@ -447,7 +485,6 @@ func (t *ConsumerMetadataRequest) Marshal(w *Writer) {
 }
 
 func (t *ConsumerMetadataRequest) Unmarshal(r *Reader) {
-	// type ConsumerMetadataRequest, { string []}
 	(*t) = ConsumerMetadataRequest(r.ReadString())
 }
 

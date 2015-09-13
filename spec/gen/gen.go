@@ -99,7 +99,7 @@ func (d *Decl) GenDecl(m map[string]*Decl) *gengo.TypeDecl {
 		}
 	}
 	return &gengo.TypeDecl{
-		Name:           d.Name,
+		Name:           goName(d.Name),
 		Type:           *d.Type.GenType(m),
 		UnderlyingType: ut,
 	}
