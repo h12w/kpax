@@ -63,26 +63,26 @@ func (t *MessageSet) Unmarshal(r *Reader) {
 
 func (t *OffsetMessage) Marshal(w *Writer) {
 	w.WriteInt64(t.Offset)
-	// value t.SizedMessage struct
+	t.SizedMessage.Marshal(w)
 }
 
 func (t *OffsetMessage) Unmarshal(r *Reader) {
 	t.Offset = r.ReadInt64()
-	// value t.SizedMessage struct
+	t.SizedMessage.Unmarshal(r)
 }
 
 func (t *SizedMessage) Marshal(w *Writer) {
 	offset := len(w.B)
 	w.WriteInt32(t.Size)
 	start := len(w.B)
-	// value t.CRCMessage struct
+	t.CRCMessage.Marshal(w)
 	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
 func (t *SizedMessage) Unmarshal(r *Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
-	// value t.CRCMessage struct
+	t.CRCMessage.Unmarshal(r)
 	if int(t.Size) != r.Offset-start {
 		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
 	}
@@ -92,14 +92,14 @@ func (t *CRCMessage) Marshal(w *Writer) {
 	offset := len(w.B)
 	w.WriteInt32(t.CRC)
 	start := len(w.B)
-	// value t.Message struct
+	t.Message.Marshal(w)
 	w.SetUint32(offset, crc32.ChecksumIEEE(w.B[start:]))
 }
 
 func (t *CRCMessage) Unmarshal(r *Reader) {
 	t.CRC = r.ReadInt32()
 	start := r.Offset
-	// value t.Message struct
+	t.Message.Unmarshal(r)
 	if uint32(t.CRC) != crc32.ChecksumIEEE(r.B[start:]) {
 		r.Err = newError("CRC mismatch")
 	}
@@ -249,32 +249,26 @@ func (t *MessageSetInTopic) Unmarshal(r *Reader) {
 
 func (t *MessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	// value t.SizedMessageSet struct
+	t.SizedMessageSet.Marshal(w)
 }
 
 func (t *MessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	// value t.SizedMessageSet struct
+	t.SizedMessageSet.Unmarshal(r)
 }
 
 func (t *SizedMessageSet) Marshal(w *Writer) {
 	offset := len(w.B)
 	w.WriteInt32(t.Size)
 	start := len(w.B)
-	w.WriteInt32(int32(len(t.MessageSet)))
-	for i := range t.MessageSet {
-		t.MessageSet[i].Marshal(w)
-	}
+	t.MessageSet.Marshal(w)
 	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
 func (t *SizedMessageSet) Unmarshal(r *Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
-	t.MessageSet = make([]OffsetMessage, int(r.ReadInt32()))
-	for i := range t.MessageSet {
-		t.MessageSet[i].Unmarshal(r)
-	}
+	t.MessageSet.Unmarshal(r)
 	if int(t.Size) != r.Offset-start {
 		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
 	}
@@ -307,20 +301,6 @@ func (t *OffsetInTopic) Unmarshal(r *Reader) {
 	t.OffsetInPartitions = make([]OffsetInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetInPartitions {
 		t.OffsetInPartitions[i].Unmarshal(r)
-	}
-}
-
-func (t *OffsetInPartitions) Marshal(w *Writer) {
-	w.WriteInt32(int32(len((*t))))
-	for i := range *t {
-		(*t)[i].Marshal(w)
-	}
-}
-
-func (t *OffsetInPartitions) Unmarshal(r *Reader) {
-	(*t) = make([]OffsetInPartition, int(r.ReadInt32()))
-	for i := range *t {
-		(*t)[i].Unmarshal(r)
 	}
 }
 
@@ -418,14 +398,14 @@ func (t *FetchMessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt16(t.ErrorCode)
 	w.WriteInt64(t.HighwaterMarkOffset)
-	// value t.SizedMessageSet struct
+	t.SizedMessageSet.Marshal(w)
 }
 
 func (t *FetchMessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode = r.ReadInt16()
 	t.HighwaterMarkOffset = r.ReadInt64()
-	// value t.SizedMessageSet struct
+	t.SizedMessageSet.Unmarshal(r)
 }
 
 func (t *OffsetRequest) Marshal(w *Writer) {

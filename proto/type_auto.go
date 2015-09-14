@@ -9,50 +9,26 @@ type Request struct {
 	APIVersion     int16
 	CorrelationID  int32
 	ClientID       string
-	RequestMessage T
+	RequestMessage RequestMessage
 }
 type RequestMessage T
 type Response struct {
 	CorrelationID   int32
-	ResponseMessage T
+	ResponseMessage ResponseMessage
 }
 type ResponseMessage T
 type MessageSet []OffsetMessage
 type OffsetMessage struct {
 	Offset       int64
-	SizedMessage struct {
-		Size       int32
-		CRCMessage struct {
-			CRC     int32
-			Message struct {
-				MagicByte  int8
-				Attributes int8
-				Key        []byte
-				Value      []byte
-			}
-		}
-	}
+	SizedMessage SizedMessage
 }
 type SizedMessage struct {
 	Size       int32
-	CRCMessage struct {
-		CRC     int32
-		Message struct {
-			MagicByte  int8
-			Attributes int8
-			Key        []byte
-			Value      []byte
-		}
-	}
+	CRCMessage CRCMessage
 }
 type CRCMessage struct {
 	CRC     int32
-	Message struct {
-		MagicByte  int8
-		Attributes int8
-		Key        []byte
-		Value      []byte
-	}
+	Message Message
 }
 type Message struct {
 	MagicByte  int8
@@ -93,21 +69,17 @@ type MessageSetInTopic struct {
 }
 type MessageSetInPartition struct {
 	Partition       int32
-	SizedMessageSet struct {
-		Size       int32
-		MessageSet []OffsetMessage
-	}
+	SizedMessageSet SizedMessageSet
 }
 type SizedMessageSet struct {
 	Size       int32
-	MessageSet []OffsetMessage
+	MessageSet MessageSet
 }
 type ProduceResponse []OffsetInTopic
 type OffsetInTopic struct {
 	TopicName          string
 	OffsetInPartitions []OffsetInPartition
 }
-type OffsetInPartitions []OffsetInPartition
 type OffsetInPartition struct {
 	Partition int32
 	ErrorCode int16
@@ -137,10 +109,7 @@ type FetchMessageSetInPartition struct {
 	Partition           int32
 	ErrorCode           int16
 	HighwaterMarkOffset int64
-	SizedMessageSet     struct {
-		Size       int32
-		MessageSet []OffsetMessage
-	}
+	SizedMessageSet     SizedMessageSet
 }
 type OffsetRequest struct {
 	ReplicaID    int32

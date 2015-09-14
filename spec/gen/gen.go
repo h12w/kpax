@@ -116,16 +116,13 @@ func (d *Decl) typeName() string {
 }
 
 func (n *Node) GenField(m map[string]*Decl) *gengo.Field {
-	var typ *Decl
-	if decl, ok := m[n.Value]; ok {
-		typ = decl
-	}
 	name := n.Value
+	decl, _ := m[name]
 	if name == "" && n.NodeType == ZeroOrMoreNode && len(n.Child) == 1 {
 		name = n.Child[0].Value + "s"
 	}
-	if typ != nil {
-		goType := typ.Type.GenType(m)
+	if decl != nil && n.NodeType == ZeroOrMoreNode {
+		goType := decl.Type.GenType(m)
 		if n.NodeType == ZeroOrMoreNode {
 			goType.Kind = gengo.ArrayKind
 		}

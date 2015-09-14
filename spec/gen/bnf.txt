@@ -53,8 +53,7 @@ ProduceRequest => RequiredAcks Timeout [MessageSetInTopic]
     Partition => int32
 
 ProduceResponse => [OffsetInTopic]
-    OffsetInTopic => TopicName OffsetInPartitions
-    OffsetInPartitions => [OffsetInPartition]
+    OffsetInTopic => TopicName [OffsetInPartition]
     OffsetInPartition => Partition ErrorCode Offset
     TopicName => string
     Partition => int32
