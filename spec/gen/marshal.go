@@ -66,12 +66,25 @@ func genUnmarshalFunc(w io.Writer, decl *gengo.TypeDecl) {
 	fpl(w, "func (t *%s) Unmarshal(r *Reader) {", decl.Name)
 	switch t.Kind {
 	case gengo.StructKind:
-		for _, f := range t.Fields {
-			fName := "t." + f.Name
-			if f.Name == "" {
-				fName = "t." + f.Type.Ident
+		if f0 := t.Fields[0]; len(t.Fields) == 2 &&
+			(f0.Name == "Size" || f0.Name == "CRC") {
+			unmarshalField(w, t.Fields[0])
+			fpl(w, "start := r.Offset")
+			unmarshalField(w, t.Fields[1])
+			switch f0.Name {
+			case "Size":
+				fpl(w, "if int(t.Size) != r.Offset-start {")
+				fpl(w, `r.Err = newError("size mismatch, expect %%d, got %%d", int(t.Size), r.Offset-start)`)
+				fpl(w, "}")
+			case "CRC":
+				fpl(w, "if uint32(t.CRC) != crc32.ChecksumIEEE(r.B[start:]) {")
+				fpl(w, `r.Err = newError("CRC mismatch")`)
+				fpl(w, "}")
 			}
-			unmarshalValue(w, fName, f.Type.Kind, f.Type.Ident, f.Type.Ident)
+		} else {
+			for _, f := range t.Fields {
+				unmarshalField(w, f)
+			}
 		}
 	case gengo.ArrayKind:
 		unmarshalValue(w, "(*t)", t.Kind, t.Ident, t.Ident)
@@ -89,6 +102,14 @@ func marshalField(w io.Writer, f *gengo.Field) {
 		fName = "t." + f.Type.Ident
 	}
 	marshalValue(w, fName, f.Type.Kind, f.Type.Ident)
+}
+
+func unmarshalField(w io.Writer, f *gengo.Field) {
+	fName := "t." + f.Name
+	if f.Name == "" {
+		fName = "t." + f.Type.Ident
+	}
+	unmarshalValue(w, fName, f.Type.Kind, f.Type.Ident, f.Type.Ident)
 }
 
 func marshalValue(w io.Writer, name string, kind gengo.Kind, typ string) {
