@@ -1,4 +1,4 @@
-package client
+package broker
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func Test(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	broker := NewBroker(&BrokerConfig{
+	broker := New(&BrokerConfig{
 		Conn:         conn,
 		SendChanSize: 10,
 		RecvChanSize: 10,

@@ -1,4 +1,4 @@
-package client
+package broker
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func NewBroker(c *BrokerConfig) *Broker {
+func New(c *BrokerConfig) *Broker {
 	b := &Broker{
 		conn:     c.Conn,
 		sendChan: make(chan *brokerJob, c.SendChanSize),
