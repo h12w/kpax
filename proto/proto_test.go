@@ -1,11 +1,9 @@
-package client
+package proto
 
 import (
 	"fmt"
 	"net"
 	"testing"
-
-	"h12.me/kafka/proto"
 )
 
 func Test(t *testing.T) {
@@ -14,20 +12,20 @@ func Test(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	req := proto.Request{
-		APIKey:        proto.TopicMetadataRequestType,
+	req := Request{
+		APIKey:        TopicMetadataRequestType,
 		APIVersion:    0,
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.TopicMetadataRequest{
+		RequestMessage: &TopicMetadataRequest{
 			"test",
 		},
 	}
 	if err := req.Send(conn); err != nil {
 		t.Fatal(t)
 	}
-	resp := &proto.Response{
-		ResponseMessage: &proto.TopicMetadataResponse{},
+	resp := &Response{
+		ResponseMessage: &TopicMetadataResponse{},
 	}
 	if err := resp.Receive(conn); err != nil {
 		t.Fatal(resp)
