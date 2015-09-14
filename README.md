@@ -1,7 +1,8 @@
 h12.me/kafka
 ============
 
-`h12.me/kafka` is a modular and idiomatic Kafka client in Go:
+A modular & idiomatic Kafka client in Go
+----------------------------------------
 
 * **kafka/proto**: Kafka wire protocol (automatically generated types and
   marshal/unmarshal functions from
