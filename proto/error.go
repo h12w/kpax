@@ -1,7 +1,14 @@
 package proto
 
 import (
+	"errors"
 	"fmt"
+)
+
+var (
+	ErrUnexpectedEOF = errors.New("proto: unexpected EOF")
+	ErrSizeMismatch  = errors.New("proto: size mismatch")
+	ErrCRCMismatch   = errors.New("proto: CRC mismatch")
 )
 
 type Error struct {
