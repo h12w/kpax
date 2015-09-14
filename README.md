@@ -11,7 +11,7 @@ h12.me/kafka
 * **kafka/client**: client that talks to a Kafka cluster (metadata management
   & error handling).
 * **kafka/producer**: high-level producer (partition, batch and compression strategy).
-* **kafka/consumer**: high-level consumer (consumer group and offset management).
+* **kafka/consumer**: high-level consumer (consumer group and offset commit management).
 
 Install
 -------
