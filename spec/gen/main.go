@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"h12.me/wipro"
 )
 
 func main() {
@@ -19,12 +21,12 @@ func main() {
 	case "bnf":
 		fromHTMLToBNF()
 	case "bnfj":
-		fromBNFToJSON()
+		wipro.FromBNFToJSON()
 	case "goj":
-		fromBNFToGoJSON()
+		wipro.FromBNFToGoJSON()
 	case "go":
-		fromBNFToGo()
+		wipro.FromBNFToGo()
 	case "gof":
-		fromBNFToGoFuncs()
+		wipro.FromBNFToGoFuncs()
 	}
 }
