@@ -125,12 +125,13 @@ func (n *Node) GenField(m map[string]*Decl) *gengo.Field {
 		name = n.Child[0].Value + "s"
 	}
 	if typ != nil {
+		goType := typ.Type.GenType(m)
+		if n.NodeType == ZeroOrMoreNode {
+			goType.Kind = gengo.ArrayKind
+		}
 		return &gengo.Field{
 			Name: goName(name),
-			Type: gengo.Type{
-				Kind:  gengo.IdentKind,
-				Ident: typ.typeName(),
-			},
+			Type: *goType,
 		}
 	}
 	return &gengo.Field{

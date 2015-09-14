@@ -9,26 +9,50 @@ type Request struct {
 	APIVersion     int16
 	CorrelationID  int32
 	ClientID       string
-	RequestMessage RequestMessage
+	RequestMessage T
 }
 type RequestMessage T
 type Response struct {
 	CorrelationID   int32
-	ResponseMessage ResponseMessage
+	ResponseMessage T
 }
 type ResponseMessage T
 type MessageSet []OffsetMessage
 type OffsetMessage struct {
 	Offset       int64
-	SizedMessage SizedMessage
+	SizedMessage struct {
+		Size       int32
+		CRCMessage struct {
+			CRC     int32
+			Message struct {
+				MagicByte  int8
+				Attributes int8
+				Key        []byte
+				Value      []byte
+			}
+		}
+	}
 }
 type SizedMessage struct {
 	Size       int32
-	CRCMessage CRCMessage
+	CRCMessage struct {
+		CRC     int32
+		Message struct {
+			MagicByte  int8
+			Attributes int8
+			Key        []byte
+			Value      []byte
+		}
+	}
 }
 type CRCMessage struct {
 	CRC     int32
-	Message Message
+	Message struct {
+		MagicByte  int8
+		Attributes int8
+		Key        []byte
+		Value      []byte
+	}
 }
 type Message struct {
 	MagicByte  int8
@@ -55,8 +79,8 @@ type PartitionMetadata struct {
 	PartitionErrorCode int16
 	PartitionID        int32
 	Leader             int32
-	Replicas           int32
-	ISR                int32
+	Replicas           []int32
+	ISR                []int32
 }
 type ProduceRequest struct {
 	RequiredAcks       int16
@@ -69,16 +93,19 @@ type MessageSetInTopic struct {
 }
 type MessageSetInPartition struct {
 	Partition       int32
-	SizedMessageSet SizedMessageSet
+	SizedMessageSet struct {
+		Size       int32
+		MessageSet []OffsetMessage
+	}
 }
 type SizedMessageSet struct {
 	Size       int32
-	MessageSet MessageSet
+	MessageSet []OffsetMessage
 }
 type ProduceResponse []OffsetInTopic
 type OffsetInTopic struct {
 	TopicName          string
-	OffsetInPartitions OffsetInPartitions
+	OffsetInPartitions []OffsetInPartition
 }
 type OffsetInPartitions []OffsetInPartition
 type OffsetInPartition struct {
@@ -110,7 +137,10 @@ type FetchMessageSetInPartition struct {
 	Partition           int32
 	ErrorCode           int16
 	HighwaterMarkOffset int64
-	SizedMessageSet     SizedMessageSet
+	SizedMessageSet     struct {
+		Size       int32
+		MessageSet []OffsetMessage
+	}
 }
 type OffsetRequest struct {
 	ReplicaID    int32
