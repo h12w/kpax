@@ -1,5 +1,5 @@
-h12.me/kafka: a modular & idiomatic Kafka client in Go
-======================================================
+h12.me/kafka
+============
 
 `h12.me/kafka` is a modular and idiomatic Kafka client in Go:
 
