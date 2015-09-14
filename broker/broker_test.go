@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"testing"
@@ -14,7 +15,7 @@ func Test(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	broker := New(&BrokerConfig{
+	broker := New(&Config{
 		Conn:         conn,
 		SendChanSize: 10,
 		RecvChanSize: 10,
@@ -34,5 +35,10 @@ func Test(t *testing.T) {
 	if err := broker.Do(req, resp); err != nil {
 		t.Fatal(t)
 	}
-	fmt.Printf("%#v\n", resp.ResponseMessage)
+	fmt.Println(toJSON(resp.ResponseMessage))
+}
+
+func toJSON(v interface{}) string {
+	buf, _ := json.MarshalIndent(v, "", "    ")
+	return string(buf)
 }
