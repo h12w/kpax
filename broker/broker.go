@@ -12,7 +12,7 @@ var (
 	ErrCorrelationIDMismatch = errors.New("correlationID mismatch")
 )
 
-type BrokerConfig struct {
+type Config struct {
 	Conn         net.Conn
 	SendChanSize int
 	RecvChanSize int
@@ -31,7 +31,7 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func New(c *BrokerConfig) *Broker {
+func New(c *Config) *Broker {
 	b := &Broker{
 		conn:     c.Conn,
 		sendChan: make(chan *brokerJob, c.SendChanSize),
