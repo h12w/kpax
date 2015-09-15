@@ -9,9 +9,13 @@ import (
 	"h12.me/kafka/proto"
 )
 
+const (
+	kafkaAddr = "docker:32788"
+)
+
 func TestMeta(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32791",
+		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})
@@ -31,14 +35,14 @@ func TestMeta(t *testing.T) {
 		ResponseMessage: &proto.TopicMetadataResponse{},
 	}
 	if err := broker.Do(req, resp); err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
 	fmt.Println(toJSON(resp.ResponseMessage))
 }
 
 func TestConsumeAll(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32793",
+		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})
@@ -52,8 +56,8 @@ func TestConsumeAll(t *testing.T) {
 		ClientID:      "abc",
 		RequestMessage: &proto.FetchRequest{
 			ReplicaID:   -1,
-			MaxWaitTime: 1000,
-			MinBytes:    10,
+			MaxWaitTime: 0,
+			MinBytes:    0,
 			FetchOffsetInTopics: []proto.FetchOffsetInTopic{
 				{
 					TopicName: "test",
@@ -61,6 +65,7 @@ func TestConsumeAll(t *testing.T) {
 						{
 							Partition:   0,
 							FetchOffset: 0,
+							MaxBytes:    10000,
 						},
 					},
 				},
@@ -69,14 +74,21 @@ func TestConsumeAll(t *testing.T) {
 	}
 	resp := proto.FetchResponse{}
 	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
-	fmt.Println(toJSON(resp))
+	//fmt.Println(toJSON(resp))
+	for _, t := range resp {
+		for _, p := range t.FetchMessageSetInPartitions {
+			for _, m := range p.MessageSet {
+				fmt.Println(string(m.SizedMessage.CRCMessage.Message.Value))
+			}
+		}
+	}
 }
 
 func TestOffsetCommit(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32791",
+		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})
@@ -117,7 +129,7 @@ func TestOffsetCommit(t *testing.T) {
 
 func TestOffsetFetch(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32791",
+		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})
@@ -141,14 +153,14 @@ func TestOffsetFetch(t *testing.T) {
 	}
 	resp := proto.OffsetFetchResponse{}
 	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
 	fmt.Println(toJSON(resp))
 }
 
 func TestConsumerMeta(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32791",
+		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})
@@ -165,14 +177,14 @@ func TestConsumerMeta(t *testing.T) {
 	}
 	resp := proto.ConsumerMetadataResponse{}
 	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
 	fmt.Println(toJSON(resp))
 }
 
 func TestProduce(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32793",
+		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})

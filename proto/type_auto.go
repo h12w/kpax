@@ -27,7 +27,7 @@ type SizedMessage struct {
 	CRCMessage CRCMessage
 }
 type CRCMessage struct {
-	CRC     int32
+	CRC     uint32
 	Message Message
 }
 type Message struct {

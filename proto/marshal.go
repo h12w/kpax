@@ -1,8 +1,6 @@
 package proto
 
-import (
-	"io"
-)
+import "io"
 
 func (req *Request) Send(conn io.Writer) error {
 	var w Writer
@@ -79,6 +77,10 @@ func (w *Writer) WriteInt32(i int32) {
 	w.B = append(w.B, byte(i>>24), byte(i>>16), byte(i>>8), byte(i))
 }
 
+func (w *Writer) WriteUint32(i uint32) {
+	w.B = append(w.B, byte(i>>24), byte(i>>16), byte(i>>8), byte(i))
+}
+
 func (r *Reader) ReadInt32() int32 {
 	if r.Err != nil {
 		return 0
@@ -90,6 +92,19 @@ func (r *Reader) ReadInt32() int32 {
 	}
 	r.Offset += 4
 	return int32(r.B[i])<<24 | int32(r.B[i+1])<<16 | int32(r.B[i+2])<<8 | int32(r.B[i+3])
+}
+
+func (r *Reader) ReadUint32() uint32 {
+	if r.Err != nil {
+		return 0
+	}
+	i := r.Offset
+	if i+4 > len(r.B) {
+		r.Err = ErrUnexpectedEOF
+		return 0
+	}
+	r.Offset += 4
+	return uint32(r.B[i])<<24 | uint32(r.B[i+1])<<16 | uint32(r.B[i+2])<<8 | uint32(r.B[i+3])
 }
 
 func (w *Writer) WriteInt64(i int64) {

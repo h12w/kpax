@@ -18,7 +18,7 @@ MessageSet => <OffsetMessage>
     SizedMessage => Size CrcMessage
     Size => int32
     CrcMessage => Crc Message
-    Crc => int32
+    Crc => uint32
 
 Message => MagicByte Attributes Key Value
     MagicByte => int8

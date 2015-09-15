@@ -16,7 +16,7 @@ func (t *RequestOrResponse) Unmarshal(r *Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
 	t.T.Unmarshal(r)
-	if int(t.Size) != r.Offset-start {
+	if r.Err == nil && int(t.Size) != r.Offset-start {
 		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
 	}
 }
@@ -63,6 +63,9 @@ func (t *MessageSet) Unmarshal(r *Reader) {
 	for r.Offset-start < size {
 		var m OffsetMessage
 		m.Unmarshal(r)
+		if r.Err != nil {
+			return
+		}
 		*t = append(*t, m)
 	}
 }
@@ -89,24 +92,24 @@ func (t *SizedMessage) Unmarshal(r *Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
 	t.CRCMessage.Unmarshal(r)
-	if int(t.Size) != r.Offset-start {
+	if r.Err == nil && int(t.Size) != r.Offset-start {
 		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
 	}
 }
 
 func (t *CRCMessage) Marshal(w *Writer) {
 	offset := len(w.B)
-	w.WriteInt32(t.CRC)
+	w.WriteUint32(t.CRC)
 	start := len(w.B)
 	t.Message.Marshal(w)
 	w.SetUint32(offset, crc32.ChecksumIEEE(w.B[start:]))
 }
 
 func (t *CRCMessage) Unmarshal(r *Reader) {
-	t.CRC = r.ReadInt32()
+	t.CRC = r.ReadUint32()
 	start := r.Offset
 	t.Message.Unmarshal(r)
-	if uint32(t.CRC) != crc32.ChecksumIEEE(r.B[start:]) {
+	if r.Err == nil && t.CRC != crc32.ChecksumIEEE(r.B[start:r.Offset]) {
 		r.Err = newError("CRC mismatch")
 	}
 }
