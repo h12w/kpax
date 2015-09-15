@@ -51,8 +51,9 @@ func TestConsumeAll(t *testing.T) {
 		CorrelationID: 1,
 		ClientID:      "abc",
 		RequestMessage: &proto.FetchRequest{
-			ReplicaID: -1,
-			MinBytes:  10,
+			ReplicaID:   -1,
+			MaxWaitTime: 1000,
+			MinBytes:    10,
 			FetchOffsetInTopics: []proto.FetchOffsetInTopic{
 				{
 					TopicName: "test",
