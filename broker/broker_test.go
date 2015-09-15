@@ -88,7 +88,7 @@ func TestOffsetFetch(t *testing.T) {
 	}
 	req := &proto.Request{
 		APIKey:        proto.OffsetFetchRequestType,
-		APIVersion:    0,
+		APIVersion:    1,
 		CorrelationID: 1,
 		ClientID:      "abc",
 		RequestMessage: &proto.OffsetFetchRequest{
