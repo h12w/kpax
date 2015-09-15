@@ -36,6 +36,43 @@ func TestMeta(t *testing.T) {
 	fmt.Println(toJSON(resp.ResponseMessage))
 }
 
+func TestConsumeAll(t *testing.T) {
+	broker, err := New(&Config{
+		Addr:         "docker:32793",
+		SendQueueLen: 10,
+		RecvQueueLen: 10,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &proto.Request{
+		APIKey:        proto.FetchRequestType,
+		APIVersion:    0,
+		CorrelationID: 1,
+		ClientID:      "abc",
+		RequestMessage: &proto.FetchRequest{
+			ReplicaID: -1,
+			MinBytes:  10,
+			FetchOffsetInTopics: []proto.FetchOffsetInTopic{
+				{
+					TopicName: "test",
+					FetchOffsetInPartitions: []proto.FetchOffsetInPartition{
+						{
+							Partition:   0,
+							FetchOffset: 0,
+						},
+					},
+				},
+			},
+		},
+	}
+	resp := proto.FetchResponse{}
+	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+		t.Fatal(t)
+	}
+	fmt.Println(toJSON(resp))
+}
+
 func TestOffsetCommit(t *testing.T) {
 	broker, err := New(&Config{
 		Addr:         "docker:32791",
