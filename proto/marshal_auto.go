@@ -61,7 +61,9 @@ func (t *MessageSet) Unmarshal(r *Reader) {
 	size := int(r.ReadInt32())
 	start := r.Offset
 	for r.Offset-start < size {
-		(*t)[i].Unmarshal(r)
+		var m OffsetMessage
+		m.Unmarshal(r)
+		*t = append(*t, m)
 	}
 }
 
