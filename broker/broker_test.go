@@ -36,6 +36,102 @@ func TestMeta(t *testing.T) {
 	fmt.Println(toJSON(resp.ResponseMessage))
 }
 
+func TestOffsetCommit(t *testing.T) {
+	broker, err := New(&Config{
+		Addr:         "docker:32791",
+		SendQueueLen: 10,
+		RecvQueueLen: 10,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tm := time.Now()
+	req := &proto.Request{
+		APIKey:        proto.OffsetCommitRequestType,
+		APIVersion:    1,
+		CorrelationID: 1,
+		ClientID:      "abc",
+		RequestMessage: &proto.OffsetCommitRequestV1{
+			ConsumerGroupID:           "test-1",
+			ConsumerGroupGenerationID: 1,
+			ConsumerID:                "consumer-1",
+			OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
+				{
+					TopicName: "test",
+					OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
+						{
+							Partition: 0,
+							Offset:    1,
+							TimeStamp: tm.Unix(),
+							Metadata:  fmt.Sprint(tm.Unix()),
+						},
+					},
+				},
+			},
+		},
+	}
+	resp := proto.OffsetCommitResponse{}
+	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+		t.Fatal(t)
+	}
+	fmt.Println(toJSON(resp))
+}
+
+func TestOffsetFetch(t *testing.T) {
+	broker, err := New(&Config{
+		Addr:         "docker:32791",
+		SendQueueLen: 10,
+		RecvQueueLen: 10,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &proto.Request{
+		APIKey:        proto.OffsetFetchRequestType,
+		APIVersion:    0,
+		CorrelationID: 1,
+		ClientID:      "abc",
+		RequestMessage: &proto.OffsetFetchRequest{
+			ConsumerGroup: "test-1",
+			PartitionInTopics: []proto.PartitionInTopic{
+				{
+					TopicName:  "test",
+					Partitions: []int32{0, 1, 2},
+				},
+			},
+		},
+	}
+	resp := proto.OffsetFetchResponse{}
+	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+		t.Fatal(t)
+	}
+	fmt.Println(toJSON(resp))
+}
+
+func TestConsumerMeta(t *testing.T) {
+	broker, err := New(&Config{
+		Addr:         "docker:32791",
+		SendQueueLen: 10,
+		RecvQueueLen: 10,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	creq := proto.ConsumerMetadataRequest("test-1")
+	req := &proto.Request{
+		APIKey:         proto.ConsumerMetadataRequestType,
+		APIVersion:     0,
+		CorrelationID:  1,
+		ClientID:       "abc",
+		RequestMessage: &creq,
+	}
+	resp := proto.ConsumerMetadataResponse{}
+	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+		t.Fatal(t)
+	}
+	fmt.Println(toJSON(resp))
+}
+
 func TestProduce(t *testing.T) {
 	broker, err := New(&Config{
 		Addr:         "docker:32793",
