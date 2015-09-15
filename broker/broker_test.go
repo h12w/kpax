@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"h12.me/kafka/proto"
 )
@@ -37,13 +38,14 @@ func TestMeta(t *testing.T) {
 
 func TestProduce(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         "docker:32791",
+		Addr:         "docker:32793",
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	tm := time.Now()
 	req := &proto.Request{
 		APIKey:        proto.ProduceRequestType,
 		APIVersion:    0,
@@ -51,19 +53,19 @@ func TestProduce(t *testing.T) {
 		ClientID:      "abc",
 		RequestMessage: &proto.ProduceRequest{
 			RequiredAcks: 1,
-			Timeout:      p.config.Timeout,
+			Timeout:      0,
 			MessageSetInTopics: []proto.MessageSetInTopic{
 				{
-					TopicName: topic,
+					TopicName: "test",
 					MessageSetInPartitions: []proto.MessageSetInPartition{
 						{
-							Partition: partition,
+							Partition: 0,
 							MessageSet: []proto.OffsetMessage{
 								{
 									SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
 										Message: proto.Message{
-											Key:   key,
-											Value: value,
+											Key:   nil,
+											Value: []byte("hello " + tm.Format(time.RFC3339)),
 										},
 									}}},
 							},
@@ -74,13 +76,10 @@ func TestProduce(t *testing.T) {
 		},
 	}
 	resp := proto.ProduceResponse{}
-	if err := leader.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
-		return err
+	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+		t.Fatal(err)
 	}
-	if err := broker.Do(req, resp); err != nil {
-		t.Fatal(t)
-	}
-	fmt.Println(toJSON(resp.ResponseMessage))
+	fmt.Println(toJSON(resp))
 }
 
 func toJSON(v interface{}) string {
