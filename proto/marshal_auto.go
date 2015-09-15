@@ -48,15 +48,19 @@ func (t *Response) Unmarshal(r *Reader) {
 }
 
 func (t *MessageSet) Marshal(w *Writer) {
-	w.WriteInt32(int32(len((*t))))
+	offset := len(w.B)
+	w.WriteInt32(0)
+	start := len(w.B)
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
+	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
 func (t *MessageSet) Unmarshal(r *Reader) {
-	(*t) = make([]OffsetMessage, int(r.ReadInt32()))
-	for i := range *t {
+	size := int(r.ReadInt32())
+	start := r.Offset
+	for r.Offset-start < size {
 		(*t)[i].Unmarshal(r)
 	}
 }
@@ -249,29 +253,12 @@ func (t *MessageSetInTopic) Unmarshal(r *Reader) {
 
 func (t *MessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	t.SizedMessageSet.Marshal(w)
+	t.MessageSet.Marshal(w)
 }
 
 func (t *MessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	t.SizedMessageSet.Unmarshal(r)
-}
-
-func (t *SizedMessageSet) Marshal(w *Writer) {
-	offset := len(w.B)
-	w.WriteInt32(t.Size)
-	start := len(w.B)
-	t.MessageSet.Marshal(w)
-	w.SetInt32(offset, int32(len(w.B)-start))
-}
-
-func (t *SizedMessageSet) Unmarshal(r *Reader) {
-	t.Size = r.ReadInt32()
-	start := r.Offset
 	t.MessageSet.Unmarshal(r)
-	if int(t.Size) != r.Offset-start {
-		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
-	}
 }
 
 func (t *ProduceResponse) Marshal(w *Writer) {
@@ -398,14 +385,14 @@ func (t *FetchMessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt16(t.ErrorCode)
 	w.WriteInt64(t.HighwaterMarkOffset)
-	t.SizedMessageSet.Marshal(w)
+	t.MessageSet.Marshal(w)
 }
 
 func (t *FetchMessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode = r.ReadInt16()
 	t.HighwaterMarkOffset = r.ReadInt64()
-	t.SizedMessageSet.Unmarshal(r)
+	t.MessageSet.Unmarshal(r)
 }
 
 func (t *OffsetRequest) Marshal(w *Writer) {

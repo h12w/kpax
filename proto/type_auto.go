@@ -68,11 +68,7 @@ type MessageSetInTopic struct {
 	MessageSetInPartitions []MessageSetInPartition
 }
 type MessageSetInPartition struct {
-	Partition       int32
-	SizedMessageSet SizedMessageSet
-}
-type SizedMessageSet struct {
-	Size       int32
+	Partition  int32
 	MessageSet MessageSet
 }
 type ProduceResponse []OffsetInTopic
@@ -109,7 +105,7 @@ type FetchMessageSetInPartition struct {
 	Partition           int32
 	ErrorCode           int16
 	HighwaterMarkOffset int64
-	SizedMessageSet     SizedMessageSet
+	MessageSet          MessageSet
 }
 type OffsetRequest struct {
 	ReplicaID    int32

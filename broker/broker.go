@@ -18,7 +18,7 @@ type Config struct {
 	RecvChanSize int
 }
 
-type Broker struct {
+type B struct {
 	conn     net.Conn
 	cid      int32
 	sendChan chan *brokerJob
@@ -31,8 +31,8 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func New(c *Config) *Broker {
-	b := &Broker{
+func New(c *Config) *B {
+	b := &B{
 		conn:     c.Conn,
 		sendChan: make(chan *brokerJob, c.SendChanSize),
 		recvChan: make(chan *brokerJob, c.RecvChanSize),
@@ -42,7 +42,7 @@ func New(c *Config) *Broker {
 	return b
 }
 
-func (b *Broker) Do(req *proto.Request, resp *proto.Response) error {
+func (b *B) Do(req *proto.Request, resp *proto.Response) error {
 	req.CorrelationID = atomic.AddInt32(&b.cid, 1)
 	errChan := make(chan error)
 	b.sendChan <- &brokerJob{
@@ -53,7 +53,7 @@ func (b *Broker) Do(req *proto.Request, resp *proto.Response) error {
 	return <-errChan
 }
 
-func (b *Broker) sendLoop() {
+func (b *B) sendLoop() {
 	for job := range b.sendChan {
 		if err := job.req.Send(b.conn); err != nil {
 			job.errChan <- err
@@ -62,7 +62,7 @@ func (b *Broker) sendLoop() {
 	}
 }
 
-func (b *Broker) receiveLoop() {
+func (b *B) receiveLoop() {
 	for job := range b.recvChan {
 		if err := job.resp.Receive(b.conn); err != nil {
 			job.errChan <- err

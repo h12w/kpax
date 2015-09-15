@@ -12,7 +12,7 @@ Response => CorrelationId ResponseMessage
     CorrelationId => int32
     ResponseMessage => TopicMetadataResponse | ConsumerMetadataResponse | ProduceResponse | FetchResponse | OffsetResponse | OffsetCommitResponse | OffsetFetchResponse
 
-MessageSet => [OffsetMessage]
+MessageSet => <OffsetMessage>
     OffsetMessage => Offset SizedMessage
     Offset => int64
     SizedMessage => Size CrcMessage
@@ -45,8 +45,7 @@ TopicMetadataResponse => [Broker][TopicMetadata]
 
 ProduceRequest => RequiredAcks Timeout [MessageSetInTopic]
     MessageSetInTopic => TopicName [MessageSetInPartition]
-    MessageSetInPartition => Partition SizedMessageSet
-    SizedMessageSet => Size MessageSet
+    MessageSetInPartition => Partition MessageSet
     Size => int32
     RequiredAcks => int16
     Timeout => int32
@@ -73,7 +72,7 @@ FetchRequest => ReplicaId MaxWaitTime MinBytes [FetchOffsetInTopic]
 
 FetchResponse => [FetchMessageSetInTopic]
     FetchMessageSetInTopic => TopicName [FetchMessageSetInPartition]
-    FetchMessageSetInPartition => Partition ErrorCode HighwaterMarkOffset SizedMessageSet
+    FetchMessageSetInPartition => Partition ErrorCode HighwaterMarkOffset MessageSet
     TopicName => string
     Partition => int32
     ErrorCode => int16
