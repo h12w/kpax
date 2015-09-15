@@ -9,3 +9,9 @@ const (
 	OffsetFetchRequestType      = 9
 	ConsumerMetadataRequestType = 10
 )
+
+const (
+	AckNone  = 0
+	AckLocal = 1
+	AckAll   = -1
+)

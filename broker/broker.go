@@ -13,12 +13,13 @@ var (
 )
 
 type Config struct {
-	Conn         net.Conn
-	SendChanSize int
-	RecvChanSize int
+	Addr         string
+	SendQueueLen int
+	RecvQueueLen int
 }
 
 type B struct {
+	config   *Config
 	conn     net.Conn
 	cid      int32
 	sendChan chan *brokerJob
@@ -31,15 +32,24 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func New(c *Config) *B {
+func New(config *Config) (*B, error) {
+	conn, err := net.Dial("tcp", config.Addr)
+	if err != nil {
+		return nil, err
+	}
 	b := &B{
-		conn:     c.Conn,
-		sendChan: make(chan *brokerJob, c.SendChanSize),
-		recvChan: make(chan *brokerJob, c.RecvChanSize),
+		config:   config,
+		conn:     conn,
+		sendChan: make(chan *brokerJob, config.SendQueueLen),
+		recvChan: make(chan *brokerJob, config.RecvQueueLen),
 	}
 	go b.sendLoop()
 	go b.receiveLoop()
-	return b
+	return b, nil
+}
+
+func (b *B) Close() {
+	b.conn.Close()
 }
 
 func (b *B) Do(req *proto.Request, resp *proto.Response) error {
@@ -66,7 +76,6 @@ func (b *B) receiveLoop() {
 	for job := range b.recvChan {
 		if err := job.resp.Receive(b.conn); err != nil {
 			job.errChan <- err
-			continue
 		}
 		if job.resp.CorrelationID != job.req.CorrelationID {
 			job.errChan <- ErrCorrelationIDMismatch

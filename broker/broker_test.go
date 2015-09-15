@@ -3,23 +3,20 @@ package broker
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"testing"
 
 	"h12.me/kafka/proto"
 )
 
-func Test(t *testing.T) {
-	conn, err := net.Dial("tcp", "docker:32791")
+func TestMeta(t *testing.T) {
+	broker, err := New(&Config{
+		Addr:         "docker:32791",
+		SendQueueLen: 10,
+		RecvQueueLen: 10,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
-	broker := New(&Config{
-		Conn:         conn,
-		SendChanSize: 10,
-		RecvChanSize: 10,
-	})
 	req := &proto.Request{
 		APIKey:        proto.TopicMetadataRequestType,
 		APIVersion:    0,
@@ -31,6 +28,54 @@ func Test(t *testing.T) {
 	}
 	resp := &proto.Response{
 		ResponseMessage: &proto.TopicMetadataResponse{},
+	}
+	if err := broker.Do(req, resp); err != nil {
+		t.Fatal(t)
+	}
+	fmt.Println(toJSON(resp.ResponseMessage))
+}
+
+func TestProduce(t *testing.T) {
+	broker, err := New(&Config{
+		Addr:         "docker:32791",
+		SendQueueLen: 10,
+		RecvQueueLen: 10,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &proto.Request{
+		APIKey:        proto.ProduceRequestType,
+		APIVersion:    0,
+		CorrelationID: 1,
+		ClientID:      "abc",
+		RequestMessage: &proto.ProduceRequest{
+			RequiredAcks: 1,
+			Timeout:      p.config.Timeout,
+			MessageSetInTopics: []proto.MessageSetInTopic{
+				{
+					TopicName: topic,
+					MessageSetInPartitions: []proto.MessageSetInPartition{
+						{
+							Partition: partition,
+							MessageSet: []proto.OffsetMessage{
+								{
+									SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
+										Message: proto.Message{
+											Key:   key,
+											Value: value,
+										},
+									}}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	resp := proto.ProduceResponse{}
+	if err := leader.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+		return err
 	}
 	if err := broker.Do(req, resp); err != nil {
 		t.Fatal(t)
