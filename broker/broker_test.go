@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	kafkaAddr = "docker:32788"
+	kafkaAddr = "docker:32793"
 )
 
 func TestMeta(t *testing.T) {
@@ -76,7 +76,7 @@ func TestConsumeAll(t *testing.T) {
 	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
 		t.Fatal(err)
 	}
-	//fmt.Println(toJSON(resp))
+	fmt.Println(toJSON(resp))
 	for _, t := range resp {
 		for _, p := range t.FetchMessageSetInPartitions {
 			for _, m := range p.MessageSet {
