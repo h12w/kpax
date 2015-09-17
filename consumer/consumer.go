@@ -38,20 +38,15 @@ func New(config *Config) (*C, error) {
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	req := &proto.Request{
-		APIKey:     proto.OffsetFetchRequestType,
-		APIVersion: 1,
-		ClientID:   c.config.Client.ClientID,
-		RequestMessage: &proto.OffsetFetchRequest{
-			ConsumerGroup: consumerGroup,
-			PartitionInTopics: []proto.PartitionInTopic{
-				{
-					TopicName:  topic,
-					Partitions: []int32{partition},
-				},
+	req := c.client.NewRequest(&proto.OffsetFetchRequestV1{
+		ConsumerGroup: consumerGroup,
+		PartitionInTopics: []proto.PartitionInTopic{
+			{
+				TopicName:  topic,
+				Partitions: []int32{partition},
 			},
 		},
-	}
+	})
 	resp := proto.OffsetFetchResponse{}
 	broker, err := c.client.Coordinator(topic, consumerGroup)
 	if err != nil {
@@ -76,29 +71,23 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byte, err error) {
-	req := &proto.Request{
-		APIKey:        proto.FetchRequestType,
-		APIVersion:    0,
-		CorrelationID: 1,
-		ClientID:      c.config.Client.ClientID,
-		RequestMessage: &proto.FetchRequest{
-			ReplicaID:   -1,
-			MaxWaitTime: c.config.MaxWaitTime,
-			MinBytes:    c.config.MinBytes,
-			FetchOffsetInTopics: []proto.FetchOffsetInTopic{
-				{
-					TopicName: topic,
-					FetchOffsetInPartitions: []proto.FetchOffsetInPartition{
-						{
-							Partition:   partition,
-							FetchOffset: offset,
-							MaxBytes:    c.config.MaxBytes,
-						},
+	req := c.client.NewRequest(&proto.FetchRequest{
+		ReplicaID:   -1,
+		MaxWaitTime: c.config.MaxWaitTime,
+		MinBytes:    c.config.MinBytes,
+		FetchOffsetInTopics: []proto.FetchOffsetInTopic{
+			{
+				TopicName: topic,
+				FetchOffsetInPartitions: []proto.FetchOffsetInPartition{
+					{
+						Partition:   partition,
+						FetchOffset: offset,
+						MaxBytes:    c.config.MaxBytes,
 					},
 				},
 			},
 		},
-	}
+	})
 	resp := proto.FetchResponse{}
 	broker, err := c.client.Leader(topic, partition)
 	if err != nil {
@@ -135,26 +124,21 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	req := &proto.Request{
-		APIKey:     proto.OffsetCommitRequestType,
-		APIVersion: 1,
-		ClientID:   c.config.Client.ClientID,
-		RequestMessage: &proto.OffsetCommitRequestV1{
-			ConsumerGroupID: consumerGroup,
-			OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
-				{
-					TopicName: topic,
-					OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
-						{
-							Partition: partition,
-							Offset:    offset,
-							TimeStamp: time.Now().Unix(),
-						},
+	req := c.client.NewRequest(&proto.OffsetCommitRequestV1{
+		ConsumerGroupID: consumerGroup,
+		OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
+			{
+				TopicName: topic,
+				OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
+					{
+						Partition: partition,
+						Offset:    offset,
+						TimeStamp: time.Now().Unix(),
 					},
 				},
 			},
 		},
-	}
+	})
 	resp := proto.OffsetCommitResponse{}
 	broker, err := c.client.Coordinator(topic, consumerGroup)
 	if err != nil {

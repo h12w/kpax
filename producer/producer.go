@@ -52,35 +52,29 @@ func (p *P) Produce(topic string, key, value []byte) error {
 	if err != nil {
 		return err
 	}
-	req := &proto.Request{
-		APIKey:        proto.ProduceRequestType,
-		APIVersion:    0,
-		CorrelationID: 1,
-		ClientID:      p.config.Client.ClientID,
-		RequestMessage: &proto.ProduceRequest{
-			RequiredAcks: p.config.RequiredAcks,
-			Timeout:      p.config.Timeout,
-			MessageSetInTopics: []proto.MessageSetInTopic{
-				{
-					TopicName: topic,
-					MessageSetInPartitions: []proto.MessageSetInPartition{
-						{
-							Partition: partition,
-							MessageSet: []proto.OffsetMessage{
-								{
-									SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
-										Message: proto.Message{
-											Key:   key,
-											Value: value,
-										},
-									}}},
-							},
+	req := p.client.NewRequest(&proto.ProduceRequest{
+		RequiredAcks: p.config.RequiredAcks,
+		Timeout:      p.config.Timeout,
+		MessageSetInTopics: []proto.MessageSetInTopic{
+			{
+				TopicName: topic,
+				MessageSetInPartitions: []proto.MessageSetInPartition{
+					{
+						Partition: partition,
+						MessageSet: []proto.OffsetMessage{
+							{
+								SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
+									Message: proto.Message{
+										Key:   key,
+										Value: value,
+									},
+								}}},
 						},
 					},
 				},
 			},
 		},
-	}
+	})
 	resp := proto.ProduceResponse{}
 	if err := leader.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
 		return err

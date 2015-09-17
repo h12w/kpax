@@ -47,6 +47,15 @@ func New(config *Config) (*C, error) {
 	return c, nil
 }
 
+func (c *C) NewRequest(req proto.RequestMessage) *proto.Request {
+	return &proto.Request{
+		APIKey:         req.APIKey(),
+		APIVersion:     req.APIVersion(),
+		ClientID:       c.config.ClientID,
+		RequestMessage: req,
+	}
+}
+
 func (c *C) Partitions(topic string) ([]int32, error) {
 	if partitions, ok := c.topicPartitions[topic]; ok {
 		return partitions, nil

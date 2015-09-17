@@ -17,16 +17,23 @@ func main() {
 		fmt.Println("gof: from BNF to Go funcs")
 		return
 	}
+	bnfFile := "bnf.txt"
 	switch os.Args[1] {
 	case "bnf":
 		fromHTMLToBNF()
 	case "bnfj":
-		wipro.FromBNFToJSON()
+		bnf := wipro.ParseBNF(bnfFile)
+		fmt.Println(bnf.JSON())
 	case "goj":
-		wipro.FromBNFToGoJSON()
+		bnf := wipro.ParseBNF(bnfFile)
+		fmt.Println(bnf.GoTypes().JSON())
 	case "go":
-		wipro.FromBNFToGo()
+		bnf := wipro.ParseBNF(bnfFile)
+		goTypes := bnf.GoTypes().RemoveDecl("RequestMessage")
+		goTypes.Fprint(os.Stdout)
 	case "gof":
-		wipro.FromBNFToGoFuncs()
+		bnf := wipro.ParseBNF(bnfFile)
+		goTypes := bnf.GoTypes()
+		goTypes.GoFuncs(os.Stdout)
 	}
 }

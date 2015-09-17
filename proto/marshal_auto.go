@@ -8,14 +8,14 @@ func (t *RequestOrResponse) Marshal(w *Writer) {
 	offset := len(w.B)
 	w.WriteInt32(t.Size)
 	start := len(w.B)
-	t.T.Marshal(w)
+	t.M.Marshal(w)
 	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
 func (t *RequestOrResponse) Unmarshal(r *Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
-	t.T.Unmarshal(r)
+	t.M.Unmarshal(r)
 	if r.Err == nil && int(t.Size) != r.Offset-start {
 		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
 	}
@@ -698,7 +698,7 @@ func (t *ErrorInPartition) Unmarshal(r *Reader) {
 	t.ErrorCode = r.ReadInt16()
 }
 
-func (t *OffsetFetchRequest) Marshal(w *Writer) {
+func (t *OffsetFetchRequestV0) Marshal(w *Writer) {
 	w.WriteString(string(t.ConsumerGroup))
 	w.WriteInt32(int32(len(t.PartitionInTopics)))
 	for i := range t.PartitionInTopics {
@@ -706,7 +706,7 @@ func (t *OffsetFetchRequest) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetFetchRequest) Unmarshal(r *Reader) {
+func (t *OffsetFetchRequestV0) Unmarshal(r *Reader) {
 	t.ConsumerGroup = string(r.ReadString())
 	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
 	for i := range t.PartitionInTopics {
@@ -727,6 +727,38 @@ func (t *PartitionInTopic) Unmarshal(r *Reader) {
 	t.Partitions = make([]int32, int(r.ReadInt32()))
 	for i := range t.Partitions {
 		t.Partitions[i] = r.ReadInt32()
+	}
+}
+
+func (t *OffsetFetchRequestV1) Marshal(w *Writer) {
+	w.WriteString(string(t.ConsumerGroup))
+	w.WriteInt32(int32(len(t.PartitionInTopics)))
+	for i := range t.PartitionInTopics {
+		t.PartitionInTopics[i].Marshal(w)
+	}
+}
+
+func (t *OffsetFetchRequestV1) Unmarshal(r *Reader) {
+	t.ConsumerGroup = string(r.ReadString())
+	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
+	for i := range t.PartitionInTopics {
+		t.PartitionInTopics[i].Unmarshal(r)
+	}
+}
+
+func (t *OffsetFetchRequestV2) Marshal(w *Writer) {
+	w.WriteString(string(t.ConsumerGroup))
+	w.WriteInt32(int32(len(t.PartitionInTopics)))
+	for i := range t.PartitionInTopics {
+		t.PartitionInTopics[i].Marshal(w)
+	}
+}
+
+func (t *OffsetFetchRequestV2) Unmarshal(r *Reader) {
+	t.ConsumerGroup = string(r.ReadString())
+	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
+	for i := range t.PartitionInTopics {
+		t.PartitionInTopics[i].Unmarshal(r)
 	}
 }
 

@@ -143,8 +143,18 @@ OffsetCommitResponse => [ErrorInTopic]
     Partition => int32
     ErrorCode => int16
 
-OffsetFetchRequest => ConsumerGroup [PartitionInTopic]
+OffsetFetchRequestV0 => ConsumerGroup [PartitionInTopic]
     PartitionInTopic => TopicName [Partition]
+    ConsumerGroup => string
+    TopicName => string
+    Partition => int32
+
+OffsetFetchRequestV1 => ConsumerGroup [PartitionInTopic]
+    ConsumerGroup => string
+    TopicName => string
+    Partition => int32
+
+OffsetFetchRequestV2 => ConsumerGroup [PartitionInTopic]
     ConsumerGroup => string
     TopicName => string
     Partition => int32

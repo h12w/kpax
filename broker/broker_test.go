@@ -18,6 +18,7 @@ func TestMeta(t *testing.T) {
 		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
+		Timeout:      time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -45,6 +46,7 @@ func TestConsumeAll(t *testing.T) {
 		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
+		Timeout:      time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -91,6 +93,7 @@ func TestOffsetCommit(t *testing.T) {
 		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
+		Timeout:      time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -132,6 +135,7 @@ func TestOffsetFetch(t *testing.T) {
 		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
+		Timeout:      time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -141,7 +145,7 @@ func TestOffsetFetch(t *testing.T) {
 		APIVersion:    1,
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.OffsetFetchRequest{
+		RequestMessage: &proto.OffsetFetchRequestV1{
 			ConsumerGroup: "test-1",
 			PartitionInTopics: []proto.PartitionInTopic{
 				{
@@ -163,6 +167,7 @@ func TestConsumerMeta(t *testing.T) {
 		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
+		Timeout:      time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -187,6 +192,7 @@ func TestProduce(t *testing.T) {
 		Addr:         kafkaAddr,
 		SendQueueLen: 10,
 		RecvQueueLen: 10,
+		Timeout:      time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)

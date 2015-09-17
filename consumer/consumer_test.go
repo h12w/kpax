@@ -3,6 +3,7 @@ package consumer
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"h12.me/kafka/broker"
 	"h12.me/kafka/client"
@@ -51,6 +52,7 @@ func getConsumer(t *testing.T) *C {
 			BrokerConfig: broker.Config{
 				SendQueueLen: 10,
 				RecvQueueLen: 10,
+				Timeout:      time.Second,
 			},
 			ClientID: "abc",
 		},

@@ -31,8 +31,4 @@ func TestProducer(t *testing.T) {
 	if err := producer.Produce("test", nil, []byte("hello "+time.Now().Format(time.RFC3339))); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(5 * time.Second)
-	if err := producer.Produce("test", nil, []byte("hello "+time.Now().Format(time.RFC3339))); err != nil {
-		t.Fatal(err)
-	}
 }

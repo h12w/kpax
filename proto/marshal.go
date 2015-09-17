@@ -4,7 +4,7 @@ import "io"
 
 func (req *Request) Send(conn io.Writer) error {
 	var w Writer
-	(&RequestOrResponse{T: req}).Marshal(&w)
+	(&RequestOrResponse{M: req}).Marshal(&w)
 	_, err := conn.Write(w.B)
 	return err
 }
@@ -20,11 +20,11 @@ func (resp *Response) Receive(conn io.Reader) error {
 		return err
 	}
 	r.Reset()
-	(&RequestOrResponse{T: resp}).Unmarshal(&r)
+	(&RequestOrResponse{M: resp}).Unmarshal(&r)
 	return r.Err
 }
 
-type T interface {
+type M interface {
 	Marshal(*Writer)
 	Unmarshal(*Reader)
 }

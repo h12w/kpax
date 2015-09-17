@@ -2,7 +2,7 @@ package proto
 
 type RequestOrResponse struct {
 	Size int32
-	T
+	M
 }
 type Request struct {
 	APIKey         int16
@@ -11,12 +11,11 @@ type Request struct {
 	ClientID       string
 	RequestMessage RequestMessage
 }
-type RequestMessage T
 type Response struct {
 	CorrelationID   int32
 	ResponseMessage ResponseMessage
 }
-type ResponseMessage T
+type ResponseMessage M
 type MessageSet []OffsetMessage
 type OffsetMessage struct {
 	Offset       int64
@@ -191,13 +190,21 @@ type ErrorInPartition struct {
 	Partition int32
 	ErrorCode int16
 }
-type OffsetFetchRequest struct {
+type OffsetFetchRequestV0 struct {
 	ConsumerGroup     string
 	PartitionInTopics []PartitionInTopic
 }
 type PartitionInTopic struct {
 	TopicName  string
 	Partitions []int32
+}
+type OffsetFetchRequestV1 struct {
+	ConsumerGroup     string
+	PartitionInTopics []PartitionInTopic
+}
+type OffsetFetchRequestV2 struct {
+	ConsumerGroup     string
+	PartitionInTopics []PartitionInTopic
 }
 type OffsetFetchResponse []OffsetMetadataInTopic
 type OffsetMetadataInTopic struct {
