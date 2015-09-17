@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"sync/atomic"
+	"time"
 
 	"h12.me/kafka/proto"
 )
@@ -16,6 +17,7 @@ type Config struct {
 	Addr         string
 	SendQueueLen int
 	RecvQueueLen int
+	Timeout      time.Duration
 }
 
 type B struct {
@@ -65,6 +67,7 @@ func (b *B) Do(req *proto.Request, resp *proto.Response) error {
 
 func (b *B) sendLoop() {
 	for job := range b.sendChan {
+		b.conn.SetWriteDeadline(time.Now().Add(b.config.Timeout))
 		if err := job.req.Send(b.conn); err != nil {
 			job.errChan <- err
 		}
@@ -74,6 +77,7 @@ func (b *B) sendLoop() {
 
 func (b *B) receiveLoop() {
 	for job := range b.recvChan {
+		b.conn.SetReadDeadline(time.Now().Add(b.config.Timeout))
 		if err := job.resp.Receive(b.conn); err != nil {
 			job.errChan <- err
 		}

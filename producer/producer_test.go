@@ -19,6 +19,7 @@ func TestProducer(t *testing.T) {
 			BrokerConfig: broker.Config{
 				SendQueueLen: 10,
 				RecvQueueLen: 10,
+				Timeout:      time.Second,
 			},
 			ClientID: "abc",
 		},
@@ -27,8 +28,11 @@ func TestProducer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tm := time.Now()
-	if err := producer.Produce("test", nil, []byte("hello "+tm.Format(time.RFC3339))); err != nil {
+	if err := producer.Produce("test", nil, []byte("hello "+time.Now().Format(time.RFC3339))); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+	if err := producer.Produce("test", nil, []byte("hello "+time.Now().Format(time.RFC3339))); err != nil {
 		t.Fatal(err)
 	}
 }
