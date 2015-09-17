@@ -125,8 +125,8 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		if _, ok := c.brokers[b.NodeID]; !ok {
 			cfg := c.config.BrokerConfig
 			cfg.Addr = fmt.Sprintf("%s:%d", b.Host, b.Port)
-			broker, err := broker.New(&cfg)
-			if err == nil {
+			broker := broker.New(&cfg)
+			if err := broker.Connect(); err == nil {
 				c.brokers[b.NodeID] = broker
 			} else {
 				// TODO: log
@@ -199,8 +199,8 @@ func (c *C) getBootstrapBroker() (*broker.B, error) {
 	for _, addr := range c.config.Brokers {
 		cfg := c.config.BrokerConfig
 		cfg.Addr = addr
-		broker, err := broker.New(&cfg)
-		if err == nil {
+		broker := broker.New(&cfg)
+		if err := broker.Connect(); err == nil {
 			return broker, nil
 		}
 	}

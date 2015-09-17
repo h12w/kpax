@@ -64,6 +64,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 				if p.ErrorCode != 0 {
 					return 0, fmt.Errorf("offset not exist %d", p.ErrorCode)
 				}
+				fmt.Println(p.Metadata)
 				return p.Offset, nil
 			}
 		}
@@ -134,7 +135,8 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 					{
 						Partition: partition,
 						Offset:    offset,
-						TimeStamp: time.Now().Add(c.config.OffsetRetention).Unix(),
+						// TimeStamp in milliseconds
+						TimeStamp: time.Now().Add(c.config.OffsetRetention).Unix() * 1000,
 					},
 				},
 			},

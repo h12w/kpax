@@ -15,7 +15,7 @@ const (
 
 func TestGetOffset(t *testing.T) {
 	consumer := getConsumer(t)
-	offset, err := consumer.Offset("test", 0, "test-consumergroup-a")
+	offset, err := consumer.Offset("test", 0, "test-consumergroup-b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestConsumeAll(t *testing.T) {
 
 func TestCommitOffset(t *testing.T) {
 	consumer := getConsumer(t)
-	err := consumer.Commit("test", 0, "test-consumergroup-a", 0)
+	err := consumer.Commit("test", 0, "test-consumergroup-b", 2)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,37 +30,50 @@ type B struct {
 	recvChan chan *brokerJob
 	mu       sync.Mutex
 }
-
 type brokerJob struct {
 	req     *proto.Request
 	resp    *proto.Response
 	errChan chan error
 }
 
-func New(config *Config) (*B, error) {
-	conn, err := net.Dial("tcp", config.Addr)
-	if err != nil {
-		return nil, err
-	}
-	b := &B{
+func New(config *Config) *B {
+	return &B{
 		config:   config,
-		conn:     conn,
 		sendChan: make(chan *brokerJob),
 		recvChan: make(chan *brokerJob, config.QueueLen),
 	}
+}
+
+func (b *B) Connected() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.conn != nil
+}
+
+func (b *B) Connect() error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.conn != nil {
+		panic("already connected")
+	}
+	var err error
+	b.conn, err = net.Dial("tcp", b.config.Addr)
+	if err != nil {
+		return err
+	}
 	go b.sendLoop()
 	go b.receiveLoop()
-	return b, nil
+	return nil
 }
 
 func (b *B) Close() {
 	b.mu.Lock()
+	defer b.mu.Unlock()
 	if !b.closed {
 		b.closed = true
 		close(b.sendChan)
 		b.conn.Close()
 	}
-	b.mu.Unlock()
 }
 
 func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
