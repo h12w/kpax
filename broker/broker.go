@@ -16,9 +16,9 @@ var (
 )
 
 type Config struct {
-	Addr         string
-	RecvQueueLen int
-	Timeout      time.Duration
+	Addr     string
+	QueueLen int
+	Timeout  time.Duration
 }
 
 type B struct {
@@ -46,7 +46,7 @@ func New(config *Config) (*B, error) {
 		config:   config,
 		conn:     conn,
 		sendChan: make(chan *brokerJob),
-		recvChan: make(chan *brokerJob, config.RecvQueueLen),
+		recvChan: make(chan *brokerJob, config.QueueLen),
 	}
 	go b.sendLoop()
 	go b.receiveLoop()

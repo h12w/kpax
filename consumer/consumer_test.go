@@ -50,8 +50,8 @@ func getConsumer(t *testing.T) *C {
 				"docker:32793",
 			},
 			BrokerConfig: broker.Config{
-				RecvQueueLen: 10,
-				Timeout:      time.Second,
+				QueueLen: 10,
+				Timeout:  time.Second,
 			},
 			ClientID: "abc",
 		},

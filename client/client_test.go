@@ -8,18 +8,20 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	client := New(&Config{
+	client, err := New(&Config{
 		Brokers: []string{
 			"docker:32791",
 			"docker:32792",
 			"docker:32793",
 		},
 		BrokerConfig: broker.Config{
-			SendQueueLen: 10,
-			RecvQueueLen: 10,
+			QueueLen: 10,
 		},
 		ClientID: "abc",
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	partitions, err := client.Partitions("test")
 	if err != nil {
 		t.Fatal(err)

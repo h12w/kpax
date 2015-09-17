@@ -15,9 +15,9 @@ const (
 
 func TestMeta(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         kafkaAddr,
-		RecvQueueLen: 10,
-		Timeout:      time.Second,
+		Addr:     kafkaAddr,
+		QueueLen: 10,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -40,9 +40,9 @@ func TestMeta(t *testing.T) {
 
 func TestConsumeAll(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         kafkaAddr,
-		RecvQueueLen: 10,
-		Timeout:      time.Second,
+		Addr:     kafkaAddr,
+		QueueLen: 10,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -86,9 +86,9 @@ func TestConsumeAll(t *testing.T) {
 
 func TestOffsetCommit(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         kafkaAddr,
-		RecvQueueLen: 10,
-		Timeout:      time.Second,
+		Addr:     kafkaAddr,
+		QueueLen: 10,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -127,9 +127,9 @@ func TestOffsetCommit(t *testing.T) {
 
 func TestOffsetFetch(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         kafkaAddr,
-		RecvQueueLen: 10,
-		Timeout:      time.Second,
+		Addr:     kafkaAddr,
+		QueueLen: 10,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -158,9 +158,9 @@ func TestOffsetFetch(t *testing.T) {
 
 func TestConsumerMeta(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         kafkaAddr,
-		RecvQueueLen: 10,
-		Timeout:      time.Second,
+		Addr:     kafkaAddr,
+		QueueLen: 10,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -182,9 +182,9 @@ func TestConsumerMeta(t *testing.T) {
 
 func TestProduce(t *testing.T) {
 	broker, err := New(&Config{
-		Addr:         kafkaAddr,
-		RecvQueueLen: 10,
-		Timeout:      time.Second,
+		Addr:     kafkaAddr,
+		QueueLen: 10,
+		Timeout:  time.Second,
 	})
 	if err != nil {
 		t.Fatal(err)
