@@ -19,7 +19,7 @@ func TestGetOffset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("offset: ", offset)
+	fmt.Println("get offset: ", offset)
 }
 
 func TestConsumeAll(t *testing.T) {
@@ -50,14 +50,14 @@ func getConsumer(t *testing.T) *C {
 				"docker:32793",
 			},
 			BrokerConfig: broker.Config{
-				SendQueueLen: 10,
 				RecvQueueLen: 10,
 				Timeout:      time.Second,
 			},
 			ClientID: "abc",
 		},
-		MinBytes: 0,
-		MaxBytes: 9999,
+		MinBytes:        0,
+		MaxBytes:        9999,
+		OffsetRetention: 7 * 24 * time.Hour,
 	})
 	if err != nil {
 		t.Fatal(err)

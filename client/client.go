@@ -170,14 +170,9 @@ func (c *C) getTopicMetadata(topic string) (*proto.TopicMetadataResponse, error)
 	if needClosing {
 		defer broker.Close()
 	}
-	req := &proto.Request{
-		APIKey:         proto.TopicMetadataRequestType,
-		APIVersion:     0,
-		ClientID:       c.config.ClientID,
-		RequestMessage: &proto.TopicMetadataRequest{topic},
-	}
+	req := c.NewRequest(&proto.TopicMetadataRequest{topic})
 	resp := &proto.TopicMetadataResponse{}
-	if err := broker.Do(req, &proto.Response{ResponseMessage: resp}); err != nil {
+	if err := broker.Do(req, resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -192,14 +187,9 @@ func (c *C) getConsumerMetadata(consumerGroup string) (*proto.ConsumerMetadataRe
 		defer broker.Close()
 	}
 	creq := proto.ConsumerMetadataRequest(consumerGroup)
-	req := &proto.Request{
-		APIKey:         proto.ConsumerMetadataRequestType,
-		APIVersion:     0,
-		ClientID:       c.config.ClientID,
-		RequestMessage: &creq,
-	}
+	req := c.NewRequest(&creq)
 	resp := proto.ConsumerMetadataResponse{}
-	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+	if err := broker.Do(req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

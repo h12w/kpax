@@ -15,7 +15,6 @@ var (
 
 type Config struct {
 	Addr         string
-	SendQueueLen int
 	RecvQueueLen int
 	Timeout      time.Duration
 }
@@ -42,7 +41,7 @@ func New(config *Config) (*B, error) {
 	b := &B{
 		config:   config,
 		conn:     conn,
-		sendChan: make(chan *brokerJob, config.SendQueueLen),
+		sendChan: make(chan *brokerJob),
 		recvChan: make(chan *brokerJob, config.RecvQueueLen),
 	}
 	go b.sendLoop()
@@ -54,12 +53,12 @@ func (b *B) Close() {
 	b.conn.Close()
 }
 
-func (b *B) Do(req *proto.Request, resp *proto.Response) error {
+func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
 	req.CorrelationID = atomic.AddInt32(&b.cid, 1)
 	errChan := make(chan error)
 	b.sendChan <- &brokerJob{
 		req:     req,
-		resp:    resp,
+		resp:    &proto.Response{ResponseMessage: resp},
 		errChan: errChan,
 	}
 	return <-errChan

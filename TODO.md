@@ -7,8 +7,12 @@ Design principle
 * Stateless
 * fail fast
   - timeout (SetDealine)
+  - release resources
 * fault tolerance:
-  - automatic handling of broken connections
-  - leader down
+  - try again for broken connection (maxBadConnRetries=2)
+  - recover without restart
+      - broken connections
+      - leader down
+  - retry
   - partition expand
   - graceful shutdown

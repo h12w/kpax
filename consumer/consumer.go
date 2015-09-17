@@ -15,10 +15,11 @@ var (
 )
 
 type Config struct {
-	Client      client.Config
-	MaxWaitTime int32
-	MinBytes    int32
-	MaxBytes    int32
+	Client          client.Config
+	MaxWaitTime     int32
+	MinBytes        int32
+	MaxBytes        int32
+	OffsetRetention time.Duration
 }
 
 type C struct {
@@ -52,7 +53,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 	if err != nil {
 		return 0, err
 	}
-	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+	if err := broker.Do(req, &resp); err != nil {
 		return 0, err
 	}
 	for i := range resp {
@@ -93,7 +94,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 	if err != nil {
 		return nil, err
 	}
-	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+	if err := broker.Do(req, &resp); err != nil {
 		return nil, err
 	}
 	for i := range resp {
@@ -133,7 +134,7 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 					{
 						Partition: partition,
 						Offset:    offset,
-						TimeStamp: time.Now().Unix(),
+						TimeStamp: time.Now().Add(c.config.OffsetRetention).Unix(),
 					},
 				},
 			},
@@ -144,7 +145,7 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 	if err != nil {
 		return err
 	}
-	if err := broker.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+	if err := broker.Do(req, &resp); err != nil {
 		return err
 	}
 	for i := range resp {

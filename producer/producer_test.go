@@ -17,7 +17,6 @@ func TestProducer(t *testing.T) {
 				"docker:32793",
 			},
 			BrokerConfig: broker.Config{
-				SendQueueLen: 10,
 				RecvQueueLen: 10,
 				Timeout:      time.Second,
 			},

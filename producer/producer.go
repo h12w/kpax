@@ -76,7 +76,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		},
 	})
 	resp := proto.ProduceResponse{}
-	if err := leader.Do(req, &proto.Response{ResponseMessage: &resp}); err != nil {
+	if err := leader.Do(req, &resp); err != nil {
 		return err
 	}
 	for i := range resp {
