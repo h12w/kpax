@@ -3,6 +3,7 @@ package broker
 import (
 	"errors"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 var (
 	ErrCorrelationIDMismatch = errors.New("correlationID mismatch")
+	ErrBrokerClosed          = errors.New("broker is closed")
 )
 
 type Config struct {
@@ -22,9 +24,11 @@ type Config struct {
 type B struct {
 	config   *Config
 	conn     net.Conn
+	closed   bool
 	cid      int32
 	sendChan chan *brokerJob
 	recvChan chan *brokerJob
+	mu       sync.Mutex
 }
 
 type brokerJob struct {
@@ -50,34 +54,57 @@ func New(config *Config) (*B, error) {
 }
 
 func (b *B) Close() {
-	b.conn.Close()
+	b.mu.Lock()
+	if !b.closed {
+		b.closed = true
+		close(b.sendChan)
+		b.conn.Close()
+	}
+	b.mu.Unlock()
 }
 
 func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
 	req.CorrelationID = atomic.AddInt32(&b.cid, 1)
 	errChan := make(chan error)
-	b.sendChan <- &brokerJob{
+	if err := b.sendJob(&brokerJob{
 		req:     req,
 		resp:    &proto.Response{ResponseMessage: resp},
 		errChan: errChan,
+	}); err != nil {
+		return err
 	}
 	return <-errChan
+}
+
+func (b *B) sendJob(job *brokerJob) error {
+	b.mu.Lock()
+	if b.closed {
+		b.mu.Unlock()
+		return ErrBrokerClosed
+	}
+	b.sendChan <- job
+	b.mu.Unlock()
+	return nil
 }
 
 func (b *B) sendLoop() {
 	for job := range b.sendChan {
 		b.conn.SetWriteDeadline(time.Now().Add(b.config.Timeout))
 		if err := job.req.Send(b.conn); err != nil {
+			b.Close()
 			job.errChan <- err
+			close(b.recvChan)
 		}
 		b.recvChan <- job
 	}
+	close(b.recvChan)
 }
 
 func (b *B) receiveLoop() {
 	for job := range b.recvChan {
 		b.conn.SetReadDeadline(time.Now().Add(b.config.Timeout))
 		if err := job.resp.Receive(b.conn); err != nil {
+			b.Close()
 			job.errChan <- err
 		}
 		if job.resp.CorrelationID != job.req.CorrelationID {

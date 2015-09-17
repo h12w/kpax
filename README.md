@@ -4,6 +4,8 @@ h12.me/kafka
 A modular & idiomatic Kafka client in Go
 ----------------------------------------
 
+Compatible with Kafka 0.8.2 or later.
+
 * **kafka/proto**: Kafka wire protocol (automatically generated types and
   marshal/unmarshal functions from
   [the HTML spec](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)).
