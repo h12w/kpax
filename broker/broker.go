@@ -44,21 +44,20 @@ func New(config *Config) *B {
 	}
 }
 
-func (b *B) Connected() bool {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.conn != nil
+func (b *B) Addr() string {
+	return b.config.Addr
 }
 
 func (b *B) Connect() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.conn != nil {
-		panic("already connected")
+		return nil
 	}
 	var err error
 	b.conn, err = net.Dial("tcp", b.config.Addr)
 	if err != nil {
+		b.closed = true
 		return err
 	}
 	go b.sendLoop()
@@ -91,12 +90,11 @@ func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
 
 func (b *B) sendJob(job *brokerJob) error {
 	b.mu.Lock()
+	defer b.mu.Unlock()
 	if b.closed {
-		b.mu.Unlock()
 		return ErrBrokerClosed
 	}
 	b.sendChan <- job
-	b.mu.Unlock()
 	return nil
 }
 

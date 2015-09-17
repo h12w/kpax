@@ -24,7 +24,7 @@ func TestGetOffset(t *testing.T) {
 
 func TestConsumeAll(t *testing.T) {
 	consumer := getConsumer(t)
-	values, err := consumer.Consume("test", 0, 1)
+	values, err := consumer.Consume("test", 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,9 +45,7 @@ func getConsumer(t *testing.T) *C {
 	consumer, err := New(&Config{
 		Client: client.Config{
 			Brokers: []string{
-				"docker:32791",
-				"docker:32792",
-				"docker:32793",
+				"docker:32771",
 			},
 			BrokerConfig: broker.Config{
 				QueueLen: 10,
