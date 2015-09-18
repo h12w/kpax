@@ -17,15 +17,16 @@ consumer: batching, fault tolerance
 ### Error Handling
 
 * fail fast
-  + timeout (SetDealine)
+  + timeout
   + release resources carefully
 * fault tolerance:
   + retry
-    - redirect produce request to another partition (-)
+    - redirect produce request to another partition
     - try again for broken connection (-)
-  + recover after broker back online without restart
-      - broker reconnect
+  + recover after broker back online
       - metadata reload
+      - broker reconnect
+      - partition reconnect
   + partition expand (-)
   + graceful shutdown (-)
 

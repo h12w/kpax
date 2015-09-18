@@ -86,6 +86,18 @@ func (p *brokerPool) GetLeader(topic string, partition int32) (*broker.B, error)
 	return broker, nil
 }
 
+func (p *brokerPool) DeleteLeader(topic string, partition int32) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	delete(p.topicPartitionLeader, topicPartition{topic, partition})
+}
+
+func (p *brokerPool) DeleteCoordinator(consumerGroup string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	delete(p.groupCoordinator, consumerGroup)
+}
+
 func (p *brokerPool) SetCoordinator(consumerGroup string, brokerID int32, host string, port int32) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

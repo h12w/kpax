@@ -22,6 +22,7 @@ type Config struct {
 	Client       client.Config
 	RequiredAcks int16
 	Timeout      int32
+	RecoveryTime time.Duration
 }
 
 type P struct {

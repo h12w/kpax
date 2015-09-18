@@ -2,6 +2,7 @@ package producer
 
 import (
 	"sync"
+	"time"
 )
 
 type topicPartitioner struct {
@@ -39,22 +40,23 @@ func (tp *topicPartitioner) Delete(topic string) {
 }
 
 type partitioner struct {
-	partitions []int32
-	skipList   map[int32]bool
-	i          int
-	mu         sync.Mutex
+	partitions   []int32
+	skipList     map[int32]time.Time
+	recoveryTime time.Duration
+	i            int
+	mu           sync.Mutex
 }
 
 func newPartitioner(partitions []int32) *partitioner {
 	return &partitioner{
 		partitions: partitions,
-		skipList:   make(map[int32]bool),
+		skipList:   make(map[int32]time.Time),
 	}
 }
 
 func (p *partitioner) Skip(partition int32) {
 	p.mu.Lock()
-	p.skipList[partition] = true
+	p.skipList[partition] = time.Now().Add(p.recoveryTime)
 	p.mu.Unlock()
 }
 
@@ -71,9 +73,13 @@ func (p *partitioner) Partition([]byte) (int32, error) {
 		if p.i == len(p.partitions) {
 			p.i = 0
 		}
-		if !p.skipList[partition] {
-			return partition, nil
+		if expireTime, ok := p.skipList[partition]; ok {
+			if time.Now().Before(expireTime) {
+				continue
+			}
+			delete(p.skipList, partition)
 		}
+		return partition, nil
 	}
 	return -1, ErrNoValidPartition
 }

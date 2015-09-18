@@ -89,11 +89,11 @@ func (c *C) Leader(topic string, partition int32) (*broker.B, error) {
 }
 
 func (c *C) LeaderIsDown(topic string, partition int32) {
-
+	c.pool.DeleteLeader(topic, partition)
 }
 
 func (c *C) CoordinatorIsDown(consumerGroup string) {
-
+	c.pool.DeleteCoordinator(consumerGroup)
 }
 
 func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
