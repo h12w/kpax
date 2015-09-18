@@ -40,7 +40,7 @@ Design
   + metadata reload lazily (only when a leader/coordinator cannot be found in cache)
   + leader/coordinator should be deleted on error
 * producer
-  + when a leader down, try another partition immediately
+  + fail over to another partition
   + failed partition will be retried again after a period of time
   + partition expand (-)
 * consumer

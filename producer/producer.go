@@ -20,18 +20,18 @@ func init() {
 }
 
 type Config struct {
-	Client       client.Config
-	RequiredAcks int16
-	Timeout      time.Duration
-	RecoveryTime time.Duration
+	Client             client.Config
+	RequiredAcks       int16
+	Timeout            time.Duration
+	LeaderRecoveryTime time.Duration
 }
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Client:       *client.DefaultConfig(brokers...),
-		RequiredAcks: proto.AckLocal,
-		Timeout:      10 * time.Second,
-		RecoveryTime: 7 * 24 * time.Hour,
+		Client:             *client.DefaultConfig(brokers...),
+		RequiredAcks:       proto.AckLocal,
+		Timeout:            10 * time.Second,
+		LeaderRecoveryTime: 60 * time.Second,
 	}
 }
 
