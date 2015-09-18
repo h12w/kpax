@@ -12,7 +12,7 @@ func TestProducer(t *testing.T) {
 	producer, err := New(&Config{
 		Client: client.Config{
 			Brokers: []string{
-				"docker:32771",
+				"docker:32791",
 			},
 			BrokerConfig: broker.Config{
 				QueueLen: 10,

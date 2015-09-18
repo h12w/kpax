@@ -88,6 +88,14 @@ func (c *C) Leader(topic string, partition int32) (*broker.B, error) {
 	return c.pool.GetLeader(topic, partition)
 }
 
+func (c *C) LeaderIsDown(topic string, partition int32) {
+
+}
+
+func (c *C) CoordinatorIsDown(consumerGroup string) {
+
+}
+
 func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 	m, err := c.getConsumerMetadata(consumerGroup)
 	if err != nil {

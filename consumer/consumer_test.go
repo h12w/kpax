@@ -9,10 +9,6 @@ import (
 	"h12.me/kafka/client"
 )
 
-const (
-	kafkaAddr = "docker:32793"
-)
-
 func TestGetOffset(t *testing.T) {
 	consumer := getConsumer(t)
 	offset, err := consumer.Offset("test", 0, "test-consumergroup-b")
@@ -45,7 +41,7 @@ func getConsumer(t *testing.T) *C {
 	consumer, err := New(&Config{
 		Client: client.Config{
 			Brokers: []string{
-				"docker:32771",
+				"docker:32791",
 			},
 			BrokerConfig: broker.Config{
 				QueueLen: 10,
