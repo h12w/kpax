@@ -3,6 +3,8 @@ package producer
 import (
 	"sync"
 	"time"
+
+	"h12.me/kafka/log"
 )
 
 type topicPartitioner struct {
@@ -56,6 +58,7 @@ func newPartitioner(partitions []int32) *partitioner {
 
 func (p *partitioner) Skip(partition int32) {
 	p.mu.Lock()
+	log.Warnf("partition %d skipped", partition)
 	p.skipList[partition] = time.Now().Add(p.recoveryTime)
 	p.mu.Unlock()
 }

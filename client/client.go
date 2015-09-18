@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"h12.me/kafka/broker"
+	"h12.me/kafka/log"
 	"h12.me/kafka/proto"
 )
 
@@ -97,10 +98,12 @@ func (c *C) Leader(topic string, partition int32) (*broker.B, error) {
 }
 
 func (c *C) LeaderIsDown(topic string, partition int32) {
+	log.Warnf("leader (%s,%d) is down", topic, partition)
 	c.pool.DeleteLeader(topic, partition)
 }
 
 func (c *C) CoordinatorIsDown(consumerGroup string) {
+	log.Warnf("coordinator (%s) is down", consumerGroup)
 	c.pool.DeleteCoordinator(consumerGroup)
 }
 

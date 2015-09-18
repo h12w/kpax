@@ -4,6 +4,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"h12.me/kafka/log"
 )
 
 type connection struct {
@@ -31,6 +33,7 @@ func (c *connection) sendLoop() {
 	for job := range c.sendChan {
 		c.conn.SetWriteDeadline(time.Now().Add(c.timeout))
 		if err := job.req.Send(c.conn); err != nil {
+			log.Warnf("net.Conn error %s", err.Error())
 			c.Close()
 			job.errChan <- err
 			close(c.recvChan)
@@ -44,6 +47,7 @@ func (c *connection) receiveLoop() {
 	for job := range c.recvChan {
 		c.conn.SetReadDeadline(time.Now().Add(c.timeout))
 		if err := job.resp.Receive(c.conn); err != nil {
+			log.Warnf("net.Conn error %s", err.Error())
 			c.Close()
 			job.errChan <- err
 		}

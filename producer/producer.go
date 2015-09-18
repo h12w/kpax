@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"h12.me/kafka/client"
+	"h12.me/kafka/log"
 	"h12.me/kafka/proto"
 )
 
@@ -74,12 +75,11 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		partition, err := partitioner.Partition(key)
 		if err != nil {
 			p.topicPartitioner.Delete(topic)
-			break // all partitions down, failed permanantly
+			break
 		}
 		leader, err := p.client.Leader(topic, partition)
 		if err != nil {
 			partitioner.Skip(partition)
-			// TODO: add log here
 			continue
 		}
 		req := p.client.NewRequest(&proto.ProduceRequest{
@@ -106,11 +106,13 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		for i := range resp {
 			for j := range resp[i].OffsetInPartitions {
 				if errCode := resp[i].OffsetInPartitions[j].ErrorCode; errCode != 0 {
+					log.Warnf("produce error, code %d", errCode)
 					continue
 				}
 			}
 		}
 		return nil
 	}
+	log.Warnf("fail to find a usable partition")
 	return ErrProduceFailed
 }
