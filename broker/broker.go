@@ -22,14 +22,12 @@ type Config struct {
 }
 
 type B struct {
-	config   *Config
-	conn     net.Conn
-	open     bool
-	cid      int32
-	sendChan chan *brokerJob
-	recvChan chan *brokerJob
-	mu       sync.Mutex
+	config *Config
+	cid    int32
+	conn   *connection
+	mu     sync.Mutex
 }
+
 type brokerJob struct {
 	req     *proto.Request
 	resp    *proto.Response
@@ -37,40 +35,11 @@ type brokerJob struct {
 }
 
 func New(config *Config) *B {
-	return &B{
-		config:   config,
-		sendChan: make(chan *brokerJob),
-		recvChan: make(chan *brokerJob, config.QueueLen),
-	}
+	return &B{config: config}
 }
 
 func (b *B) Addr() string {
 	return b.config.Addr
-}
-
-func (b *B) connect() error {
-	if b.open {
-		return nil
-	}
-	var err error
-	b.conn, err = net.Dial("tcp", b.config.Addr)
-	if err != nil {
-		return err
-	}
-	b.open = true
-	go b.sendLoop()
-	go b.receiveLoop()
-	return nil
-}
-
-func (b *B) Close() {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.open {
-		b.open = false
-		close(b.sendChan)
-		b.conn.Close()
-	}
 }
 
 func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
@@ -88,37 +57,40 @@ func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
 
 func (b *B) sendJob(job *brokerJob) error {
 	b.mu.Lock()
-	defer b.mu.Unlock()
-	if err := b.connect(); err != nil {
-		return err
+	if b.conn == nil || b.conn.Closed() {
+		conn, err := b.newConn()
+		if err != nil {
+			b.mu.Unlock()
+			return err
+		}
+		b.conn = conn
 	}
-	b.sendChan <- job
+	b.mu.Unlock()
+	b.conn.sendChan <- job
 	return nil
 }
 
-func (b *B) sendLoop() {
-	for job := range b.sendChan {
-		b.conn.SetWriteDeadline(time.Now().Add(b.config.Timeout))
-		if err := job.req.Send(b.conn); err != nil {
-			b.Close()
-			job.errChan <- err
-			close(b.recvChan)
-		}
-		b.recvChan <- job
+func (b *B) newConn() (*connection, error) {
+	conn, err := net.Dial("tcp", b.config.Addr)
+	if err != nil {
+		return nil, err
 	}
-	close(b.recvChan)
+	c := &connection{
+		conn:     conn,
+		sendChan: make(chan *brokerJob),
+		recvChan: make(chan *brokerJob, b.config.QueueLen),
+		timeout:  b.config.Timeout,
+	}
+	go c.sendLoop()
+	go c.receiveLoop()
+	return c, nil
 }
 
-func (b *B) receiveLoop() {
-	for job := range b.recvChan {
-		b.conn.SetReadDeadline(time.Now().Add(b.config.Timeout))
-		if err := job.resp.Receive(b.conn); err != nil {
-			b.Close()
-			job.errChan <- err
-		}
-		if job.resp.CorrelationID != job.req.CorrelationID {
-			job.errChan <- ErrCorrelationIDMismatch
-		}
-		job.errChan <- nil
+func (b *B) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.conn != nil && !b.conn.Closed() {
+		b.conn.Close()
+		b.conn = nil
 	}
 }
