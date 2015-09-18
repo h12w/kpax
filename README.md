@@ -31,22 +31,27 @@ Design
 
 ### Error Handling
 
-* fail fast
-  + timeout
+* broker
+  + fail fast: timeout returns error immediately
   + release resources carefully
-* fault tolerance
-  + retry
-    - when a leader down, try another partition
-    - try connecting one more time for broken connection (-)
-  + recover after broker back online
-      - broker reconnect
-      - failed partition will be retried after a period of time (producer)
-      - metadata reload lazily
+  + reconnect when requested next time
+* client
+  + metadata reload lazily (only when a leader/coordinator cannot be found in cache)
+  + leader/coordinator should be deleted on error
+* producer
+  + when a leader down, try another partition immediately
+  + failed partition will be retried again after a period of time
   + partition expand (-)
-  + graceful shutdown (-)
+* consumer
+  + just loop & wait on error
+  + partition expand (-)
+* graceful shutdown (-)
 
 ### Efficiency
 
 * efficiency
-  + batching (-)
+  + batching
+    - consumer response
+    - consumer request (-)
+    - producer (-)
   + compression (-)
