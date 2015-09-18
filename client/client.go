@@ -136,7 +136,6 @@ func (c *C) getTopicMetadata(topic string) (*proto.TopicMetadataResponse, error)
 		return nil, err
 	}
 	for _, broker := range brokers {
-		broker.Connect()
 		err = broker.Do(req, resp)
 		if err == nil {
 			return resp, nil
@@ -155,7 +154,6 @@ func (c *C) getConsumerMetadata(consumerGroup string) (*proto.ConsumerMetadataRe
 		return nil, err
 	}
 	for _, broker := range brokers {
-		broker.Connect()
 		err = broker.Do(req, resp)
 		if err == nil {
 			return resp, nil

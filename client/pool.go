@@ -83,7 +83,7 @@ func (p *brokerPool) GetLeader(topic string, partition int32) (*broker.B, error)
 	if !ok {
 		return nil, ErrLeaderNotFound
 	}
-	return broker, broker.Connect()
+	return broker, nil
 }
 
 func (p *brokerPool) SetCoordinator(consumerGroup string, brokerID int32, host string, port int32) {
@@ -100,7 +100,7 @@ func (p *brokerPool) GetCoordinator(consumerGroup string) (*broker.B, error) {
 	if !ok {
 		return nil, ErrCoordNotFound
 	}
-	return broker, broker.Connect()
+	return broker, nil
 }
 
 func (p *brokerPool) find(brokerID int32) (*broker.B, error) {

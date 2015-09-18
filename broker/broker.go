@@ -24,7 +24,7 @@ type Config struct {
 type B struct {
 	config   *Config
 	conn     net.Conn
-	closed   bool
+	open     bool
 	cid      int32
 	sendChan chan *brokerJob
 	recvChan chan *brokerJob
@@ -48,18 +48,16 @@ func (b *B) Addr() string {
 	return b.config.Addr
 }
 
-func (b *B) Connect() error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.conn != nil {
+func (b *B) connect() error {
+	if b.open {
 		return nil
 	}
 	var err error
 	b.conn, err = net.Dial("tcp", b.config.Addr)
 	if err != nil {
-		b.closed = true
 		return err
 	}
+	b.open = true
 	go b.sendLoop()
 	go b.receiveLoop()
 	return nil
@@ -68,8 +66,8 @@ func (b *B) Connect() error {
 func (b *B) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if !b.closed {
-		b.closed = true
+	if b.open {
+		b.open = false
 		close(b.sendChan)
 		b.conn.Close()
 	}
@@ -91,8 +89,8 @@ func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
 func (b *B) sendJob(job *brokerJob) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.closed {
-		return ErrBrokerClosed
+	if err := b.connect(); err != nil {
+		return err
 	}
 	b.sendChan <- job
 	return nil
