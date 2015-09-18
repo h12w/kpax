@@ -13,12 +13,14 @@ const (
 	kafkaAddr = "docker:32793"
 )
 
+func newTestBroker() *B {
+	cfg := DefaultConfig()
+	cfg.Addr = kafkaAddr
+	return New(cfg)
+}
+
 func TestMeta(t *testing.T) {
-	broker := New(&Config{
-		Addr:     kafkaAddr,
-		QueueLen: 10,
-		Timeout:  time.Second,
-	})
+	broker := newTestBroker()
 	req := &proto.Request{
 		APIKey:        proto.TopicMetadataRequestType,
 		APIVersion:    0,
@@ -36,11 +38,7 @@ func TestMeta(t *testing.T) {
 }
 
 func TestConsumeAll(t *testing.T) {
-	broker := New(&Config{
-		Addr:     kafkaAddr,
-		QueueLen: 10,
-		Timeout:  time.Second,
-	})
+	broker := newTestBroker()
 	req := &proto.Request{
 		APIKey:        proto.FetchRequestType,
 		APIVersion:    0,
@@ -117,11 +115,7 @@ func TestOffsetCommit(t *testing.T) {
 }
 
 func TestOffsetFetch(t *testing.T) {
-	broker := New(&Config{
-		Addr:     kafkaAddr,
-		QueueLen: 10,
-		Timeout:  time.Second,
-	})
+	broker := newTestBroker()
 	req := &proto.Request{
 		APIKey:        proto.OffsetFetchRequestType,
 		APIVersion:    1,
@@ -145,11 +139,7 @@ func TestOffsetFetch(t *testing.T) {
 }
 
 func TestConsumerMeta(t *testing.T) {
-	broker := New(&Config{
-		Addr:     kafkaAddr,
-		QueueLen: 10,
-		Timeout:  time.Second,
-	})
+	broker := newTestBroker()
 	creq := proto.ConsumerMetadataRequest("test-1")
 	req := &proto.Request{
 		APIKey:         proto.ConsumerMetadataRequestType,
@@ -166,11 +156,7 @@ func TestConsumerMeta(t *testing.T) {
 }
 
 func TestProduce(t *testing.T) {
-	broker := New(&Config{
-		Addr:     kafkaAddr,
-		QueueLen: 10,
-		Timeout:  time.Second,
-	})
+	broker := newTestBroker()
 	tm := time.Now()
 	req := &proto.Request{
 		APIKey:        proto.ProduceRequestType,

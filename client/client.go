@@ -21,6 +21,14 @@ type Config struct {
 	ClientID     string
 }
 
+func DefaultConfig(brokers ...string) *Config {
+	return &Config{
+		Brokers:      brokers,
+		BrokerConfig: *broker.DefaultConfig(),
+		ClientID:     "h12.me/kafka",
+	}
+}
+
 type C struct {
 	config *Config
 	topics *topicPartitions

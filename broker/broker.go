@@ -21,6 +21,13 @@ type Config struct {
 	Timeout  time.Duration
 }
 
+func DefaultConfig() *Config {
+	return &Config{
+		QueueLen: 1000,
+		Timeout:  30 * time.Second,
+	}
+}
+
 type B struct {
 	config *Config
 	cid    int32

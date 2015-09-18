@@ -3,22 +3,10 @@ package client
 import (
 	"fmt"
 	"testing"
-
-	"h12.me/kafka/broker"
 )
 
 func TestClient(t *testing.T) {
-	client, err := New(&Config{
-		Brokers: []string{
-			"docker:32791",
-			"docker:32792",
-			"docker:32793",
-		},
-		BrokerConfig: broker.Config{
-			QueueLen: 10,
-		},
-		ClientID: "abc",
-	})
+	client, err := New(DefaultConfig("docker:32791"))
 	if err != nil {
 		t.Fatal(err)
 	}

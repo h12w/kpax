@@ -3,10 +3,6 @@ package consumer
 import (
 	"fmt"
 	"testing"
-	"time"
-
-	"h12.me/kafka/broker"
-	"h12.me/kafka/client"
 )
 
 func TestGetOffset(t *testing.T) {
@@ -42,21 +38,7 @@ func TestCommitOffset(t *testing.T) {
 }
 
 func getConsumer(t *testing.T) *C {
-	consumer, err := New(&Config{
-		Client: client.Config{
-			Brokers: []string{
-				"docker:32791",
-			},
-			BrokerConfig: broker.Config{
-				QueueLen: 10,
-				Timeout:  time.Second,
-			},
-			ClientID: "abc",
-		},
-		MinBytes:        9999,
-		MaxBytes:        999999,
-		OffsetRetention: 7 * 24 * time.Hour,
-	})
+	consumer, err := New(DefaultConfig("docker:32791"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -21,8 +21,17 @@ func init() {
 type Config struct {
 	Client       client.Config
 	RequiredAcks int16
-	Timeout      int32
+	Timeout      time.Duration
 	RecoveryTime time.Duration
+}
+
+func DefaultConfig(brokers ...string) *Config {
+	return &Config{
+		Client:       *client.DefaultConfig(brokers...),
+		RequiredAcks: proto.AckLocal,
+		Timeout:      10 * time.Second,
+		RecoveryTime: 7 * 24 * time.Hour,
+	}
 }
 
 type P struct {
@@ -75,7 +84,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		}
 		req := p.client.NewRequest(&proto.ProduceRequest{
 			RequiredAcks: p.config.RequiredAcks,
-			Timeout:      p.config.Timeout,
+			Timeout:      int32(p.config.Timeout / time.Millisecond),
 			MessageSetInTopics: []proto.MessageSetInTopic{
 				{
 					TopicName: topic,

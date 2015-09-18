@@ -3,25 +3,10 @@ package producer
 import (
 	"testing"
 	"time"
-
-	"h12.me/kafka/broker"
-	"h12.me/kafka/client"
 )
 
 func TestProducer(t *testing.T) {
-	producer, err := New(&Config{
-		Client: client.Config{
-			Brokers: []string{
-				"docker:32791",
-			},
-			BrokerConfig: broker.Config{
-				QueueLen: 10,
-				Timeout:  time.Second,
-			},
-			ClientID: "abc",
-		},
-		RequiredAcks: 1,
-	})
+	producer, err := New(DefaultConfig("docker:32791"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,10 +16,20 @@ var (
 
 type Config struct {
 	Client          client.Config
-	MaxWaitTime     int32
-	MinBytes        int32
-	MaxBytes        int32
+	MaxWaitTime     time.Duration
+	MinBytes        int
+	MaxBytes        int
 	OffsetRetention time.Duration
+}
+
+func DefaultConfig(brokers ...string) *Config {
+	return &Config{
+		Client:          *client.DefaultConfig(brokers...),
+		MaxWaitTime:     100 * time.Millisecond,
+		MinBytes:        1,
+		MaxBytes:        1024 * 1024,
+		OffsetRetention: 7 * 24 * time.Hour,
+	}
 }
 
 type C struct {
@@ -75,8 +85,8 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byte, err error) {
 	req := c.client.NewRequest(&proto.FetchRequest{
 		ReplicaID:   -1,
-		MaxWaitTime: c.config.MaxWaitTime,
-		MinBytes:    c.config.MinBytes,
+		MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
+		MinBytes:    int32(c.config.MinBytes),
 		FetchOffsetInTopics: []proto.FetchOffsetInTopic{
 			{
 				TopicName: topic,
@@ -84,7 +94,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 					{
 						Partition:   partition,
 						FetchOffset: offset,
-						MaxBytes:    c.config.MaxBytes,
+						MaxBytes:    int32(c.config.MaxBytes),
 					},
 				},
 			},
