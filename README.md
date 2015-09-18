@@ -28,6 +28,7 @@ Design
 * **client**: client that talks to a Kafka cluster (leader/coordinator management).
 * **producer**: fault tolerant high-level producer (batching and partitioning strategy).
 * **consumer**: fault tolerant high-level consumer (consumer group and offset commit).
+* **log**: replaceable global logger
 
 ### Error Handling
 
