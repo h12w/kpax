@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"h12.me/kafka/broker"
+	"h12.me/kafka/log"
 )
 
 type brokerPool struct {
@@ -50,6 +51,7 @@ func (p *brokerPool) addAddr(addr string) *broker.B {
 	}
 	broker := p.newBroker(addr)
 	p.addrBroker[addr] = broker
+	log.Debugf("broker %s added to pool", addr)
 	return broker
 }
 

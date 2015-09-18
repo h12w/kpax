@@ -1,7 +1,8 @@
 package log
 
 import (
-	"log"
+	"fmt"
+	"os"
 	"sync"
 )
 
@@ -35,6 +36,10 @@ func SetLogger(logger Logger) {
 	gmu.Unlock()
 }
 
+func SetLevel(level Level) {
+	gl.SetLevel(level)
+}
+
 func Panicf(format string, v ...interface{}) {
 	gl.Panicf(format, v...)
 }
@@ -61,7 +66,8 @@ type DefaultLogger struct {
 }
 
 func (l *DefaultLogger) printf(format string, v []interface{}) {
-	log.Printf(format, v...)
+	fmt.Fprintf(os.Stderr, format, v...)
+	fmt.Fprintln(os.Stderr)
 }
 
 func (l *DefaultLogger) SetLevel(level Level) {

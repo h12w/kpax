@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"h12.me/kafka/broker"
@@ -10,7 +11,6 @@ import (
 )
 
 var (
-	ErrTopicNotFound  = errors.New("topic not found")
 	ErrLeaderNotFound = errors.New("leader not found")
 	ErrCoordNotFound  = errors.New("coordinator not found")
 	ErrNoBrokerFound  = errors.New("no broker found")
@@ -74,7 +74,7 @@ func (c *C) Partitions(topic string) ([]int32, error) {
 	if len(partitions) > 0 {
 		return partitions, nil
 	}
-	return nil, ErrTopicNotFound
+	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
 func (c *C) Coordinator(topic, consumerGroup string) (*broker.B, error) {
@@ -108,75 +108,75 @@ func (c *C) CoordinatorIsDown(consumerGroup string) {
 }
 
 func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
-	m, err := c.getConsumerMetadata(consumerGroup)
+	brokers, err := c.pool.Brokers()
 	if err != nil {
 		return err
 	}
-	if m.ErrorCode != 0 {
-		return ErrCoordNotFound
+	for _, broker := range brokers {
+		m, err := c.getConsumerMetadata(broker, consumerGroup)
+		if err != nil {
+			return err
+		}
+		if m.ErrorCode != 0 {
+			return ErrCoordNotFound
+		}
+		c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
+		return nil
 	}
-	c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
 	return nil
 }
 
 func (c *C) updateFromTopicMetadata(topic string) error {
-	m, err := c.getTopicMetadata(topic)
+	brokers, err := c.pool.Brokers()
 	if err != nil {
 		return err
 	}
-	for i := range m.Brokers {
-		b := &m.Brokers[i]
-		c.pool.Add(b.NodeID, b.Host, b.Port)
-	}
-	for i := range m.TopicMetadatas {
-		t := &m.TopicMetadatas[i]
-		if t.TopicName == topic {
-			partitions := make([]int32, len(t.PartitionMetadatas))
-			for i := range t.PartitionMetadatas {
-				partition := &t.PartitionMetadatas[i]
-				partitions[i] = partition.PartitionID
-				if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
-					return ErrLeaderNotFound
-				}
+	for _, broker := range brokers {
+		m, err := c.getTopicMetadata(broker, topic)
+		if err != nil {
+			return err
+		}
+		for i := range m.Brokers {
+			b := &m.Brokers[i]
+			c.pool.Add(b.NodeID, b.Host, b.Port)
+		}
+		for i := range m.TopicMetadatas {
+			t := &m.TopicMetadatas[i]
+			if t.TopicErrorCode != 0 {
+				log.Warnf("topic error %d", t.TopicErrorCode)
 			}
-			c.topics.addPartitions(topic, partitions)
-			return nil
+			if t.TopicName == topic {
+				partitions := make([]int32, len(t.PartitionMetadatas))
+				for i := range t.PartitionMetadatas {
+					partition := &t.PartitionMetadatas[i]
+					partitions[i] = partition.PartitionID
+					if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
+						return ErrLeaderNotFound
+					}
+				}
+				c.topics.addPartitions(topic, partitions)
+				return nil
+			}
 		}
 	}
-	return ErrTopicNotFound
+	return fmt.Errorf("topic %s not found", topic)
 }
 
-func (c *C) getTopicMetadata(topic string) (*proto.TopicMetadataResponse, error) {
-	var err error
+func (c *C) getTopicMetadata(broker *broker.B, topic string) (*proto.TopicMetadataResponse, error) {
 	req := c.NewRequest(&proto.TopicMetadataRequest{topic})
 	resp := &proto.TopicMetadataResponse{}
-	brokers, err := c.pool.Brokers()
-	if err != nil {
+	if err := broker.Do(req, resp); err != nil {
 		return nil, err
 	}
-	for _, broker := range brokers {
-		err = broker.Do(req, resp)
-		if err == nil {
-			return resp, nil
-		}
-	}
-	return nil, err
+	return resp, nil
 }
 
-func (c *C) getConsumerMetadata(consumerGroup string) (*proto.ConsumerMetadataResponse, error) {
-	var err error
+func (c *C) getConsumerMetadata(broker *broker.B, consumerGroup string) (*proto.ConsumerMetadataResponse, error) {
 	creq := proto.ConsumerMetadataRequest(consumerGroup)
 	req := c.NewRequest(&creq)
 	resp := &proto.ConsumerMetadataResponse{}
-	brokers, err := c.pool.Brokers()
-	if err != nil {
+	if err := broker.Do(req, resp); err != nil {
 		return nil, err
 	}
-	for _, broker := range brokers {
-		err = broker.Do(req, resp)
-		if err == nil {
-			return resp, nil
-		}
-	}
-	return nil, err
+	return resp, nil
 }
