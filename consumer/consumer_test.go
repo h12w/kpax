@@ -20,12 +20,16 @@ func TestGetOffset(t *testing.T) {
 
 func TestConsumeAll(t *testing.T) {
 	consumer := getConsumer(t)
-	values, err := consumer.Consume("test", 0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, value := range values {
-		fmt.Println(string(value))
+	for partition := int32(0); partition < 3; partition++ {
+		values, err := consumer.Consume("test", partition, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("Partition", partition)
+		for _, value := range values {
+			fmt.Println(string(value))
+		}
+		fmt.Println()
 	}
 }
 
@@ -49,8 +53,8 @@ func getConsumer(t *testing.T) *C {
 			},
 			ClientID: "abc",
 		},
-		MinBytes:        0,
-		MaxBytes:        9999,
+		MinBytes:        9999,
+		MaxBytes:        999999,
 		OffsetRetention: 7 * 24 * time.Hour,
 	})
 	if err != nil {

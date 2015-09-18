@@ -49,11 +49,11 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 		},
 	})
 	resp := proto.OffsetFetchResponse{}
-	broker, err := c.client.Coordinator(topic, consumerGroup)
+	coord, err := c.client.Coordinator(topic, consumerGroup)
 	if err != nil {
 		return 0, err
 	}
-	if err := broker.Do(req, &resp); err != nil {
+	if err := coord.Do(req, &resp); err != nil {
 		return 0, err
 	}
 	for i := range resp {
@@ -91,11 +91,12 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 		},
 	})
 	resp := proto.FetchResponse{}
-	broker, err := c.client.Leader(topic, partition)
+	leader, err := c.client.Leader(topic, partition)
 	if err != nil {
 		return nil, err
 	}
-	if err := broker.Do(req, &resp); err != nil {
+	if err := leader.Do(req, &resp); err != nil {
+		c.client.LeaderIsDown(topic, partition)
 		return nil, err
 	}
 	for i := range resp {
@@ -143,11 +144,12 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 		},
 	})
 	resp := proto.OffsetCommitResponse{}
-	broker, err := c.client.Coordinator(topic, consumerGroup)
+	coord, err := c.client.Coordinator(topic, consumerGroup)
 	if err != nil {
 		return err
 	}
-	if err := broker.Do(req, &resp); err != nil {
+	if err := coord.Do(req, &resp); err != nil {
+		c.client.CoordinatorIsDown(consumerGroup)
 		return err
 	}
 	for i := range resp {

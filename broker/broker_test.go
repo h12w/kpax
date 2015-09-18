@@ -14,14 +14,11 @@ const (
 )
 
 func TestMeta(t *testing.T) {
-	broker, err := New(&Config{
+	broker := New(&Config{
 		Addr:     kafkaAddr,
 		QueueLen: 10,
 		Timeout:  time.Second,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	req := &proto.Request{
 		APIKey:        proto.TopicMetadataRequestType,
 		APIVersion:    0,
@@ -39,14 +36,11 @@ func TestMeta(t *testing.T) {
 }
 
 func TestConsumeAll(t *testing.T) {
-	broker, err := New(&Config{
+	broker := New(&Config{
 		Addr:     kafkaAddr,
 		QueueLen: 10,
 		Timeout:  time.Second,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	req := &proto.Request{
 		APIKey:        proto.FetchRequestType,
 		APIVersion:    0,
@@ -85,14 +79,11 @@ func TestConsumeAll(t *testing.T) {
 }
 
 func TestOffsetCommit(t *testing.T) {
-	broker, err := New(&Config{
+	broker := New(&Config{
 		Addr:     kafkaAddr,
 		QueueLen: 10,
 		Timeout:  time.Second,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	tm := time.Now()
 	req := &proto.Request{
 		APIKey:        proto.OffsetCommitRequestType,
@@ -126,14 +117,11 @@ func TestOffsetCommit(t *testing.T) {
 }
 
 func TestOffsetFetch(t *testing.T) {
-	broker, err := New(&Config{
+	broker := New(&Config{
 		Addr:     kafkaAddr,
 		QueueLen: 10,
 		Timeout:  time.Second,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	req := &proto.Request{
 		APIKey:        proto.OffsetFetchRequestType,
 		APIVersion:    1,
@@ -157,14 +145,11 @@ func TestOffsetFetch(t *testing.T) {
 }
 
 func TestConsumerMeta(t *testing.T) {
-	broker, err := New(&Config{
+	broker := New(&Config{
 		Addr:     kafkaAddr,
 		QueueLen: 10,
 		Timeout:  time.Second,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	creq := proto.ConsumerMetadataRequest("test-1")
 	req := &proto.Request{
 		APIKey:         proto.ConsumerMetadataRequestType,
@@ -181,14 +166,11 @@ func TestConsumerMeta(t *testing.T) {
 }
 
 func TestProduce(t *testing.T) {
-	broker, err := New(&Config{
+	broker := New(&Config{
 		Addr:     kafkaAddr,
 		QueueLen: 10,
 		Timeout:  time.Second,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	tm := time.Now()
 	req := &proto.Request{
 		APIKey:        proto.ProduceRequestType,

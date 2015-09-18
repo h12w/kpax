@@ -97,7 +97,6 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		for i := range resp {
 			for j := range resp[i].OffsetInPartitions {
 				if errCode := resp[i].OffsetInPartitions[j].ErrorCode; errCode != 0 {
-					// TODO: add log here
 					continue
 				}
 			}
