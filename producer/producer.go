@@ -99,8 +99,10 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		})
 		resp := proto.ProduceResponse{}
 		if err := leader.Do(req, &resp); err != nil {
-			partitioner.Skip(partition)
-			p.client.LeaderIsDown(topic, partition)
+			if err == proto.ErrConn {
+				partitioner.Skip(partition)
+				p.client.LeaderIsDown(topic, partition)
+			}
 			return err
 		}
 		for i := range resp {

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) != 3 {
 		fmt.Println("gen (bnf | bnfj | goj | go | gof)")
 		fmt.Println("bnf: from HTML to BNF")
 		fmt.Println("bnfj: from BNF to BNF JSON")
@@ -17,7 +17,7 @@ func main() {
 		fmt.Println("gof: from BNF to Go funcs")
 		return
 	}
-	bnfFile := "bnf.txt"
+	bnfFile := os.Args[2]
 	switch os.Args[1] {
 	case "bnf":
 		fromHTMLToBNF()

@@ -17,7 +17,7 @@ func (t *RequestOrResponse) Unmarshal(r *Reader) {
 	start := r.Offset
 	t.M.Unmarshal(r)
 	if r.Err == nil && int(t.Size) != r.Offset-start {
-		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
+		r.Err = ErrSizeMismatch
 	}
 }
 
@@ -93,7 +93,7 @@ func (t *SizedMessage) Unmarshal(r *Reader) {
 	start := r.Offset
 	t.CRCMessage.Unmarshal(r)
 	if r.Err == nil && int(t.Size) != r.Offset-start {
-		r.Err = newError("size mismatch, expect %d, got %d", int(t.Size), r.Offset-start)
+		r.Err = ErrSizeMismatch
 	}
 }
 
@@ -110,7 +110,7 @@ func (t *CRCMessage) Unmarshal(r *Reader) {
 	start := r.Offset
 	t.Message.Unmarshal(r)
 	if r.Err == nil && t.CRC != crc32.ChecksumIEEE(r.B[start:r.Offset]) {
-		r.Err = newError("CRC mismatch")
+		r.Err = ErrCRCMismatch
 	}
 }
 

@@ -5,19 +5,21 @@ import "io"
 func (req *Request) Send(conn io.Writer) error {
 	var w Writer
 	(&RequestOrResponse{M: req}).Marshal(&w)
-	_, err := conn.Write(w.B)
-	return err
+	if _, err := conn.Write(w.B); err != nil {
+		return ErrConn
+	}
+	return nil
 }
 
 func (resp *Response) Receive(conn io.Reader) error {
 	r := Reader{B: make([]byte, 4)}
 	if _, err := conn.Read(r.B); err != nil {
-		return err
+		return ErrConn
 	}
 	size := int(r.ReadInt32())
 	r.Grow(size)
 	if _, err := io.ReadAtLeast(conn, r.B[4:], size); err != nil {
-		return err
+		return ErrConn
 	}
 	r.Reset()
 	(&RequestOrResponse{M: resp}).Unmarshal(&r)
