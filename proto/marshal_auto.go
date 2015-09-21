@@ -64,6 +64,8 @@ func (t *MessageSet) Unmarshal(r *Reader) {
 		var m OffsetMessage
 		m.Unmarshal(r)
 		if r.Err != nil {
+			r.Err = nil
+			r.Offset = len(r.B)
 			return
 		}
 		*t = append(*t, m)
