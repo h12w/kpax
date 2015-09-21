@@ -113,15 +113,17 @@ func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 		return err
 	}
 	for _, broker := range brokers {
-		m, err := c.getConsumerMetadata(broker, consumerGroup)
-		if err != nil {
-			return err
+		for i := 0; i < 2; i++ { // twice
+			m, err := c.getConsumerMetadata(broker, consumerGroup)
+			if err != nil {
+				return err
+			}
+			if m.ErrorCode != 0 {
+				return ErrCoordNotFound
+			}
+			c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
+			return nil
 		}
-		if m.ErrorCode != 0 {
-			return ErrCoordNotFound
-		}
-		c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
-		return nil
 	}
 	return nil
 }

@@ -74,7 +74,6 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 				if p.ErrorCode != 0 {
 					return 0, fmt.Errorf("offset not exist %d", p.ErrorCode)
 				}
-				fmt.Println(p.Metadata)
 				return p.Offset, nil
 			}
 		}
