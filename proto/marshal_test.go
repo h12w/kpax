@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,13 +17,38 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestUnmarshalTrunc(t *testing.T) {
-	f, _ := os.Open("truncated_response")
+	//f, _ := os.Open("truncated_response")
+	f, _ := os.Open("newtrunc")
 	b, _ := ioutil.ReadAll(f)
+	f.Close()
 	r := Reader{
 		B: b,
 	}
-	(&RequestOrResponse{M: &Response{ResponseMessage: &FetchResponse{}}}).Unmarshal(&r)
+	resp := FetchResponse{}
+	(&RequestOrResponse{M: &Response{ResponseMessage: &resp}}).Unmarshal(&r)
 	if r.Err != nil {
 		t.Fatal(r.Err)
 	}
+	if len(resp) != 1 ||
+		len(resp[0].FetchMessageSetInPartitions) != 1 ||
+		len(resp[0].FetchMessageSetInPartitions[0].MessageSet) != 2 {
+		t.Fatal("fail to parse truncated message set")
+	}
+}
+
+func TestUnmarshalDump(t *testing.T) {
+	f, _ := os.Open("truncated_response")
+	b, _ := ioutil.ReadAll(f)
+	f.Close()
+	o, _ := os.Create("newtrunc")
+	nb := append(b[4:51], b[1048266:]...)
+	size := int32(len(nb))
+	nb = append([]byte{byte(size >> 24), byte(size >> 16), byte(size >> 8), byte(size)}, nb...)
+	o.Write(nb)
+	o.Close()
+}
+
+func toJSON(v interface{}) string {
+	buf, _ := json.MarshalIndent(v, "", "    ")
+	return string(buf)
 }
