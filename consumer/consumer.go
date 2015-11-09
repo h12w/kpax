@@ -72,7 +72,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
 				if p.ErrorCode != 0 {
-					return 0, fmt.Errorf("offset not exist %d", p.ErrorCode)
+					return 0, fmt.Errorf("fail to get offset: %s", proto.ErrorText(p.ErrorCode))
 				}
 				return p.Offset, nil
 			}
@@ -172,7 +172,7 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 				p := &t.ErrorInPartitions[j]
 				if p.Partition == partition {
 					if p.ErrorCode != 0 {
-						return fmt.Errorf("fail to commit %d", p.ErrorCode)
+						return fmt.Errorf("fail to commit: %s", proto.ErrorText(p.ErrorCode))
 					}
 					return nil
 				}
