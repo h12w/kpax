@@ -1,5 +1,6 @@
 zookeeper:
   image: wurstmeister/zookeeper
+  container_name: 
   ports:
     - "2181"
 kafka:
