@@ -25,7 +25,7 @@ func (t *Request) Marshal(w *Writer) {
 	w.WriteInt16(t.APIKey)
 	w.WriteInt16(t.APIVersion)
 	w.WriteInt32(t.CorrelationID)
-	w.WriteString(string(t.ClientID))
+	w.WriteString(t.ClientID)
 	t.RequestMessage.Marshal(w)
 }
 
@@ -33,7 +33,7 @@ func (t *Request) Unmarshal(r *Reader) {
 	t.APIKey = r.ReadInt16()
 	t.APIVersion = r.ReadInt16()
 	t.CorrelationID = r.ReadInt32()
-	t.ClientID = string(r.ReadString())
+	t.ClientID = r.ReadString()
 	t.RequestMessage.Unmarshal(r)
 }
 
@@ -133,14 +133,14 @@ func (t *Message) Unmarshal(r *Reader) {
 func (t *TopicMetadataRequest) Marshal(w *Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
-		w.WriteString(string((*t)[i]))
+		w.WriteString((*t)[i])
 	}
 }
 
 func (t *TopicMetadataRequest) Unmarshal(r *Reader) {
 	(*t) = make([]string, int(r.ReadInt32()))
 	for i := range *t {
-		(*t)[i] = string(r.ReadString())
+		(*t)[i] = r.ReadString()
 	}
 }
 
@@ -168,19 +168,19 @@ func (t *TopicMetadataResponse) Unmarshal(r *Reader) {
 
 func (t *Broker) Marshal(w *Writer) {
 	w.WriteInt32(t.NodeID)
-	w.WriteString(string(t.Host))
+	w.WriteString(t.Host)
 	w.WriteInt32(t.Port)
 }
 
 func (t *Broker) Unmarshal(r *Reader) {
 	t.NodeID = r.ReadInt32()
-	t.Host = string(r.ReadString())
+	t.Host = r.ReadString()
 	t.Port = r.ReadInt32()
 }
 
 func (t *TopicMetadata) Marshal(w *Writer) {
-	w.WriteInt16(t.TopicErrorCode)
-	w.WriteString(string(t.TopicName))
+	t.ErrorCode.Marshal(w)
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.PartitionMetadatas)))
 	for i := range t.PartitionMetadatas {
 		t.PartitionMetadatas[i].Marshal(w)
@@ -188,8 +188,8 @@ func (t *TopicMetadata) Marshal(w *Writer) {
 }
 
 func (t *TopicMetadata) Unmarshal(r *Reader) {
-	t.TopicErrorCode = r.ReadInt16()
-	t.TopicName = string(r.ReadString())
+	t.ErrorCode.Unmarshal(r)
+	t.TopicName = r.ReadString()
 	t.PartitionMetadatas = make([]PartitionMetadata, int(r.ReadInt32()))
 	for i := range t.PartitionMetadatas {
 		t.PartitionMetadatas[i].Unmarshal(r)
@@ -197,7 +197,7 @@ func (t *TopicMetadata) Unmarshal(r *Reader) {
 }
 
 func (t *PartitionMetadata) Marshal(w *Writer) {
-	w.WriteInt16(t.PartitionErrorCode)
+	t.ErrorCode.Marshal(w)
 	w.WriteInt32(t.PartitionID)
 	w.WriteInt32(t.Leader)
 	w.WriteInt32(int32(len(t.Replicas)))
@@ -211,7 +211,7 @@ func (t *PartitionMetadata) Marshal(w *Writer) {
 }
 
 func (t *PartitionMetadata) Unmarshal(r *Reader) {
-	t.PartitionErrorCode = r.ReadInt16()
+	t.ErrorCode.Unmarshal(r)
 	t.PartitionID = r.ReadInt32()
 	t.Leader = r.ReadInt32()
 	t.Replicas = make([]int32, int(r.ReadInt32()))
@@ -243,7 +243,7 @@ func (t *ProduceRequest) Unmarshal(r *Reader) {
 }
 
 func (t *MessageSetInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.MessageSetInPartitions)))
 	for i := range t.MessageSetInPartitions {
 		t.MessageSetInPartitions[i].Marshal(w)
@@ -251,7 +251,7 @@ func (t *MessageSetInTopic) Marshal(w *Writer) {
 }
 
 func (t *MessageSetInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.MessageSetInPartitions = make([]MessageSetInPartition, int(r.ReadInt32()))
 	for i := range t.MessageSetInPartitions {
 		t.MessageSetInPartitions[i].Unmarshal(r)
@@ -283,7 +283,7 @@ func (t *ProduceResponse) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetInPartitions)))
 	for i := range t.OffsetInPartitions {
 		t.OffsetInPartitions[i].Marshal(w)
@@ -291,7 +291,7 @@ func (t *OffsetInTopic) Marshal(w *Writer) {
 }
 
 func (t *OffsetInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.OffsetInPartitions = make([]OffsetInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetInPartitions {
 		t.OffsetInPartitions[i].Unmarshal(r)
@@ -300,13 +300,13 @@ func (t *OffsetInTopic) Unmarshal(r *Reader) {
 
 func (t *OffsetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	w.WriteInt16(t.ErrorCode)
+	t.ErrorCode.Marshal(w)
 	w.WriteInt64(t.Offset)
 }
 
 func (t *OffsetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	t.ErrorCode = r.ReadInt16()
+	t.ErrorCode.Unmarshal(r)
 	t.Offset = r.ReadInt64()
 }
 
@@ -331,7 +331,7 @@ func (t *FetchRequest) Unmarshal(r *Reader) {
 }
 
 func (t *FetchOffsetInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.FetchOffsetInPartitions)))
 	for i := range t.FetchOffsetInPartitions {
 		t.FetchOffsetInPartitions[i].Marshal(w)
@@ -339,7 +339,7 @@ func (t *FetchOffsetInTopic) Marshal(w *Writer) {
 }
 
 func (t *FetchOffsetInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.FetchOffsetInPartitions = make([]FetchOffsetInPartition, int(r.ReadInt32()))
 	for i := range t.FetchOffsetInPartitions {
 		t.FetchOffsetInPartitions[i].Unmarshal(r)
@@ -373,7 +373,7 @@ func (t *FetchResponse) Unmarshal(r *Reader) {
 }
 
 func (t *FetchMessageSetInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.FetchMessageSetInPartitions)))
 	for i := range t.FetchMessageSetInPartitions {
 		t.FetchMessageSetInPartitions[i].Marshal(w)
@@ -381,7 +381,7 @@ func (t *FetchMessageSetInTopic) Marshal(w *Writer) {
 }
 
 func (t *FetchMessageSetInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.FetchMessageSetInPartitions = make([]FetchMessageSetInPartition, int(r.ReadInt32()))
 	for i := range t.FetchMessageSetInPartitions {
 		t.FetchMessageSetInPartitions[i].Unmarshal(r)
@@ -390,14 +390,14 @@ func (t *FetchMessageSetInTopic) Unmarshal(r *Reader) {
 
 func (t *FetchMessageSetInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	w.WriteInt16(t.ErrorCode)
+	t.ErrorCode.Marshal(w)
 	w.WriteInt64(t.HighwaterMarkOffset)
 	t.MessageSet.Marshal(w)
 }
 
 func (t *FetchMessageSetInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	t.ErrorCode = r.ReadInt16()
+	t.ErrorCode.Unmarshal(r)
 	t.HighwaterMarkOffset = r.ReadInt64()
 	t.MessageSet.Unmarshal(r)
 }
@@ -419,7 +419,7 @@ func (t *OffsetRequest) Unmarshal(r *Reader) {
 }
 
 func (t *TimeInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.TimeInPartitions)))
 	for i := range t.TimeInPartitions {
 		t.TimeInPartitions[i].Marshal(w)
@@ -427,7 +427,7 @@ func (t *TimeInTopic) Marshal(w *Writer) {
 }
 
 func (t *TimeInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.TimeInPartitions = make([]TimeInPartition, int(r.ReadInt32()))
 	for i := range t.TimeInPartitions {
 		t.TimeInPartitions[i].Unmarshal(r)
@@ -461,7 +461,7 @@ func (t *OffsetResponse) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetsInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetsInPartitions)))
 	for i := range t.OffsetsInPartitions {
 		t.OffsetsInPartitions[i].Marshal(w)
@@ -469,7 +469,7 @@ func (t *OffsetsInTopic) Marshal(w *Writer) {
 }
 
 func (t *OffsetsInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.OffsetsInPartitions = make([]OffsetsInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetsInPartitions {
 		t.OffsetsInPartitions[i].Unmarshal(r)
@@ -478,7 +478,7 @@ func (t *OffsetsInTopic) Unmarshal(r *Reader) {
 
 func (t *OffsetsInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	w.WriteInt16(t.ErrorCode)
+	t.ErrorCode.Marshal(w)
 	w.WriteInt32(int32(len(t.Offsets)))
 	for i := range t.Offsets {
 		w.WriteInt64(t.Offsets[i])
@@ -487,7 +487,7 @@ func (t *OffsetsInPartition) Marshal(w *Writer) {
 
 func (t *OffsetsInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	t.ErrorCode = r.ReadInt16()
+	t.ErrorCode.Unmarshal(r)
 	t.Offsets = make([]int64, int(r.ReadInt32()))
 	for i := range t.Offsets {
 		t.Offsets[i] = r.ReadInt64()
@@ -503,21 +503,21 @@ func (t *ConsumerMetadataRequest) Unmarshal(r *Reader) {
 }
 
 func (t *ConsumerMetadataResponse) Marshal(w *Writer) {
-	w.WriteInt16(t.ErrorCode)
+	t.ErrorCode.Marshal(w)
 	w.WriteInt32(t.CoordinatorID)
-	w.WriteString(string(t.CoordinatorHost))
+	w.WriteString(t.CoordinatorHost)
 	w.WriteInt32(t.CoordinatorPort)
 }
 
 func (t *ConsumerMetadataResponse) Unmarshal(r *Reader) {
-	t.ErrorCode = r.ReadInt16()
+	t.ErrorCode.Unmarshal(r)
 	t.CoordinatorID = r.ReadInt32()
-	t.CoordinatorHost = string(r.ReadString())
+	t.CoordinatorHost = r.ReadString()
 	t.CoordinatorPort = r.ReadInt32()
 }
 
 func (t *OffsetCommitRequestV0) Marshal(w *Writer) {
-	w.WriteString(string(t.ConsumerGroupID))
+	w.WriteString(t.ConsumerGroupID)
 	w.WriteInt32(int32(len(t.OffsetCommitInTopicV0s)))
 	for i := range t.OffsetCommitInTopicV0s {
 		t.OffsetCommitInTopicV0s[i].Marshal(w)
@@ -525,7 +525,7 @@ func (t *OffsetCommitRequestV0) Marshal(w *Writer) {
 }
 
 func (t *OffsetCommitRequestV0) Unmarshal(r *Reader) {
-	t.ConsumerGroupID = string(r.ReadString())
+	t.ConsumerGroupID = r.ReadString()
 	t.OffsetCommitInTopicV0s = make([]OffsetCommitInTopicV0, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInTopicV0s {
 		t.OffsetCommitInTopicV0s[i].Unmarshal(r)
@@ -533,7 +533,7 @@ func (t *OffsetCommitRequestV0) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetCommitInTopicV0) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetCommitInPartitionV0s)))
 	for i := range t.OffsetCommitInPartitionV0s {
 		t.OffsetCommitInPartitionV0s[i].Marshal(w)
@@ -541,7 +541,7 @@ func (t *OffsetCommitInTopicV0) Marshal(w *Writer) {
 }
 
 func (t *OffsetCommitInTopicV0) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.OffsetCommitInPartitionV0s = make([]OffsetCommitInPartitionV0, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInPartitionV0s {
 		t.OffsetCommitInPartitionV0s[i].Unmarshal(r)
@@ -551,19 +551,19 @@ func (t *OffsetCommitInTopicV0) Unmarshal(r *Reader) {
 func (t *OffsetCommitInPartitionV0) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
-	w.WriteString(string(t.Metadata))
+	w.WriteString(t.Metadata)
 }
 
 func (t *OffsetCommitInPartitionV0) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
-	t.Metadata = string(r.ReadString())
+	t.Metadata = r.ReadString()
 }
 
 func (t *OffsetCommitRequestV1) Marshal(w *Writer) {
-	w.WriteString(string(t.ConsumerGroupID))
+	w.WriteString(t.ConsumerGroupID)
 	w.WriteInt32(t.ConsumerGroupGenerationID)
-	w.WriteString(string(t.ConsumerID))
+	w.WriteString(t.ConsumerID)
 	w.WriteInt32(int32(len(t.OffsetCommitInTopicV1s)))
 	for i := range t.OffsetCommitInTopicV1s {
 		t.OffsetCommitInTopicV1s[i].Marshal(w)
@@ -571,9 +571,9 @@ func (t *OffsetCommitRequestV1) Marshal(w *Writer) {
 }
 
 func (t *OffsetCommitRequestV1) Unmarshal(r *Reader) {
-	t.ConsumerGroupID = string(r.ReadString())
+	t.ConsumerGroupID = r.ReadString()
 	t.ConsumerGroupGenerationID = r.ReadInt32()
-	t.ConsumerID = string(r.ReadString())
+	t.ConsumerID = r.ReadString()
 	t.OffsetCommitInTopicV1s = make([]OffsetCommitInTopicV1, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInTopicV1s {
 		t.OffsetCommitInTopicV1s[i].Unmarshal(r)
@@ -581,7 +581,7 @@ func (t *OffsetCommitRequestV1) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetCommitInTopicV1) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetCommitInPartitionV1s)))
 	for i := range t.OffsetCommitInPartitionV1s {
 		t.OffsetCommitInPartitionV1s[i].Marshal(w)
@@ -589,7 +589,7 @@ func (t *OffsetCommitInTopicV1) Marshal(w *Writer) {
 }
 
 func (t *OffsetCommitInTopicV1) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.OffsetCommitInPartitionV1s = make([]OffsetCommitInPartitionV1, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInPartitionV1s {
 		t.OffsetCommitInPartitionV1s[i].Unmarshal(r)
@@ -600,20 +600,20 @@ func (t *OffsetCommitInPartitionV1) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
 	w.WriteInt64(t.TimeStamp)
-	w.WriteString(string(t.Metadata))
+	w.WriteString(t.Metadata)
 }
 
 func (t *OffsetCommitInPartitionV1) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
 	t.TimeStamp = r.ReadInt64()
-	t.Metadata = string(r.ReadString())
+	t.Metadata = r.ReadString()
 }
 
 func (t *OffsetCommitRequestV2) Marshal(w *Writer) {
-	w.WriteString(string(t.ConsumerGroup))
+	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(t.ConsumerGroupGenerationID)
-	w.WriteString(string(t.ConsumerID))
+	w.WriteString(t.ConsumerID)
 	w.WriteInt64(t.RetentionTime)
 	w.WriteInt32(int32(len(t.OffsetCommitInTopicV2s)))
 	for i := range t.OffsetCommitInTopicV2s {
@@ -622,9 +622,9 @@ func (t *OffsetCommitRequestV2) Marshal(w *Writer) {
 }
 
 func (t *OffsetCommitRequestV2) Unmarshal(r *Reader) {
-	t.ConsumerGroup = string(r.ReadString())
+	t.ConsumerGroup = r.ReadString()
 	t.ConsumerGroupGenerationID = r.ReadInt32()
-	t.ConsumerID = string(r.ReadString())
+	t.ConsumerID = r.ReadString()
 	t.RetentionTime = r.ReadInt64()
 	t.OffsetCommitInTopicV2s = make([]OffsetCommitInTopicV2, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInTopicV2s {
@@ -633,7 +633,7 @@ func (t *OffsetCommitRequestV2) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetCommitInTopicV2) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetCommitInPartitionV2s)))
 	for i := range t.OffsetCommitInPartitionV2s {
 		t.OffsetCommitInPartitionV2s[i].Marshal(w)
@@ -641,7 +641,7 @@ func (t *OffsetCommitInTopicV2) Marshal(w *Writer) {
 }
 
 func (t *OffsetCommitInTopicV2) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.OffsetCommitInPartitionV2s = make([]OffsetCommitInPartitionV2, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInPartitionV2s {
 		t.OffsetCommitInPartitionV2s[i].Unmarshal(r)
@@ -651,13 +651,13 @@ func (t *OffsetCommitInTopicV2) Unmarshal(r *Reader) {
 func (t *OffsetCommitInPartitionV2) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
-	w.WriteString(string(t.Metadata))
+	w.WriteString(t.Metadata)
 }
 
 func (t *OffsetCommitInPartitionV2) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
-	t.Metadata = string(r.ReadString())
+	t.Metadata = r.ReadString()
 }
 
 func (t *OffsetCommitResponse) Marshal(w *Writer) {
@@ -675,7 +675,7 @@ func (t *OffsetCommitResponse) Unmarshal(r *Reader) {
 }
 
 func (t *ErrorInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.ErrorInPartitions)))
 	for i := range t.ErrorInPartitions {
 		t.ErrorInPartitions[i].Marshal(w)
@@ -683,7 +683,7 @@ func (t *ErrorInTopic) Marshal(w *Writer) {
 }
 
 func (t *ErrorInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.ErrorInPartitions = make([]ErrorInPartition, int(r.ReadInt32()))
 	for i := range t.ErrorInPartitions {
 		t.ErrorInPartitions[i].Unmarshal(r)
@@ -692,16 +692,16 @@ func (t *ErrorInTopic) Unmarshal(r *Reader) {
 
 func (t *ErrorInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
-	w.WriteInt16(t.ErrorCode)
+	t.ErrorCode.Marshal(w)
 }
 
 func (t *ErrorInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
-	t.ErrorCode = r.ReadInt16()
+	t.ErrorCode.Unmarshal(r)
 }
 
 func (t *OffsetFetchRequestV0) Marshal(w *Writer) {
-	w.WriteString(string(t.ConsumerGroup))
+	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(int32(len(t.PartitionInTopics)))
 	for i := range t.PartitionInTopics {
 		t.PartitionInTopics[i].Marshal(w)
@@ -709,7 +709,7 @@ func (t *OffsetFetchRequestV0) Marshal(w *Writer) {
 }
 
 func (t *OffsetFetchRequestV0) Unmarshal(r *Reader) {
-	t.ConsumerGroup = string(r.ReadString())
+	t.ConsumerGroup = r.ReadString()
 	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
 	for i := range t.PartitionInTopics {
 		t.PartitionInTopics[i].Unmarshal(r)
@@ -717,7 +717,7 @@ func (t *OffsetFetchRequestV0) Unmarshal(r *Reader) {
 }
 
 func (t *PartitionInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.Partitions)))
 	for i := range t.Partitions {
 		w.WriteInt32(t.Partitions[i])
@@ -725,7 +725,7 @@ func (t *PartitionInTopic) Marshal(w *Writer) {
 }
 
 func (t *PartitionInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.Partitions = make([]int32, int(r.ReadInt32()))
 	for i := range t.Partitions {
 		t.Partitions[i] = r.ReadInt32()
@@ -733,7 +733,7 @@ func (t *PartitionInTopic) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetFetchRequestV1) Marshal(w *Writer) {
-	w.WriteString(string(t.ConsumerGroup))
+	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(int32(len(t.PartitionInTopics)))
 	for i := range t.PartitionInTopics {
 		t.PartitionInTopics[i].Marshal(w)
@@ -741,7 +741,7 @@ func (t *OffsetFetchRequestV1) Marshal(w *Writer) {
 }
 
 func (t *OffsetFetchRequestV1) Unmarshal(r *Reader) {
-	t.ConsumerGroup = string(r.ReadString())
+	t.ConsumerGroup = r.ReadString()
 	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
 	for i := range t.PartitionInTopics {
 		t.PartitionInTopics[i].Unmarshal(r)
@@ -749,7 +749,7 @@ func (t *OffsetFetchRequestV1) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetFetchRequestV2) Marshal(w *Writer) {
-	w.WriteString(string(t.ConsumerGroup))
+	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(int32(len(t.PartitionInTopics)))
 	for i := range t.PartitionInTopics {
 		t.PartitionInTopics[i].Marshal(w)
@@ -757,7 +757,7 @@ func (t *OffsetFetchRequestV2) Marshal(w *Writer) {
 }
 
 func (t *OffsetFetchRequestV2) Unmarshal(r *Reader) {
-	t.ConsumerGroup = string(r.ReadString())
+	t.ConsumerGroup = r.ReadString()
 	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
 	for i := range t.PartitionInTopics {
 		t.PartitionInTopics[i].Unmarshal(r)
@@ -779,7 +779,7 @@ func (t *OffsetFetchResponse) Unmarshal(r *Reader) {
 }
 
 func (t *OffsetMetadataInTopic) Marshal(w *Writer) {
-	w.WriteString(string(t.TopicName))
+	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetMetadataInPartitions)))
 	for i := range t.OffsetMetadataInPartitions {
 		t.OffsetMetadataInPartitions[i].Marshal(w)
@@ -787,7 +787,7 @@ func (t *OffsetMetadataInTopic) Marshal(w *Writer) {
 }
 
 func (t *OffsetMetadataInTopic) Unmarshal(r *Reader) {
-	t.TopicName = string(r.ReadString())
+	t.TopicName = r.ReadString()
 	t.OffsetMetadataInPartitions = make([]OffsetMetadataInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetMetadataInPartitions {
 		t.OffsetMetadataInPartitions[i].Unmarshal(r)
@@ -797,13 +797,21 @@ func (t *OffsetMetadataInTopic) Unmarshal(r *Reader) {
 func (t *OffsetMetadataInPartition) Marshal(w *Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
-	w.WriteString(string(t.Metadata))
-	w.WriteInt16(t.ErrorCode)
+	w.WriteString(t.Metadata)
+	t.ErrorCode.Marshal(w)
 }
 
 func (t *OffsetMetadataInPartition) Unmarshal(r *Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
-	t.Metadata = string(r.ReadString())
-	t.ErrorCode = r.ReadInt16()
+	t.Metadata = r.ReadString()
+	t.ErrorCode.Unmarshal(r)
+}
+
+func (t *ErrorCode) Marshal(w *Writer) {
+	w.WriteInt16(int16((*t)))
+}
+
+func (t *ErrorCode) Unmarshal(r *Reader) {
+	(*t) = ErrorCode(r.ReadInt16())
 }

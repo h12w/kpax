@@ -17,8 +17,14 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestUnmarshalTrunc(t *testing.T) {
-	f, _ := os.Open("truncated_response")
-	b, _ := ioutil.ReadAll(f)
+	f, err := os.Open("truncated_response")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
 	f.Close()
 	r := Reader{
 		B: b,

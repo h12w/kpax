@@ -34,10 +34,8 @@ TopicMetadataResponse => [Broker][TopicMetadata]
     NodeId => int32
     Host => string
     Port => int32
-    TopicMetadata => TopicErrorCode TopicName [PartitionMetadata]
-    TopicErrorCode => int16
-    PartitionMetadata => PartitionErrorCode PartitionId Leader Replicas Isr
-    PartitionErrorCode => int16
+    TopicMetadata => ErrorCode TopicName [PartitionMetadata]
+    PartitionMetadata => ErrorCode PartitionId Leader Replicas Isr
     PartitionId => int32
     Leader => int32
     Replicas => [int32]
@@ -56,7 +54,6 @@ ProduceResponse => [OffsetInTopic]
     OffsetInPartition => Partition ErrorCode Offset
     TopicName => string
     Partition => int32
-    ErrorCode => int16
     Offset => int64
 
 FetchRequest => ReplicaId MaxWaitTime MinBytes [FetchOffsetInTopic]
@@ -75,7 +72,6 @@ FetchResponse => [FetchMessageSetInTopic]
     FetchMessageSetInPartition => Partition ErrorCode HighwaterMarkOffset MessageSet
     TopicName => string
     Partition => int32
-    ErrorCode => int16
     HighwaterMarkOffset => int64
 
 OffsetRequest => ReplicaId [TimeInTopic]
@@ -91,14 +87,12 @@ OffsetResponse => [OffsetsInTopic]
     OffsetsInTopic => TopicName [OffsetsInPartition]
     OffsetsInPartition => Partition ErrorCode [Offset]
     Partition => int32
-    ErrorCode => int16
     Offset => int64
 
 ConsumerMetadataRequest => ConsumerGroup
     ConsumerGroup => string
 
 ConsumerMetadataResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorPort
-    ErrorCode => int16
     CoordinatorId => int32
     CoordinatorHost => string
     CoordinatorPort => int32
@@ -141,7 +135,6 @@ OffsetCommitResponse => [ErrorInTopic]
     ErrorInPartition => Partition ErrorCode
     TopicName => string
     Partition => int32
-    ErrorCode => int16
 
 OffsetFetchRequestV0 => ConsumerGroup [PartitionInTopic]
     PartitionInTopic => TopicName [Partition]
@@ -166,4 +159,6 @@ OffsetFetchResponse => [OffsetMetadataInTopic]
     Partition => int32
     Offset => int64
     Metadata => string
-    ErrorCode => int16
+
+ErrorCode => ErrorCodeT
+    ErrorCodeT => int16

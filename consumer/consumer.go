@@ -71,8 +71,8 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 		if t.TopicName == topic {
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
-				if p.ErrorCode != 0 {
-					return 0, fmt.Errorf("fail to get offset: %s", proto.ErrorText(p.ErrorCode))
+				if p.ErrorCode != proto.NoError {
+					return 0, fmt.Errorf("fail to get offset: %v", p.ErrorCode)
 				}
 				return p.Offset, nil
 			}
@@ -121,6 +121,9 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 				continue
 			}
 			start := 0
+			if p.ErrorCode != proto.NoError {
+				return nil, fmt.Errorf("fail to consume: %v", p.ErrorCode)
+			}
 			for k := range p.MessageSet {
 				m := &p.MessageSet[k]
 				if m.Offset == offset {
@@ -171,8 +174,8 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 			for j := range t.ErrorInPartitions {
 				p := &t.ErrorInPartitions[j]
 				if p.Partition == partition {
-					if p.ErrorCode != 0 {
-						return fmt.Errorf("fail to commit: %s", proto.ErrorText(p.ErrorCode))
+					if p.ErrorCode != proto.NoError {
+						return fmt.Errorf("fail to commit: %v", p.ErrorCode)
 					}
 					return nil
 				}

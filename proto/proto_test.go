@@ -7,7 +7,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	conn, err := net.Dial("tcp", "docker:32791")
+	conn, err := net.Dial("tcp", "docker:32780")
 	if err != nil {
 		t.Fatal(err)
 	}
