@@ -1,16 +1,16 @@
 zookeeper:
-  image: wurstmeister/zookeeper
+  image: h12w/zookeeper:latest
   ports:
     - "2181"
 kafka:
-  image: wurstmeister/kafka:0.8.2.1
+  image: h12w/kafka:latest
   ports:
     - "9092"
   links:
     - zookeeper:zk
   environment:
-    KAFKA_ADVERTISED_HOST_NAME: 192.168.59.103
-    #KAFKA_ADVERTISED_HOST_NAME: 192.168.1.120
-    KAFKA_CREATE_TOPICS: "test:5:3"
+    #KAFKA_ADVERTISED_HOST_NAME: 192.168.59.103
+    KAFKA_ADVERTISED_HOST_NAME: 192.168.1.120
+    KAFKA_DELETE_TOPIC_ENABLE: "true"
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
