@@ -1,5 +1,6 @@
 zookeeper:
   image: h12w/zookeeper:latest
+  container_name: ccfea3b2a73aee522ffbf41723f38cddecc6a404
   ports:
     - "2181"
 kafka:
