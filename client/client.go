@@ -118,7 +118,7 @@ func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 			if err != nil {
 				return err
 			}
-			if m.ErrorCode != 0 {
+			if m.ErrorCode != proto.NoError {
 				return ErrCoordNotFound
 			}
 			c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
@@ -144,8 +144,8 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
-			if t.TopicErrorCode != 0 {
-				log.Warnf("topic error %d", t.TopicErrorCode)
+			if t.ErrorCode != proto.NoError {
+				log.Warnf("topic error %v", t.ErrorCode)
 			}
 			if t.TopicName == topic {
 				partitions := make([]int32, len(t.PartitionMetadatas))

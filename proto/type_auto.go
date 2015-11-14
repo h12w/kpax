@@ -46,16 +46,16 @@ type Broker struct {
 	Port   int32
 }
 type TopicMetadata struct {
-	TopicErrorCode     int16
+	ErrorCode          ErrorCode
 	TopicName          string
 	PartitionMetadatas []PartitionMetadata
 }
 type PartitionMetadata struct {
-	PartitionErrorCode int16
-	PartitionID        int32
-	Leader             int32
-	Replicas           []int32
-	ISR                []int32
+	ErrorCode   ErrorCode
+	PartitionID int32
+	Leader      int32
+	Replicas    []int32
+	ISR         []int32
 }
 type ProduceRequest struct {
 	RequiredAcks       int16
@@ -77,7 +77,7 @@ type OffsetInTopic struct {
 }
 type OffsetInPartition struct {
 	Partition int32
-	ErrorCode int16
+	ErrorCode ErrorCode
 	Offset    int64
 }
 type FetchRequest struct {
@@ -102,7 +102,7 @@ type FetchMessageSetInTopic struct {
 }
 type FetchMessageSetInPartition struct {
 	Partition           int32
-	ErrorCode           int16
+	ErrorCode           ErrorCode
 	HighwaterMarkOffset int64
 	MessageSet          MessageSet
 }
@@ -126,12 +126,12 @@ type OffsetsInTopic struct {
 }
 type OffsetsInPartition struct {
 	Partition int32
-	ErrorCode int16
+	ErrorCode ErrorCode
 	Offsets   []int64
 }
 type ConsumerMetadataRequest string
 type ConsumerMetadataResponse struct {
-	ErrorCode       int16
+	ErrorCode       ErrorCode
 	CoordinatorID   int32
 	CoordinatorHost string
 	CoordinatorPort int32
@@ -188,7 +188,7 @@ type ErrorInTopic struct {
 }
 type ErrorInPartition struct {
 	Partition int32
-	ErrorCode int16
+	ErrorCode ErrorCode
 }
 type OffsetFetchRequestV0 struct {
 	ConsumerGroup     string
@@ -215,5 +215,6 @@ type OffsetMetadataInPartition struct {
 	Partition int32
 	Offset    int64
 	Metadata  string
-	ErrorCode int16
+	ErrorCode ErrorCode
 }
+type ErrorCode int16
