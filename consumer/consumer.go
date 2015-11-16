@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"h12.me/kafka/client"
@@ -72,7 +71,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
 				if p.ErrorCode != proto.NoError {
-					return 0, fmt.Errorf("fail to get offset: %v", p.ErrorCode)
+					return 0, p.ErrorCode
 				}
 				return p.Offset, nil
 			}
@@ -122,7 +121,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 			}
 			start := 0
 			if p.ErrorCode != proto.NoError {
-				return nil, fmt.Errorf("fail to consume: %v", p.ErrorCode)
+				return nil, p.ErrorCode
 			}
 			for k := range p.MessageSet {
 				m := &p.MessageSet[k]
@@ -175,7 +174,7 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 				p := &t.ErrorInPartitions[j]
 				if p.Partition == partition {
 					if p.ErrorCode != proto.NoError {
-						return fmt.Errorf("fail to commit: %v", p.ErrorCode)
+						return p.ErrorCode
 					}
 					return nil
 				}
