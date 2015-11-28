@@ -4,10 +4,17 @@ import (
 	"fmt"
 	"net"
 	"testing"
+
+	"h12.me/realtest/kafka"
 )
 
-func Test(t *testing.T) {
-	conn, err := net.Dial("tcp", "docker:32780")
+func TestTopicMetadata(t *testing.T) {
+	k, err := kafka.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	brokers := k.Brokers()
+	conn, err := net.Dial("tcp", brokers[0])
 	if err != nil {
 		t.Fatal(err)
 	}
