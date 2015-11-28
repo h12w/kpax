@@ -1,10 +1,12 @@
 h12.me/kafka
 ============
 
+[![GoDoc](https://godoc.org/h12.me/kafka?status.svg)](https://godoc.org/h12.me/kafka)
+
 A modular & idiomatic Kafka client in Go
 ----------------------------------------
 
-Compatible with Kafka 0.8.2 or later.
+Compatible with Kafka from 0.8.0 to 0.9.0.
 
 Install
 -------

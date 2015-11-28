@@ -494,22 +494,22 @@ func (t *OffsetsInPartition) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *ConsumerMetadataRequest) Marshal(w *Writer) {
+func (t *GroupCoordinatorRequest) Marshal(w *Writer) {
 	w.WriteString(string((*t)))
 }
 
-func (t *ConsumerMetadataRequest) Unmarshal(r *Reader) {
-	(*t) = ConsumerMetadataRequest(r.ReadString())
+func (t *GroupCoordinatorRequest) Unmarshal(r *Reader) {
+	(*t) = GroupCoordinatorRequest(r.ReadString())
 }
 
-func (t *ConsumerMetadataResponse) Marshal(w *Writer) {
+func (t *GroupCoordinatorResponse) Marshal(w *Writer) {
 	t.ErrorCode.Marshal(w)
 	w.WriteInt32(t.CoordinatorID)
 	w.WriteString(t.CoordinatorHost)
 	w.WriteInt32(t.CoordinatorPort)
 }
 
-func (t *ConsumerMetadataResponse) Unmarshal(r *Reader) {
+func (t *GroupCoordinatorResponse) Unmarshal(r *Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.CoordinatorID = r.ReadInt32()
 	t.CoordinatorHost = r.ReadString()
@@ -748,22 +748,6 @@ func (t *OffsetFetchRequestV1) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetFetchRequestV2) Marshal(w *Writer) {
-	w.WriteString(t.ConsumerGroup)
-	w.WriteInt32(int32(len(t.PartitionInTopics)))
-	for i := range t.PartitionInTopics {
-		t.PartitionInTopics[i].Marshal(w)
-	}
-}
-
-func (t *OffsetFetchRequestV2) Unmarshal(r *Reader) {
-	t.ConsumerGroup = r.ReadString()
-	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
-	for i := range t.PartitionInTopics {
-		t.PartitionInTopics[i].Unmarshal(r)
-	}
-}
-
 func (t *OffsetFetchResponse) Marshal(w *Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
@@ -806,6 +790,358 @@ func (t *OffsetMetadataInPartition) Unmarshal(r *Reader) {
 	t.Offset = r.ReadInt64()
 	t.Metadata = r.ReadString()
 	t.ErrorCode.Unmarshal(r)
+}
+
+func (t *JoinGroupRequest) Marshal(w *Writer) {
+	w.WriteString(t.GroupID)
+	w.WriteInt32(t.SessionTimeout)
+	w.WriteString(t.MemberID)
+	w.WriteString(t.ProtocolType)
+	t.GroupProtocols.Marshal(w)
+}
+
+func (t *JoinGroupRequest) Unmarshal(r *Reader) {
+	t.GroupID = r.ReadString()
+	t.SessionTimeout = r.ReadInt32()
+	t.MemberID = r.ReadString()
+	t.ProtocolType = r.ReadString()
+	t.GroupProtocols.Unmarshal(r)
+}
+
+func (t *GroupProtocols) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *GroupProtocols) Unmarshal(r *Reader) {
+	(*t) = make([]GroupProtocol, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *GroupProtocol) Marshal(w *Writer) {
+	w.WriteString(t.ProtocolName)
+	t.ProtocolMetadata.Marshal(w)
+}
+
+func (t *GroupProtocol) Unmarshal(r *Reader) {
+	t.ProtocolName = r.ReadString()
+	t.ProtocolMetadata.Unmarshal(r)
+}
+
+func (t *ProtocolMetadata) Marshal(w *Writer) {
+	w.WriteInt16(t.Version)
+	t.Subscription.Marshal(w)
+	w.WriteBytes(t.UserData)
+}
+
+func (t *ProtocolMetadata) Unmarshal(r *Reader) {
+	t.Version = r.ReadInt16()
+	t.Subscription.Unmarshal(r)
+	t.UserData = r.ReadBytes()
+}
+
+func (t *Subscription) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		w.WriteString((*t)[i])
+	}
+}
+
+func (t *Subscription) Unmarshal(r *Reader) {
+	(*t) = make([]string, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i] = r.ReadString()
+	}
+}
+
+func (t *JoinGroupResponse) Marshal(w *Writer) {
+	t.ErrorCode.Marshal(w)
+	w.WriteInt32(t.GenerationID)
+	w.WriteString(t.GroupProtocolName)
+	w.WriteString(t.LeaderID)
+	w.WriteString(t.MemberID)
+	t.MemberWithMetas.Marshal(w)
+}
+
+func (t *JoinGroupResponse) Unmarshal(r *Reader) {
+	t.ErrorCode.Unmarshal(r)
+	t.GenerationID = r.ReadInt32()
+	t.GroupProtocolName = r.ReadString()
+	t.LeaderID = r.ReadString()
+	t.MemberID = r.ReadString()
+	t.MemberWithMetas.Unmarshal(r)
+}
+
+func (t *MemberWithMetas) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *MemberWithMetas) Unmarshal(r *Reader) {
+	(*t) = make([]MemberWithMeta, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *MemberWithMeta) Marshal(w *Writer) {
+	w.WriteString(t.MemberID)
+	w.WriteBytes(t.MemberMetadata)
+}
+
+func (t *MemberWithMeta) Unmarshal(r *Reader) {
+	t.MemberID = r.ReadString()
+	t.MemberMetadata = r.ReadBytes()
+}
+
+func (t *SyncGroupRequest) Marshal(w *Writer) {
+	w.WriteString(t.GroupID)
+	w.WriteInt32(t.GenerationID)
+	w.WriteString(t.MemberID)
+	t.GroupAssignments.Marshal(w)
+}
+
+func (t *SyncGroupRequest) Unmarshal(r *Reader) {
+	t.GroupID = r.ReadString()
+	t.GenerationID = r.ReadInt32()
+	t.MemberID = r.ReadString()
+	t.GroupAssignments.Unmarshal(r)
+}
+
+func (t *GroupAssignments) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *GroupAssignments) Unmarshal(r *Reader) {
+	(*t) = make([]GroupAssignment, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *GroupAssignment) Marshal(w *Writer) {
+	w.WriteString(t.MemberID)
+	t.MemberAssignment.Marshal(w)
+}
+
+func (t *GroupAssignment) Unmarshal(r *Reader) {
+	t.MemberID = r.ReadString()
+	t.MemberAssignment.Unmarshal(r)
+}
+
+func (t *MemberAssignment) Marshal(w *Writer) {
+	w.WriteInt16(t.Version)
+	t.PartitionAssignments.Marshal(w)
+}
+
+func (t *MemberAssignment) Unmarshal(r *Reader) {
+	t.Version = r.ReadInt16()
+	t.PartitionAssignments.Unmarshal(r)
+}
+
+func (t *PartitionAssignments) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *PartitionAssignments) Unmarshal(r *Reader) {
+	(*t) = make([]PartitionAssignment, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *PartitionAssignment) Marshal(w *Writer) {
+	w.WriteString(t.Topic)
+	w.WriteInt32(int32(len(t.Partitions)))
+	for i := range t.Partitions {
+		w.WriteInt32(t.Partitions[i])
+	}
+}
+
+func (t *PartitionAssignment) Unmarshal(r *Reader) {
+	t.Topic = r.ReadString()
+	t.Partitions = make([]int32, int(r.ReadInt32()))
+	for i := range t.Partitions {
+		t.Partitions[i] = r.ReadInt32()
+	}
+}
+
+func (t *SyncGroupResponse) Marshal(w *Writer) {
+	t.ErrorCode.Marshal(w)
+	t.MemberAssignment.Marshal(w)
+}
+
+func (t *SyncGroupResponse) Unmarshal(r *Reader) {
+	t.ErrorCode.Unmarshal(r)
+	t.MemberAssignment.Unmarshal(r)
+}
+
+func (t *HeartbeatRequest) Marshal(w *Writer) {
+	w.WriteString(t.GroupID)
+	w.WriteInt32(t.GenerationID)
+	w.WriteString(t.MemberID)
+}
+
+func (t *HeartbeatRequest) Unmarshal(r *Reader) {
+	t.GroupID = r.ReadString()
+	t.GenerationID = r.ReadInt32()
+	t.MemberID = r.ReadString()
+}
+
+func (t *HeartbeatResponse) Marshal(w *Writer) {
+	(*t).Marshal(w)
+}
+
+func (t *HeartbeatResponse) Unmarshal(r *Reader) {
+	(*t).Unmarshal(r)
+}
+
+func (t *LeaveGroupRequest) Marshal(w *Writer) {
+	w.WriteString(t.GroupID)
+	w.WriteString(t.MemberID)
+}
+
+func (t *LeaveGroupRequest) Unmarshal(r *Reader) {
+	t.GroupID = r.ReadString()
+	t.MemberID = r.ReadString()
+}
+
+func (t *LeaveGroupResponse) Marshal(w *Writer) {
+	(*t).Marshal(w)
+}
+
+func (t *LeaveGroupResponse) Unmarshal(r *Reader) {
+	(*t).Unmarshal(r)
+}
+
+func (t *ListGroupsRequest) Marshal(w *Writer) {
+	// no fields for type ListGroupsRequest, {struct  [] map[]}
+}
+
+func (t *ListGroupsRequest) Unmarshal(r *Reader) {
+	// no fields for type ListGroupsRequest, {struct  [] map[]}
+}
+
+func (t *ListGroupsResponse) Marshal(w *Writer) {
+	t.ErrorCode.Marshal(w)
+	t.Groups.Marshal(w)
+}
+
+func (t *ListGroupsResponse) Unmarshal(r *Reader) {
+	t.ErrorCode.Unmarshal(r)
+	t.Groups.Unmarshal(r)
+}
+
+func (t *Groups) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *Groups) Unmarshal(r *Reader) {
+	(*t) = make([]Group, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *Group) Marshal(w *Writer) {
+	w.WriteString(t.GroupID)
+	w.WriteString(t.ProtocolType)
+}
+
+func (t *Group) Unmarshal(r *Reader) {
+	t.GroupID = r.ReadString()
+	t.ProtocolType = r.ReadString()
+}
+
+func (t *DescribeGroupsRequest) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		w.WriteString((*t)[i])
+	}
+}
+
+func (t *DescribeGroupsRequest) Unmarshal(r *Reader) {
+	(*t) = make([]string, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i] = r.ReadString()
+	}
+}
+
+func (t *DescribeGroupsResponse) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *DescribeGroupsResponse) Unmarshal(r *Reader) {
+	(*t) = make([]GroupDescription, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *GroupDescription) Marshal(w *Writer) {
+	t.ErrorCode.Marshal(w)
+	w.WriteString(t.GroupID)
+	w.WriteString(t.State)
+	w.WriteString(t.ProtocolType)
+	w.WriteString(t.Protocol)
+	t.Members.Marshal(w)
+}
+
+func (t *GroupDescription) Unmarshal(r *Reader) {
+	t.ErrorCode.Unmarshal(r)
+	t.GroupID = r.ReadString()
+	t.State = r.ReadString()
+	t.ProtocolType = r.ReadString()
+	t.Protocol = r.ReadString()
+	t.Members.Unmarshal(r)
+}
+
+func (t *Members) Marshal(w *Writer) {
+	w.WriteInt32(int32(len((*t))))
+	for i := range *t {
+		(*t)[i].Marshal(w)
+	}
+}
+
+func (t *Members) Unmarshal(r *Reader) {
+	(*t) = make([]Member, int(r.ReadInt32()))
+	for i := range *t {
+		(*t)[i].Unmarshal(r)
+	}
+}
+
+func (t *Member) Marshal(w *Writer) {
+	w.WriteString(t.MemberID)
+	w.WriteString(t.ClientID)
+	w.WriteString(t.ClientHost)
+	w.WriteBytes(t.MemberMetadata)
+	t.MemberAssignment.Marshal(w)
+}
+
+func (t *Member) Unmarshal(r *Reader) {
+	t.MemberID = r.ReadString()
+	t.ClientID = r.ReadString()
+	t.ClientHost = r.ReadString()
+	t.MemberMetadata = r.ReadBytes()
+	t.MemberAssignment.Unmarshal(r)
 }
 
 func (t *ErrorCode) Marshal(w *Writer) {
