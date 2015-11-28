@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"fmt"
 	"net"
 	"testing"
 
@@ -19,14 +18,20 @@ func TestTopicMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
+	topic, err := k.NewRandomTopic(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer k.DeleteTopic(topic)
+	reqMsg := &TopicMetadataRequest{
+		topic,
+	}
 	req := Request{
-		APIKey:        TopicMetadataRequestType,
-		APIVersion:    0,
-		CorrelationID: 1,
-		ClientID:      "abc",
-		RequestMessage: &TopicMetadataRequest{
-			"test",
-		},
+		APIKey:         reqMsg.APIKey(),
+		APIVersion:     reqMsg.APIVersion(),
+		CorrelationID:  1,
+		ClientID:       "abc",
+		RequestMessage: reqMsg,
 	}
 	if err := req.Send(conn); err != nil {
 		t.Fatal(t)
@@ -37,5 +42,4 @@ func TestTopicMetadata(t *testing.T) {
 	if err := resp.Receive(conn); err != nil {
 		t.Fatal(resp)
 	}
-	fmt.Printf("%#v\n", resp.ResponseMessage)
 }
