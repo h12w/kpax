@@ -114,7 +114,7 @@ func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 	}
 	for _, broker := range brokers {
 		for i := 0; i < 2; i++ { // twice
-			m, err := c.getConsumerMetadata(broker, consumerGroup)
+			m, err := c.getGroupCoordinator(broker, consumerGroup)
 			if err != nil {
 				return err
 			}
@@ -173,10 +173,10 @@ func (c *C) getTopicMetadata(broker *broker.B, topic string) (*proto.TopicMetada
 	return resp, nil
 }
 
-func (c *C) getConsumerMetadata(broker *broker.B, consumerGroup string) (*proto.ConsumerMetadataResponse, error) {
-	creq := proto.ConsumerMetadataRequest(consumerGroup)
+func (c *C) getGroupCoordinator(broker *broker.B, consumerGroup string) (*proto.GroupCoordinatorResponse, error) {
+	creq := proto.GroupCoordinatorRequest(consumerGroup)
 	req := c.NewRequest(&creq)
-	resp := &proto.ConsumerMetadataResponse{}
+	resp := &proto.GroupCoordinatorResponse{}
 	if err := broker.Do(req, resp); err != nil {
 		return nil, err
 	}
