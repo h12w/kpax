@@ -1,46 +1,35 @@
 package main
 
 import (
-	"html"
-	"log"
-	"os"
-	"strings"
+	"bytes"
+	"fmt"
+	"io"
 
 	"h12.me/gs"
 	"h12.me/html-query"
 	"h12.me/html-query/expr"
 )
 
-func fromHTMLToBNF() {
-	root := gs.WebPage{}.Load("spec.html").Parse()
-
-	f, err := os.Create("bnf.auto.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
+func fromHTMLToBNF(htmlFile string, w io.Writer) {
+	root := gs.WebPage{}.Load(htmlFile).Parse()
 	var (
+		td    = expr.Td
 		class = expr.Class
+		code  = expr.Code
+		not   = expr.Not
 	)
-
-	root.Descendants(class("code")).For(func(item *query.Node) {
-		//fmt.Println(*h.Text())
-		bnf := cleanBNFCode(*item.Script().Text())
-		f.Write([]byte(bnf))
-		f.Write([]byte("\n\n"))
+	root.Descendants(td, class("code")).For(func(def *query.Node) {
+		for i, line := range def.Descendants(code, not(class("spaces"))).All() {
+			if i != 0 {
+				w.Write([]byte{'\t'})
+			}
+			if txt := line.Text(); txt != nil {
+				w.Write(bytes.TrimSpace([]byte(*txt)))
+			} else {
+				fmt.Sprintf("%#v", line)
+			}
+			w.Write([]byte{'\n'})
+		}
+		w.Write([]byte{'\n'})
 	})
-}
-
-func cleanBNFCode(code string) string {
-	code = html.UnescapeString(code)
-	code = strings.TrimSpace(code)
-	code = strings.TrimPrefix(code, "<![CDATA[")
-	code = strings.TrimSuffix(code, "]]>")
-	code = strings.TrimSpace(code)
-	ss := strings.Split(code, "\n")
-	for i := range ss {
-		ss[i] = strings.TrimPrefix(ss[i], "                                ")
-	}
-	return strings.Join(ss, "\n")
 }
