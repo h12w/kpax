@@ -15,6 +15,7 @@ func main() {
 		fmt.Println("goj: from BNF to Go JSON")
 		fmt.Println("go: from BNF to Go")
 		fmt.Println("gof: from BNF to Go funcs")
+		fmt.Println("goe: from HTML to Go errors")
 		return
 	}
 	file := os.Args[2]
@@ -35,5 +36,7 @@ func main() {
 		bnf := wipro.ParseBNF(file)
 		goTypes := bnf.GoTypes()
 		goTypes.GoFuncs(os.Stdout)
+	case "goe":
+		genErrorCodes(file, os.Stdout)
 	}
 }
