@@ -29,7 +29,7 @@ func (r *OffsetRequest) APIVersion() int16           { return 0 }
 func (r *TopicMetadataRequest) APIVersion() int16    { return 0 }
 func (r *OffsetCommitRequestV0) APIVersion() int16   { return 0 }
 func (r *OffsetCommitRequestV1) APIVersion() int16   { return 1 }
-func (r *OffsetCommitRequestV2) APIVersion() int16   { return 0 }
+func (r *OffsetCommitRequestV2) APIVersion() int16   { return 2 }
 func (r *OffsetFetchRequestV0) APIVersion() int16    { return 0 }
 func (r *OffsetFetchRequestV1) APIVersion() int16    { return 1 }
 func (r *GroupCoordinatorRequest) APIVersion() int16 { return 0 }
