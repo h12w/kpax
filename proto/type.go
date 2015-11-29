@@ -1,8 +1,10 @@
 package proto
 
 import (
-	"h12.me/wipro"
+	"io"
 	"strconv"
+
+	"h12.me/wipro"
 )
 
 type RequestMessage interface {
@@ -47,4 +49,12 @@ func (*ListGroupsRequest) APIVersion() int16       { return 0 }
 
 func (b *Broker) Addr() string {
 	return b.Host + ":" + strconv.Itoa(int(b.Port))
+}
+
+func (req *Request) Send(conn io.Writer) error {
+	return wipro.Send(&RequestOrResponse{M: req}, conn)
+}
+
+func (resp *Response) Receive(conn io.Reader) error {
+	return wipro.Receive(conn, &RequestOrResponse{M: resp})
 }
