@@ -70,7 +70,3 @@ func TestTopicMetadata(t *testing.T) {
 		}
 	}
 }
-
-func (b *Broker) Addr() string {
-	return b.Host + ":" + strconv.Itoa(int(b.Port))
-}

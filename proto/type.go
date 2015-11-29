@@ -1,5 +1,9 @@
 package proto
 
+import (
+	"strconv"
+)
+
 type RequestMessage interface {
 	M
 	APIKey() int16
@@ -39,3 +43,7 @@ func (r *LeaveGroupRequest) APIVersion() int16       { return 0 }
 func (r *SyncGroupRequest) APIVersion() int16        { return 0 }
 func (r *DescribeGroupsRequest) APIVersion() int16   { return 0 }
 func (r *ListGroupsRequest) APIVersion() int16       { return 0 }
+
+func (b *Broker) Addr() string {
+	return b.Host + ":" + strconv.Itoa(int(b.Port))
+}

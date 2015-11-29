@@ -121,7 +121,7 @@ func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 			if m.ErrorCode != proto.NoError {
 				return ErrCoordNotFound
 			}
-			c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
+			c.pool.SetCoordinator(consumerGroup, m.Broker.NodeID, m.Broker.Addr())
 			return nil
 		}
 	}
@@ -140,7 +140,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 		for i := range m.Brokers {
 			b := &m.Brokers[i]
-			c.pool.Add(b.NodeID, b.Host, b.Port)
+			c.pool.Add(b.NodeID, b.Addr())
 		}
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
