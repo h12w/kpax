@@ -1,8 +1,10 @@
 package proto
 
+import "h12.me/wipro"
+
 type RequestOrResponse struct {
 	Size int32
-	M
+	wipro.M
 }
 type Request struct {
 	APIKey         int16
@@ -15,7 +17,7 @@ type Response struct {
 	CorrelationID   int32
 	ResponseMessage ResponseMessage
 }
-type ResponseMessage M
+type ResponseMessage wipro.M
 type MessageSet []OffsetMessage
 type OffsetMessage struct {
 	Offset       int64
