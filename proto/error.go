@@ -6,10 +6,9 @@ import (
 )
 
 var (
-	ErrUnexpectedEOF = errors.New("proto: unexpected EOF")
-	ErrSizeMismatch  = errors.New("proto: size mismatch in response")
-	ErrCRCMismatch   = errors.New("proto: CRC mismatch in response")
-	ErrConn          = errors.New("proto: network connection error")
+	ErrSizeMismatch = errors.New("proto: size mismatch in response")
+	ErrCRCMismatch  = errors.New("proto: CRC mismatch in response")
+	ErrConn         = errors.New("proto: network connection error")
 )
 
 func (code ErrorCode) Error() string {

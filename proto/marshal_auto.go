@@ -1,10 +1,11 @@
 package proto
 
 import (
+	"h12.me/wipro"
 	"hash/crc32"
 )
 
-func (t *RequestOrResponse) Marshal(w *Writer) {
+func (t *RequestOrResponse) Marshal(w *wipro.Writer) {
 	offset := len(w.B)
 	w.WriteInt32(t.Size)
 	start := len(w.B)
@@ -12,7 +13,7 @@ func (t *RequestOrResponse) Marshal(w *Writer) {
 	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
-func (t *RequestOrResponse) Unmarshal(r *Reader) {
+func (t *RequestOrResponse) Unmarshal(r *wipro.Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
 	t.M.Unmarshal(r)
@@ -21,7 +22,7 @@ func (t *RequestOrResponse) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *Request) Marshal(w *Writer) {
+func (t *Request) Marshal(w *wipro.Writer) {
 	w.WriteInt16(t.APIKey)
 	w.WriteInt16(t.APIVersion)
 	w.WriteInt32(t.CorrelationID)
@@ -29,7 +30,7 @@ func (t *Request) Marshal(w *Writer) {
 	t.RequestMessage.Marshal(w)
 }
 
-func (t *Request) Unmarshal(r *Reader) {
+func (t *Request) Unmarshal(r *wipro.Reader) {
 	t.APIKey = r.ReadInt16()
 	t.APIVersion = r.ReadInt16()
 	t.CorrelationID = r.ReadInt32()
@@ -37,17 +38,17 @@ func (t *Request) Unmarshal(r *Reader) {
 	t.RequestMessage.Unmarshal(r)
 }
 
-func (t *Response) Marshal(w *Writer) {
+func (t *Response) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.CorrelationID)
 	t.ResponseMessage.Marshal(w)
 }
 
-func (t *Response) Unmarshal(r *Reader) {
+func (t *Response) Unmarshal(r *wipro.Reader) {
 	t.CorrelationID = r.ReadInt32()
 	t.ResponseMessage.Unmarshal(r)
 }
 
-func (t *MessageSet) Marshal(w *Writer) {
+func (t *MessageSet) Marshal(w *wipro.Writer) {
 	offset := len(w.B)
 	w.WriteInt32(0)
 	start := len(w.B)
@@ -57,7 +58,7 @@ func (t *MessageSet) Marshal(w *Writer) {
 	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
-func (t *MessageSet) Unmarshal(r *Reader) {
+func (t *MessageSet) Unmarshal(r *wipro.Reader) {
 	size := int(r.ReadInt32())
 	start := r.Offset
 	for r.Offset-start < size {
@@ -72,17 +73,17 @@ func (t *MessageSet) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetMessage) Marshal(w *Writer) {
+func (t *OffsetMessage) Marshal(w *wipro.Writer) {
 	w.WriteInt64(t.Offset)
 	t.SizedMessage.Marshal(w)
 }
 
-func (t *OffsetMessage) Unmarshal(r *Reader) {
+func (t *OffsetMessage) Unmarshal(r *wipro.Reader) {
 	t.Offset = r.ReadInt64()
 	t.SizedMessage.Unmarshal(r)
 }
 
-func (t *SizedMessage) Marshal(w *Writer) {
+func (t *SizedMessage) Marshal(w *wipro.Writer) {
 	offset := len(w.B)
 	w.WriteInt32(t.Size)
 	start := len(w.B)
@@ -90,7 +91,7 @@ func (t *SizedMessage) Marshal(w *Writer) {
 	w.SetInt32(offset, int32(len(w.B)-start))
 }
 
-func (t *SizedMessage) Unmarshal(r *Reader) {
+func (t *SizedMessage) Unmarshal(r *wipro.Reader) {
 	t.Size = r.ReadInt32()
 	start := r.Offset
 	t.CRCMessage.Unmarshal(r)
@@ -99,7 +100,7 @@ func (t *SizedMessage) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *CRCMessage) Marshal(w *Writer) {
+func (t *CRCMessage) Marshal(w *wipro.Writer) {
 	offset := len(w.B)
 	w.WriteUint32(t.CRC)
 	start := len(w.B)
@@ -107,7 +108,7 @@ func (t *CRCMessage) Marshal(w *Writer) {
 	w.SetUint32(offset, crc32.ChecksumIEEE(w.B[start:]))
 }
 
-func (t *CRCMessage) Unmarshal(r *Reader) {
+func (t *CRCMessage) Unmarshal(r *wipro.Reader) {
 	t.CRC = r.ReadUint32()
 	start := r.Offset
 	t.Message.Unmarshal(r)
@@ -116,35 +117,35 @@ func (t *CRCMessage) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *Message) Marshal(w *Writer) {
+func (t *Message) Marshal(w *wipro.Writer) {
 	w.WriteInt8(t.MagicByte)
 	w.WriteInt8(t.Attributes)
 	w.WriteBytes(t.Key)
 	w.WriteBytes(t.Value)
 }
 
-func (t *Message) Unmarshal(r *Reader) {
+func (t *Message) Unmarshal(r *wipro.Reader) {
 	t.MagicByte = r.ReadInt8()
 	t.Attributes = r.ReadInt8()
 	t.Key = r.ReadBytes()
 	t.Value = r.ReadBytes()
 }
 
-func (t *TopicMetadataRequest) Marshal(w *Writer) {
+func (t *TopicMetadataRequest) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		w.WriteString((*t)[i])
 	}
 }
 
-func (t *TopicMetadataRequest) Unmarshal(r *Reader) {
+func (t *TopicMetadataRequest) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]string, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i] = r.ReadString()
 	}
 }
 
-func (t *TopicMetadataResponse) Marshal(w *Writer) {
+func (t *TopicMetadataResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len(t.Brokers)))
 	for i := range t.Brokers {
 		t.Brokers[i].Marshal(w)
@@ -155,7 +156,7 @@ func (t *TopicMetadataResponse) Marshal(w *Writer) {
 	}
 }
 
-func (t *TopicMetadataResponse) Unmarshal(r *Reader) {
+func (t *TopicMetadataResponse) Unmarshal(r *wipro.Reader) {
 	t.Brokers = make([]Broker, int(r.ReadInt32()))
 	for i := range t.Brokers {
 		t.Brokers[i].Unmarshal(r)
@@ -166,19 +167,19 @@ func (t *TopicMetadataResponse) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *Broker) Marshal(w *Writer) {
+func (t *Broker) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.NodeID)
 	w.WriteString(t.Host)
 	w.WriteInt32(t.Port)
 }
 
-func (t *Broker) Unmarshal(r *Reader) {
+func (t *Broker) Unmarshal(r *wipro.Reader) {
 	t.NodeID = r.ReadInt32()
 	t.Host = r.ReadString()
 	t.Port = r.ReadInt32()
 }
 
-func (t *TopicMetadata) Marshal(w *Writer) {
+func (t *TopicMetadata) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.PartitionMetadatas)))
@@ -187,7 +188,7 @@ func (t *TopicMetadata) Marshal(w *Writer) {
 	}
 }
 
-func (t *TopicMetadata) Unmarshal(r *Reader) {
+func (t *TopicMetadata) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.TopicName = r.ReadString()
 	t.PartitionMetadatas = make([]PartitionMetadata, int(r.ReadInt32()))
@@ -196,7 +197,7 @@ func (t *TopicMetadata) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *PartitionMetadata) Marshal(w *Writer) {
+func (t *PartitionMetadata) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	w.WriteInt32(t.PartitionID)
 	w.WriteInt32(t.Leader)
@@ -210,7 +211,7 @@ func (t *PartitionMetadata) Marshal(w *Writer) {
 	}
 }
 
-func (t *PartitionMetadata) Unmarshal(r *Reader) {
+func (t *PartitionMetadata) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.PartitionID = r.ReadInt32()
 	t.Leader = r.ReadInt32()
@@ -224,7 +225,7 @@ func (t *PartitionMetadata) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *ProduceRequest) Marshal(w *Writer) {
+func (t *ProduceRequest) Marshal(w *wipro.Writer) {
 	w.WriteInt16(t.RequiredAcks)
 	w.WriteInt32(t.Timeout)
 	w.WriteInt32(int32(len(t.MessageSetInTopics)))
@@ -233,7 +234,7 @@ func (t *ProduceRequest) Marshal(w *Writer) {
 	}
 }
 
-func (t *ProduceRequest) Unmarshal(r *Reader) {
+func (t *ProduceRequest) Unmarshal(r *wipro.Reader) {
 	t.RequiredAcks = r.ReadInt16()
 	t.Timeout = r.ReadInt32()
 	t.MessageSetInTopics = make([]MessageSetInTopic, int(r.ReadInt32()))
@@ -242,7 +243,7 @@ func (t *ProduceRequest) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *MessageSetInTopic) Marshal(w *Writer) {
+func (t *MessageSetInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.MessageSetInPartitions)))
 	for i := range t.MessageSetInPartitions {
@@ -250,7 +251,7 @@ func (t *MessageSetInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *MessageSetInTopic) Unmarshal(r *Reader) {
+func (t *MessageSetInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.MessageSetInPartitions = make([]MessageSetInPartition, int(r.ReadInt32()))
 	for i := range t.MessageSetInPartitions {
@@ -258,31 +259,31 @@ func (t *MessageSetInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *MessageSetInPartition) Marshal(w *Writer) {
+func (t *MessageSetInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	t.MessageSet.Marshal(w)
 }
 
-func (t *MessageSetInPartition) Unmarshal(r *Reader) {
+func (t *MessageSetInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.MessageSet.Unmarshal(r)
 }
 
-func (t *ProduceResponse) Marshal(w *Writer) {
+func (t *ProduceResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *ProduceResponse) Unmarshal(r *Reader) {
+func (t *ProduceResponse) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]OffsetInTopic, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *OffsetInTopic) Marshal(w *Writer) {
+func (t *OffsetInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetInPartitions)))
 	for i := range t.OffsetInPartitions {
@@ -290,7 +291,7 @@ func (t *OffsetInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetInTopic) Unmarshal(r *Reader) {
+func (t *OffsetInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.OffsetInPartitions = make([]OffsetInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetInPartitions {
@@ -298,19 +299,19 @@ func (t *OffsetInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetInPartition) Marshal(w *Writer) {
+func (t *OffsetInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	t.ErrorCode.Marshal(w)
 	w.WriteInt64(t.Offset)
 }
 
-func (t *OffsetInPartition) Unmarshal(r *Reader) {
+func (t *OffsetInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode.Unmarshal(r)
 	t.Offset = r.ReadInt64()
 }
 
-func (t *FetchRequest) Marshal(w *Writer) {
+func (t *FetchRequest) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.ReplicaID)
 	w.WriteInt32(t.MaxWaitTime)
 	w.WriteInt32(t.MinBytes)
@@ -320,7 +321,7 @@ func (t *FetchRequest) Marshal(w *Writer) {
 	}
 }
 
-func (t *FetchRequest) Unmarshal(r *Reader) {
+func (t *FetchRequest) Unmarshal(r *wipro.Reader) {
 	t.ReplicaID = r.ReadInt32()
 	t.MaxWaitTime = r.ReadInt32()
 	t.MinBytes = r.ReadInt32()
@@ -330,7 +331,7 @@ func (t *FetchRequest) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *FetchOffsetInTopic) Marshal(w *Writer) {
+func (t *FetchOffsetInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.FetchOffsetInPartitions)))
 	for i := range t.FetchOffsetInPartitions {
@@ -338,7 +339,7 @@ func (t *FetchOffsetInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *FetchOffsetInTopic) Unmarshal(r *Reader) {
+func (t *FetchOffsetInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.FetchOffsetInPartitions = make([]FetchOffsetInPartition, int(r.ReadInt32()))
 	for i := range t.FetchOffsetInPartitions {
@@ -346,33 +347,33 @@ func (t *FetchOffsetInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *FetchOffsetInPartition) Marshal(w *Writer) {
+func (t *FetchOffsetInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.FetchOffset)
 	w.WriteInt32(t.MaxBytes)
 }
 
-func (t *FetchOffsetInPartition) Unmarshal(r *Reader) {
+func (t *FetchOffsetInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.FetchOffset = r.ReadInt64()
 	t.MaxBytes = r.ReadInt32()
 }
 
-func (t *FetchResponse) Marshal(w *Writer) {
+func (t *FetchResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *FetchResponse) Unmarshal(r *Reader) {
+func (t *FetchResponse) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]FetchMessageSetInTopic, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *FetchMessageSetInTopic) Marshal(w *Writer) {
+func (t *FetchMessageSetInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.FetchMessageSetInPartitions)))
 	for i := range t.FetchMessageSetInPartitions {
@@ -380,7 +381,7 @@ func (t *FetchMessageSetInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *FetchMessageSetInTopic) Unmarshal(r *Reader) {
+func (t *FetchMessageSetInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.FetchMessageSetInPartitions = make([]FetchMessageSetInPartition, int(r.ReadInt32()))
 	for i := range t.FetchMessageSetInPartitions {
@@ -388,21 +389,21 @@ func (t *FetchMessageSetInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *FetchMessageSetInPartition) Marshal(w *Writer) {
+func (t *FetchMessageSetInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	t.ErrorCode.Marshal(w)
 	w.WriteInt64(t.HighwaterMarkOffset)
 	t.MessageSet.Marshal(w)
 }
 
-func (t *FetchMessageSetInPartition) Unmarshal(r *Reader) {
+func (t *FetchMessageSetInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode.Unmarshal(r)
 	t.HighwaterMarkOffset = r.ReadInt64()
 	t.MessageSet.Unmarshal(r)
 }
 
-func (t *OffsetRequest) Marshal(w *Writer) {
+func (t *OffsetRequest) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.ReplicaID)
 	w.WriteInt32(int32(len(t.TimeInTopics)))
 	for i := range t.TimeInTopics {
@@ -410,7 +411,7 @@ func (t *OffsetRequest) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetRequest) Unmarshal(r *Reader) {
+func (t *OffsetRequest) Unmarshal(r *wipro.Reader) {
 	t.ReplicaID = r.ReadInt32()
 	t.TimeInTopics = make([]TimeInTopic, int(r.ReadInt32()))
 	for i := range t.TimeInTopics {
@@ -418,7 +419,7 @@ func (t *OffsetRequest) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *TimeInTopic) Marshal(w *Writer) {
+func (t *TimeInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.TimeInPartitions)))
 	for i := range t.TimeInPartitions {
@@ -426,7 +427,7 @@ func (t *TimeInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *TimeInTopic) Unmarshal(r *Reader) {
+func (t *TimeInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.TimeInPartitions = make([]TimeInPartition, int(r.ReadInt32()))
 	for i := range t.TimeInPartitions {
@@ -434,33 +435,33 @@ func (t *TimeInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *TimeInPartition) Marshal(w *Writer) {
+func (t *TimeInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Time)
 	w.WriteInt32(t.MaxNumberOfOffsets)
 }
 
-func (t *TimeInPartition) Unmarshal(r *Reader) {
+func (t *TimeInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.Time = r.ReadInt64()
 	t.MaxNumberOfOffsets = r.ReadInt32()
 }
 
-func (t *OffsetResponse) Marshal(w *Writer) {
+func (t *OffsetResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *OffsetResponse) Unmarshal(r *Reader) {
+func (t *OffsetResponse) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]OffsetsInTopic, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *OffsetsInTopic) Marshal(w *Writer) {
+func (t *OffsetsInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetsInPartitions)))
 	for i := range t.OffsetsInPartitions {
@@ -468,7 +469,7 @@ func (t *OffsetsInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetsInTopic) Unmarshal(r *Reader) {
+func (t *OffsetsInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.OffsetsInPartitions = make([]OffsetsInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetsInPartitions {
@@ -476,7 +477,7 @@ func (t *OffsetsInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetsInPartition) Marshal(w *Writer) {
+func (t *OffsetsInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	t.ErrorCode.Marshal(w)
 	w.WriteInt32(int32(len(t.Offsets)))
@@ -485,7 +486,7 @@ func (t *OffsetsInPartition) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetsInPartition) Unmarshal(r *Reader) {
+func (t *OffsetsInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode.Unmarshal(r)
 	t.Offsets = make([]int64, int(r.ReadInt32()))
@@ -494,25 +495,25 @@ func (t *OffsetsInPartition) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *GroupCoordinatorRequest) Marshal(w *Writer) {
+func (t *GroupCoordinatorRequest) Marshal(w *wipro.Writer) {
 	w.WriteString(string((*t)))
 }
 
-func (t *GroupCoordinatorRequest) Unmarshal(r *Reader) {
+func (t *GroupCoordinatorRequest) Unmarshal(r *wipro.Reader) {
 	(*t) = GroupCoordinatorRequest(r.ReadString())
 }
 
-func (t *GroupCoordinatorResponse) Marshal(w *Writer) {
+func (t *GroupCoordinatorResponse) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	t.Broker.Marshal(w)
 }
 
-func (t *GroupCoordinatorResponse) Unmarshal(r *Reader) {
+func (t *GroupCoordinatorResponse) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.Broker.Unmarshal(r)
 }
 
-func (t *OffsetCommitRequestV0) Marshal(w *Writer) {
+func (t *OffsetCommitRequestV0) Marshal(w *wipro.Writer) {
 	w.WriteString(t.ConsumerGroupID)
 	w.WriteInt32(int32(len(t.OffsetCommitInTopicV0s)))
 	for i := range t.OffsetCommitInTopicV0s {
@@ -520,7 +521,7 @@ func (t *OffsetCommitRequestV0) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetCommitRequestV0) Unmarshal(r *Reader) {
+func (t *OffsetCommitRequestV0) Unmarshal(r *wipro.Reader) {
 	t.ConsumerGroupID = r.ReadString()
 	t.OffsetCommitInTopicV0s = make([]OffsetCommitInTopicV0, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInTopicV0s {
@@ -528,7 +529,7 @@ func (t *OffsetCommitRequestV0) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetCommitInTopicV0) Marshal(w *Writer) {
+func (t *OffsetCommitInTopicV0) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetCommitInPartitionV0s)))
 	for i := range t.OffsetCommitInPartitionV0s {
@@ -536,7 +537,7 @@ func (t *OffsetCommitInTopicV0) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetCommitInTopicV0) Unmarshal(r *Reader) {
+func (t *OffsetCommitInTopicV0) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.OffsetCommitInPartitionV0s = make([]OffsetCommitInPartitionV0, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInPartitionV0s {
@@ -544,19 +545,19 @@ func (t *OffsetCommitInTopicV0) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetCommitInPartitionV0) Marshal(w *Writer) {
+func (t *OffsetCommitInPartitionV0) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
 	w.WriteString(t.Metadata)
 }
 
-func (t *OffsetCommitInPartitionV0) Unmarshal(r *Reader) {
+func (t *OffsetCommitInPartitionV0) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
 	t.Metadata = r.ReadString()
 }
 
-func (t *OffsetCommitRequestV1) Marshal(w *Writer) {
+func (t *OffsetCommitRequestV1) Marshal(w *wipro.Writer) {
 	w.WriteString(t.ConsumerGroupID)
 	w.WriteInt32(t.ConsumerGroupGenerationID)
 	w.WriteString(t.ConsumerID)
@@ -566,7 +567,7 @@ func (t *OffsetCommitRequestV1) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetCommitRequestV1) Unmarshal(r *Reader) {
+func (t *OffsetCommitRequestV1) Unmarshal(r *wipro.Reader) {
 	t.ConsumerGroupID = r.ReadString()
 	t.ConsumerGroupGenerationID = r.ReadInt32()
 	t.ConsumerID = r.ReadString()
@@ -576,7 +577,7 @@ func (t *OffsetCommitRequestV1) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetCommitInTopicV1) Marshal(w *Writer) {
+func (t *OffsetCommitInTopicV1) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetCommitInPartitionV1s)))
 	for i := range t.OffsetCommitInPartitionV1s {
@@ -584,7 +585,7 @@ func (t *OffsetCommitInTopicV1) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetCommitInTopicV1) Unmarshal(r *Reader) {
+func (t *OffsetCommitInTopicV1) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.OffsetCommitInPartitionV1s = make([]OffsetCommitInPartitionV1, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInPartitionV1s {
@@ -592,21 +593,21 @@ func (t *OffsetCommitInTopicV1) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetCommitInPartitionV1) Marshal(w *Writer) {
+func (t *OffsetCommitInPartitionV1) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
 	w.WriteInt64(t.TimeStamp)
 	w.WriteString(t.Metadata)
 }
 
-func (t *OffsetCommitInPartitionV1) Unmarshal(r *Reader) {
+func (t *OffsetCommitInPartitionV1) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
 	t.TimeStamp = r.ReadInt64()
 	t.Metadata = r.ReadString()
 }
 
-func (t *OffsetCommitRequestV2) Marshal(w *Writer) {
+func (t *OffsetCommitRequestV2) Marshal(w *wipro.Writer) {
 	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(t.ConsumerGroupGenerationID)
 	w.WriteString(t.ConsumerID)
@@ -617,7 +618,7 @@ func (t *OffsetCommitRequestV2) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetCommitRequestV2) Unmarshal(r *Reader) {
+func (t *OffsetCommitRequestV2) Unmarshal(r *wipro.Reader) {
 	t.ConsumerGroup = r.ReadString()
 	t.ConsumerGroupGenerationID = r.ReadInt32()
 	t.ConsumerID = r.ReadString()
@@ -628,7 +629,7 @@ func (t *OffsetCommitRequestV2) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetCommitInTopicV2) Marshal(w *Writer) {
+func (t *OffsetCommitInTopicV2) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetCommitInPartitionV2s)))
 	for i := range t.OffsetCommitInPartitionV2s {
@@ -636,7 +637,7 @@ func (t *OffsetCommitInTopicV2) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetCommitInTopicV2) Unmarshal(r *Reader) {
+func (t *OffsetCommitInTopicV2) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.OffsetCommitInPartitionV2s = make([]OffsetCommitInPartitionV2, int(r.ReadInt32()))
 	for i := range t.OffsetCommitInPartitionV2s {
@@ -644,33 +645,33 @@ func (t *OffsetCommitInTopicV2) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetCommitInPartitionV2) Marshal(w *Writer) {
+func (t *OffsetCommitInPartitionV2) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
 	w.WriteString(t.Metadata)
 }
 
-func (t *OffsetCommitInPartitionV2) Unmarshal(r *Reader) {
+func (t *OffsetCommitInPartitionV2) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
 	t.Metadata = r.ReadString()
 }
 
-func (t *OffsetCommitResponse) Marshal(w *Writer) {
+func (t *OffsetCommitResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *OffsetCommitResponse) Unmarshal(r *Reader) {
+func (t *OffsetCommitResponse) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]ErrorInTopic, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *ErrorInTopic) Marshal(w *Writer) {
+func (t *ErrorInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.ErrorInPartitions)))
 	for i := range t.ErrorInPartitions {
@@ -678,7 +679,7 @@ func (t *ErrorInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *ErrorInTopic) Unmarshal(r *Reader) {
+func (t *ErrorInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.ErrorInPartitions = make([]ErrorInPartition, int(r.ReadInt32()))
 	for i := range t.ErrorInPartitions {
@@ -686,17 +687,17 @@ func (t *ErrorInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *ErrorInPartition) Marshal(w *Writer) {
+func (t *ErrorInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	t.ErrorCode.Marshal(w)
 }
 
-func (t *ErrorInPartition) Unmarshal(r *Reader) {
+func (t *ErrorInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.ErrorCode.Unmarshal(r)
 }
 
-func (t *OffsetFetchRequestV0) Marshal(w *Writer) {
+func (t *OffsetFetchRequestV0) Marshal(w *wipro.Writer) {
 	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(int32(len(t.PartitionInTopics)))
 	for i := range t.PartitionInTopics {
@@ -704,7 +705,7 @@ func (t *OffsetFetchRequestV0) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetFetchRequestV0) Unmarshal(r *Reader) {
+func (t *OffsetFetchRequestV0) Unmarshal(r *wipro.Reader) {
 	t.ConsumerGroup = r.ReadString()
 	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
 	for i := range t.PartitionInTopics {
@@ -712,7 +713,7 @@ func (t *OffsetFetchRequestV0) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *PartitionInTopic) Marshal(w *Writer) {
+func (t *PartitionInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.Partitions)))
 	for i := range t.Partitions {
@@ -720,7 +721,7 @@ func (t *PartitionInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *PartitionInTopic) Unmarshal(r *Reader) {
+func (t *PartitionInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.Partitions = make([]int32, int(r.ReadInt32()))
 	for i := range t.Partitions {
@@ -728,7 +729,7 @@ func (t *PartitionInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetFetchRequestV1) Marshal(w *Writer) {
+func (t *OffsetFetchRequestV1) Marshal(w *wipro.Writer) {
 	w.WriteString(t.ConsumerGroup)
 	w.WriteInt32(int32(len(t.PartitionInTopics)))
 	for i := range t.PartitionInTopics {
@@ -736,7 +737,7 @@ func (t *OffsetFetchRequestV1) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetFetchRequestV1) Unmarshal(r *Reader) {
+func (t *OffsetFetchRequestV1) Unmarshal(r *wipro.Reader) {
 	t.ConsumerGroup = r.ReadString()
 	t.PartitionInTopics = make([]PartitionInTopic, int(r.ReadInt32()))
 	for i := range t.PartitionInTopics {
@@ -744,21 +745,21 @@ func (t *OffsetFetchRequestV1) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetFetchResponse) Marshal(w *Writer) {
+func (t *OffsetFetchResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *OffsetFetchResponse) Unmarshal(r *Reader) {
+func (t *OffsetFetchResponse) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]OffsetMetadataInTopic, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *OffsetMetadataInTopic) Marshal(w *Writer) {
+func (t *OffsetMetadataInTopic) Marshal(w *wipro.Writer) {
 	w.WriteString(t.TopicName)
 	w.WriteInt32(int32(len(t.OffsetMetadataInPartitions)))
 	for i := range t.OffsetMetadataInPartitions {
@@ -766,7 +767,7 @@ func (t *OffsetMetadataInTopic) Marshal(w *Writer) {
 	}
 }
 
-func (t *OffsetMetadataInTopic) Unmarshal(r *Reader) {
+func (t *OffsetMetadataInTopic) Unmarshal(r *wipro.Reader) {
 	t.TopicName = r.ReadString()
 	t.OffsetMetadataInPartitions = make([]OffsetMetadataInPartition, int(r.ReadInt32()))
 	for i := range t.OffsetMetadataInPartitions {
@@ -774,21 +775,21 @@ func (t *OffsetMetadataInTopic) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *OffsetMetadataInPartition) Marshal(w *Writer) {
+func (t *OffsetMetadataInPartition) Marshal(w *wipro.Writer) {
 	w.WriteInt32(t.Partition)
 	w.WriteInt64(t.Offset)
 	w.WriteString(t.Metadata)
 	t.ErrorCode.Marshal(w)
 }
 
-func (t *OffsetMetadataInPartition) Unmarshal(r *Reader) {
+func (t *OffsetMetadataInPartition) Unmarshal(r *wipro.Reader) {
 	t.Partition = r.ReadInt32()
 	t.Offset = r.ReadInt64()
 	t.Metadata = r.ReadString()
 	t.ErrorCode.Unmarshal(r)
 }
 
-func (t *JoinGroupRequest) Marshal(w *Writer) {
+func (t *JoinGroupRequest) Marshal(w *wipro.Writer) {
 	w.WriteString(t.GroupID)
 	w.WriteInt32(t.SessionTimeout)
 	w.WriteString(t.MemberID)
@@ -796,7 +797,7 @@ func (t *JoinGroupRequest) Marshal(w *Writer) {
 	t.GroupProtocols.Marshal(w)
 }
 
-func (t *JoinGroupRequest) Unmarshal(r *Reader) {
+func (t *JoinGroupRequest) Unmarshal(r *wipro.Reader) {
 	t.GroupID = r.ReadString()
 	t.SessionTimeout = r.ReadInt32()
 	t.MemberID = r.ReadString()
@@ -804,57 +805,57 @@ func (t *JoinGroupRequest) Unmarshal(r *Reader) {
 	t.GroupProtocols.Unmarshal(r)
 }
 
-func (t *GroupProtocols) Marshal(w *Writer) {
+func (t *GroupProtocols) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *GroupProtocols) Unmarshal(r *Reader) {
+func (t *GroupProtocols) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]GroupProtocol, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *GroupProtocol) Marshal(w *Writer) {
+func (t *GroupProtocol) Marshal(w *wipro.Writer) {
 	w.WriteString(t.ProtocolName)
 	t.ProtocolMetadata.Marshal(w)
 }
 
-func (t *GroupProtocol) Unmarshal(r *Reader) {
+func (t *GroupProtocol) Unmarshal(r *wipro.Reader) {
 	t.ProtocolName = r.ReadString()
 	t.ProtocolMetadata.Unmarshal(r)
 }
 
-func (t *ProtocolMetadata) Marshal(w *Writer) {
+func (t *ProtocolMetadata) Marshal(w *wipro.Writer) {
 	w.WriteInt16(t.Version)
 	t.Subscription.Marshal(w)
 	w.WriteBytes(t.UserData)
 }
 
-func (t *ProtocolMetadata) Unmarshal(r *Reader) {
+func (t *ProtocolMetadata) Unmarshal(r *wipro.Reader) {
 	t.Version = r.ReadInt16()
 	t.Subscription.Unmarshal(r)
 	t.UserData = r.ReadBytes()
 }
 
-func (t *Subscription) Marshal(w *Writer) {
+func (t *Subscription) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		w.WriteString((*t)[i])
 	}
 }
 
-func (t *Subscription) Unmarshal(r *Reader) {
+func (t *Subscription) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]string, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i] = r.ReadString()
 	}
 }
 
-func (t *JoinGroupResponse) Marshal(w *Writer) {
+func (t *JoinGroupResponse) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	w.WriteInt32(t.GenerationID)
 	w.WriteString(t.GroupProtocolName)
@@ -863,7 +864,7 @@ func (t *JoinGroupResponse) Marshal(w *Writer) {
 	t.MemberWithMetas.Marshal(w)
 }
 
-func (t *JoinGroupResponse) Unmarshal(r *Reader) {
+func (t *JoinGroupResponse) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.GenerationID = r.ReadInt32()
 	t.GroupProtocolName = r.ReadString()
@@ -872,93 +873,93 @@ func (t *JoinGroupResponse) Unmarshal(r *Reader) {
 	t.MemberWithMetas.Unmarshal(r)
 }
 
-func (t *MemberWithMetas) Marshal(w *Writer) {
+func (t *MemberWithMetas) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *MemberWithMetas) Unmarshal(r *Reader) {
+func (t *MemberWithMetas) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]MemberWithMeta, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *MemberWithMeta) Marshal(w *Writer) {
+func (t *MemberWithMeta) Marshal(w *wipro.Writer) {
 	w.WriteString(t.MemberID)
 	w.WriteBytes(t.MemberMetadata)
 }
 
-func (t *MemberWithMeta) Unmarshal(r *Reader) {
+func (t *MemberWithMeta) Unmarshal(r *wipro.Reader) {
 	t.MemberID = r.ReadString()
 	t.MemberMetadata = r.ReadBytes()
 }
 
-func (t *SyncGroupRequest) Marshal(w *Writer) {
+func (t *SyncGroupRequest) Marshal(w *wipro.Writer) {
 	w.WriteString(t.GroupID)
 	w.WriteInt32(t.GenerationID)
 	w.WriteString(t.MemberID)
 	t.GroupAssignments.Marshal(w)
 }
 
-func (t *SyncGroupRequest) Unmarshal(r *Reader) {
+func (t *SyncGroupRequest) Unmarshal(r *wipro.Reader) {
 	t.GroupID = r.ReadString()
 	t.GenerationID = r.ReadInt32()
 	t.MemberID = r.ReadString()
 	t.GroupAssignments.Unmarshal(r)
 }
 
-func (t *GroupAssignments) Marshal(w *Writer) {
+func (t *GroupAssignments) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *GroupAssignments) Unmarshal(r *Reader) {
+func (t *GroupAssignments) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]GroupAssignment, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *GroupAssignment) Marshal(w *Writer) {
+func (t *GroupAssignment) Marshal(w *wipro.Writer) {
 	w.WriteString(t.MemberID)
 	t.MemberAssignment.Marshal(w)
 }
 
-func (t *GroupAssignment) Unmarshal(r *Reader) {
+func (t *GroupAssignment) Unmarshal(r *wipro.Reader) {
 	t.MemberID = r.ReadString()
 	t.MemberAssignment.Unmarshal(r)
 }
 
-func (t *MemberAssignment) Marshal(w *Writer) {
+func (t *MemberAssignment) Marshal(w *wipro.Writer) {
 	w.WriteInt16(t.Version)
 	t.PartitionAssignments.Marshal(w)
 }
 
-func (t *MemberAssignment) Unmarshal(r *Reader) {
+func (t *MemberAssignment) Unmarshal(r *wipro.Reader) {
 	t.Version = r.ReadInt16()
 	t.PartitionAssignments.Unmarshal(r)
 }
 
-func (t *PartitionAssignments) Marshal(w *Writer) {
+func (t *PartitionAssignments) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *PartitionAssignments) Unmarshal(r *Reader) {
+func (t *PartitionAssignments) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]PartitionAssignment, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *PartitionAssignment) Marshal(w *Writer) {
+func (t *PartitionAssignment) Marshal(w *wipro.Writer) {
 	w.WriteString(t.Topic)
 	w.WriteInt32(int32(len(t.Partitions)))
 	for i := range t.Partitions {
@@ -966,7 +967,7 @@ func (t *PartitionAssignment) Marshal(w *Writer) {
 	}
 }
 
-func (t *PartitionAssignment) Unmarshal(r *Reader) {
+func (t *PartitionAssignment) Unmarshal(r *wipro.Reader) {
 	t.Topic = r.ReadString()
 	t.Partitions = make([]int32, int(r.ReadInt32()))
 	for i := range t.Partitions {
@@ -974,125 +975,125 @@ func (t *PartitionAssignment) Unmarshal(r *Reader) {
 	}
 }
 
-func (t *SyncGroupResponse) Marshal(w *Writer) {
+func (t *SyncGroupResponse) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	t.MemberAssignment.Marshal(w)
 }
 
-func (t *SyncGroupResponse) Unmarshal(r *Reader) {
+func (t *SyncGroupResponse) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.MemberAssignment.Unmarshal(r)
 }
 
-func (t *HeartbeatRequest) Marshal(w *Writer) {
+func (t *HeartbeatRequest) Marshal(w *wipro.Writer) {
 	w.WriteString(t.GroupID)
 	w.WriteInt32(t.GenerationID)
 	w.WriteString(t.MemberID)
 }
 
-func (t *HeartbeatRequest) Unmarshal(r *Reader) {
+func (t *HeartbeatRequest) Unmarshal(r *wipro.Reader) {
 	t.GroupID = r.ReadString()
 	t.GenerationID = r.ReadInt32()
 	t.MemberID = r.ReadString()
 }
 
-func (t *HeartbeatResponse) Marshal(w *Writer) {
+func (t *HeartbeatResponse) Marshal(w *wipro.Writer) {
 	(*t).Marshal(w)
 }
 
-func (t *HeartbeatResponse) Unmarshal(r *Reader) {
+func (t *HeartbeatResponse) Unmarshal(r *wipro.Reader) {
 	(*t).Unmarshal(r)
 }
 
-func (t *LeaveGroupRequest) Marshal(w *Writer) {
+func (t *LeaveGroupRequest) Marshal(w *wipro.Writer) {
 	w.WriteString(t.GroupID)
 	w.WriteString(t.MemberID)
 }
 
-func (t *LeaveGroupRequest) Unmarshal(r *Reader) {
+func (t *LeaveGroupRequest) Unmarshal(r *wipro.Reader) {
 	t.GroupID = r.ReadString()
 	t.MemberID = r.ReadString()
 }
 
-func (t *LeaveGroupResponse) Marshal(w *Writer) {
+func (t *LeaveGroupResponse) Marshal(w *wipro.Writer) {
 	(*t).Marshal(w)
 }
 
-func (t *LeaveGroupResponse) Unmarshal(r *Reader) {
+func (t *LeaveGroupResponse) Unmarshal(r *wipro.Reader) {
 	(*t).Unmarshal(r)
 }
 
-func (t *ListGroupsRequest) Marshal(w *Writer) {
+func (t *ListGroupsRequest) Marshal(w *wipro.Writer) {
 	// no fields for type ListGroupsRequest, {struct  [] map[]}
 }
 
-func (t *ListGroupsRequest) Unmarshal(r *Reader) {
+func (t *ListGroupsRequest) Unmarshal(r *wipro.Reader) {
 	// no fields for type ListGroupsRequest, {struct  [] map[]}
 }
 
-func (t *ListGroupsResponse) Marshal(w *Writer) {
+func (t *ListGroupsResponse) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	t.Groups.Marshal(w)
 }
 
-func (t *ListGroupsResponse) Unmarshal(r *Reader) {
+func (t *ListGroupsResponse) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.Groups.Unmarshal(r)
 }
 
-func (t *Groups) Marshal(w *Writer) {
+func (t *Groups) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *Groups) Unmarshal(r *Reader) {
+func (t *Groups) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]Group, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *Group) Marshal(w *Writer) {
+func (t *Group) Marshal(w *wipro.Writer) {
 	w.WriteString(t.GroupID)
 	w.WriteString(t.ProtocolType)
 }
 
-func (t *Group) Unmarshal(r *Reader) {
+func (t *Group) Unmarshal(r *wipro.Reader) {
 	t.GroupID = r.ReadString()
 	t.ProtocolType = r.ReadString()
 }
 
-func (t *DescribeGroupsRequest) Marshal(w *Writer) {
+func (t *DescribeGroupsRequest) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		w.WriteString((*t)[i])
 	}
 }
 
-func (t *DescribeGroupsRequest) Unmarshal(r *Reader) {
+func (t *DescribeGroupsRequest) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]string, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i] = r.ReadString()
 	}
 }
 
-func (t *DescribeGroupsResponse) Marshal(w *Writer) {
+func (t *DescribeGroupsResponse) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *DescribeGroupsResponse) Unmarshal(r *Reader) {
+func (t *DescribeGroupsResponse) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]GroupDescription, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *GroupDescription) Marshal(w *Writer) {
+func (t *GroupDescription) Marshal(w *wipro.Writer) {
 	t.ErrorCode.Marshal(w)
 	w.WriteString(t.GroupID)
 	w.WriteString(t.State)
@@ -1101,7 +1102,7 @@ func (t *GroupDescription) Marshal(w *Writer) {
 	t.Members.Marshal(w)
 }
 
-func (t *GroupDescription) Unmarshal(r *Reader) {
+func (t *GroupDescription) Unmarshal(r *wipro.Reader) {
 	t.ErrorCode.Unmarshal(r)
 	t.GroupID = r.ReadString()
 	t.State = r.ReadString()
@@ -1110,21 +1111,21 @@ func (t *GroupDescription) Unmarshal(r *Reader) {
 	t.Members.Unmarshal(r)
 }
 
-func (t *Members) Marshal(w *Writer) {
+func (t *Members) Marshal(w *wipro.Writer) {
 	w.WriteInt32(int32(len((*t))))
 	for i := range *t {
 		(*t)[i].Marshal(w)
 	}
 }
 
-func (t *Members) Unmarshal(r *Reader) {
+func (t *Members) Unmarshal(r *wipro.Reader) {
 	(*t) = make([]Member, int(r.ReadInt32()))
 	for i := range *t {
 		(*t)[i].Unmarshal(r)
 	}
 }
 
-func (t *Member) Marshal(w *Writer) {
+func (t *Member) Marshal(w *wipro.Writer) {
 	w.WriteString(t.MemberID)
 	w.WriteString(t.ClientID)
 	w.WriteString(t.ClientHost)
@@ -1132,7 +1133,7 @@ func (t *Member) Marshal(w *Writer) {
 	t.MemberAssignment.Marshal(w)
 }
 
-func (t *Member) Unmarshal(r *Reader) {
+func (t *Member) Unmarshal(r *wipro.Reader) {
 	t.MemberID = r.ReadString()
 	t.ClientID = r.ReadString()
 	t.ClientHost = r.ReadString()
@@ -1140,10 +1141,10 @@ func (t *Member) Unmarshal(r *Reader) {
 	t.MemberAssignment.Unmarshal(r)
 }
 
-func (t *ErrorCode) Marshal(w *Writer) {
+func (t *ErrorCode) Marshal(w *wipro.Writer) {
 	w.WriteInt16(int16((*t)))
 }
 
-func (t *ErrorCode) Unmarshal(r *Reader) {
+func (t *ErrorCode) Unmarshal(r *wipro.Reader) {
 	(*t) = ErrorCode(r.ReadInt16())
 }
