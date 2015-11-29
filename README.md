@@ -23,7 +23,7 @@ Design
 ### Modular
 
 * **proto**: Kafka Wire Protocol (automatically generated types and
-  marshal/unmarshal functions from
+  marshal/unmarshal functions by [wipro](https://github.com/h12w/wipro) from
   [the HTML spec](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)).
 * **broker**: client that talks to a single Kafka broker (concurrent,
   synchronous API wraps inside asynchronous request/response IO).
