@@ -131,10 +131,8 @@ type OffsetsInPartition struct {
 }
 type GroupCoordinatorRequest string
 type GroupCoordinatorResponse struct {
-	ErrorCode       ErrorCode
-	CoordinatorID   int32
-	CoordinatorHost string
-	CoordinatorPort int32
+	ErrorCode ErrorCode
+	Broker    Broker
 }
 type OffsetCommitRequestV0 struct {
 	ConsumerGroupID        string

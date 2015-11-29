@@ -92,10 +92,7 @@ OffsetResponse => [OffsetsInTopic]
 GroupCoordinatorRequest => GroupId
 	GroupId => string
 
-GroupCoordinatorResponse => ErrorCode CoordinatorId CoordinatorHost CoordinatorPort
-	CoordinatorId => int32
-	CoordinatorHost => string
-	CoordinatorPort => int32
+GroupCoordinatorResponse => ErrorCode Broker
 
 OffsetCommitRequestV0 => ConsumerGroupId [OffsetCommitInTopicV0]
 	OffsetCommitInTopicV0 => TopicName [OffsetCommitInPartitionV0]

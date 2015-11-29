@@ -504,16 +504,12 @@ func (t *GroupCoordinatorRequest) Unmarshal(r *Reader) {
 
 func (t *GroupCoordinatorResponse) Marshal(w *Writer) {
 	t.ErrorCode.Marshal(w)
-	w.WriteInt32(t.CoordinatorID)
-	w.WriteString(t.CoordinatorHost)
-	w.WriteInt32(t.CoordinatorPort)
+	t.Broker.Marshal(w)
 }
 
 func (t *GroupCoordinatorResponse) Unmarshal(r *Reader) {
 	t.ErrorCode.Unmarshal(r)
-	t.CoordinatorID = r.ReadInt32()
-	t.CoordinatorHost = r.ReadString()
-	t.CoordinatorPort = r.ReadInt32()
+	t.Broker.Unmarshal(r)
 }
 
 func (t *OffsetCommitRequestV0) Marshal(w *Writer) {
