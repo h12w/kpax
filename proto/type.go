@@ -52,6 +52,8 @@ func (b *Broker) Addr() string {
 }
 
 func (req *Request) Send(conn io.Writer) error {
+	req.APIKey = req.RequestMessage.APIKey()
+	req.APIVersion = req.RequestMessage.APIVersion()
 	return wipro.Send(&RequestOrResponse{M: req}, conn)
 }
 

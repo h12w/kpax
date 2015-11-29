@@ -55,8 +55,6 @@ func New(config *Config) (*C, error) {
 
 func (c *C) NewRequest(req proto.RequestMessage) *proto.Request {
 	return &proto.Request{
-		APIKey:         req.APIKey(),
-		APIVersion:     req.APIVersion(),
 		ClientID:       c.config.ClientID,
 		RequestMessage: req,
 	}
