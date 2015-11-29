@@ -138,12 +138,10 @@ func produceMessage(t *testing.T, conn net.Conn, topic string, partition int32, 
 							Partition: partition,
 							MessageSet: []OffsetMessage{
 								{
-									SizedMessage: SizedMessage{CRCMessage: CRCMessage{
-										Message: Message{
-											Key:   []byte(key),
-											Value: []byte(value),
-										},
-									}}},
+									SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
+										Key:   []byte(key),
+										Value: []byte(value),
+									}}}},
 							},
 						},
 					},
