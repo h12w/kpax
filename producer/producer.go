@@ -76,23 +76,13 @@ func (p *P) Produce(topic string, key, value []byte) error {
 			partitioner.Skip(partition)
 			continue
 		}
-		req := p.client.NewRequest(&proto.ProduceRequest{
-			RequiredAcks: p.config.RequiredAcks,
-			Timeout:      int32(p.config.Timeout / time.Millisecond),
-			MessageSetInTopics: []proto.MessageSetInTopic{
-				{
-					TopicName: topic,
-					MessageSetInPartitions: []proto.MessageSetInPartition{
-						{
-							Partition:  partition,
-							MessageSet: messageSet,
-						},
-					},
-				},
-			},
-		})
+		req := p.getProducerRequest(topic, partition, messageSet)
 
-		return p.doSentMessage(leader, req, topic, partition)
+		err = p.doSentMessage(leader, req)
+		if err == proto.ErrConn {
+			p.client.LeaderIsDown(topic, partition)
+		}
+		return err
 	}
 	log.Warnf("fail to find a usable partition")
 	return ErrProduceFailed
@@ -110,12 +100,8 @@ func getMessageSet(key, value []byte) []proto.OffsetMessage {
 	}
 }
 
-func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
-	leader, err := p.client.Leader(topic, partition)
-	if err != nil {
-		return err
-	}
-	req := p.client.NewRequest(&proto.ProduceRequest{
+func (p *P) getProducerRequest(topic string, partition int32, messageSet []proto.OffsetMessage) *proto.Request {
+	return p.client.NewRequest(&proto.ProduceRequest{
 		RequiredAcks: p.config.RequiredAcks,
 		Timeout:      int32(p.config.Timeout / time.Millisecond),
 		MessageSetInTopics: []proto.MessageSetInTopic{
@@ -124,21 +110,31 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 				MessageSetInPartitions: []proto.MessageSetInPartition{
 					{
 						Partition:  partition,
-						MessageSet: getMessageSet(key, value),
+						MessageSet: messageSet,
 					},
 				},
 			},
 		},
 	})
-	return p.doSentMessage(leader, req, topic, partition)
 }
 
-func (p *P) doSentMessage(leader *broker.B, req *proto.Request, topic string, partition int32) error {
+func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
+	leader, err := p.client.Leader(topic, partition)
+	if err != nil {
+		return err
+	}
+	messageSet := getMessageSet(key, value)
+	req := p.getProducerRequest(topic, partition, messageSet)
+	err = p.doSentMessage(leader, req, topic, partition)
+	if err == proto.ErrConn {
+		p.client.LeaderIsDown(topic, partition)
+	}
+	return err
+}
+
+func (p *P) doSentMessage(leader *broker.B, req *proto.Request) error {
 	resp := proto.ProduceResponse{}
 	if err := leader.Do(req, &resp); err != nil {
-		if err == proto.ErrConn {
-			p.client.LeaderIsDown(topic, partition)
-		}
 		return err
 	}
 	for i := range resp {
