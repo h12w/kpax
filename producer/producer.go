@@ -125,7 +125,7 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 	}
 	messageSet := getMessageSet(key, value)
 	req := p.getProducerRequest(topic, partition, messageSet)
-	err = p.doSentMessage(leader, req, topic, partition)
+	err = p.doSentMessage(leader, req)
 	if err == proto.ErrConn {
 		p.client.LeaderIsDown(topic, partition)
 	}
