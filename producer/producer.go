@@ -3,9 +3,9 @@ package producer
 import (
 	"errors"
 	"math/rand"
-	"strings"
 	"time"
 
+	"h12.me/kafka/broker"
 	"h12.me/kafka/client"
 	"h12.me/kafka/log"
 	"h12.me/kafka/proto"
@@ -63,33 +63,43 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		}
 		partitioner = p.topicPartitioner.Add(topic, partitions)
 	}
-
+	messageSet := getMessageSet(key, value)
 	for i := 0; i < partitioner.Count(); i++ {
 		partition, err := partitioner.Partition(key)
 		if err != nil {
 			p.topicPartitioner.Delete(topic)
 			break
 		}
-		err = p.ProduceWithPartition(topic, partition, key, value)
-		if err == nil {
-			return nil
-		}
-		partitioner.Skip(partition)
-		if strings.HasPrefix(err.Error(), "Get leader error:") {
+
+		leader, err := p.client.Leader(topic, partition)
+		if err != nil {
+			partitioner.Skip(partition)
 			continue
 		}
-		return err
+		req := p.client.NewRequest(&proto.ProduceRequest{
+			RequiredAcks: p.config.RequiredAcks,
+			Timeout:      int32(p.config.Timeout / time.Millisecond),
+			MessageSetInTopics: []proto.MessageSetInTopic{
+				{
+					TopicName: topic,
+					MessageSetInPartitions: []proto.MessageSetInPartition{
+						{
+							Partition:  partition,
+							MessageSet: messageSet,
+						},
+					},
+				},
+			},
+		})
+
+		return p.doSentMessage(leader, req, topic, partition)
 	}
 	log.Warnf("fail to find a usable partition")
 	return ErrProduceFailed
 }
 
-func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
-	leader, err := p.client.Leader(topic, partition)
-	if err != nil {
-		return errors.New("Get leader error:" + err.Error())
-	}
-	messageSet := []proto.OffsetMessage{
+func getMessageSet(key, value []byte) []proto.OffsetMessage {
+	return []proto.OffsetMessage{
 		{
 			SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
 				Message: proto.Message{
@@ -97,6 +107,13 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 					Value: value,
 				},
 			}}},
+	}
+}
+
+func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
+	leader, err := p.client.Leader(topic, partition)
+	if err != nil {
+		return err
 	}
 	req := p.client.NewRequest(&proto.ProduceRequest{
 		RequiredAcks: p.config.RequiredAcks,
@@ -107,12 +124,16 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 				MessageSetInPartitions: []proto.MessageSetInPartition{
 					{
 						Partition:  partition,
-						MessageSet: messageSet,
+						MessageSet: getMessageSet(key, value),
 					},
 				},
 			},
 		},
 	})
+	return p.doSentMessage(leader, req, topic, partition)
+}
+
+func (p *P) doSentMessage(leader *broker.B, req *proto.Request, topic string, partition int32) error {
 	resp := proto.ProduceResponse{}
 	if err := leader.Do(req, &resp); err != nil {
 		if err == proto.ErrConn {
