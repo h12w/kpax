@@ -1,7 +1,6 @@
 package client
 
 import (
-	"strconv"
 	"sync"
 
 	"h12.me/kafka/broker"
@@ -55,16 +54,15 @@ func (p *brokerPool) addAddr(addr string) *broker.B {
 	return broker
 }
 
-func (p *brokerPool) add(brokerID int32, host string, port int32) *broker.B {
-	addr := host + ":" + strconv.Itoa(int(port))
+func (p *brokerPool) add(brokerID int32, addr string) *broker.B {
 	p.idAddr[brokerID] = addr
 	return p.addAddr(addr)
 }
 
-func (p *brokerPool) Add(brokerID int32, host string, port int32) *broker.B {
+func (p *brokerPool) Add(brokerID int32, addr string) *broker.B {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.add(brokerID, host, port)
+	return p.add(brokerID, addr)
 }
 
 func (p *brokerPool) SetLeader(topic string, partition int32, brokerID int32) error {
@@ -100,10 +98,10 @@ func (p *brokerPool) DeleteCoordinator(consumerGroup string) {
 	delete(p.groupCoordinator, consumerGroup)
 }
 
-func (p *brokerPool) SetCoordinator(consumerGroup string, brokerID int32, host string, port int32) {
+func (p *brokerPool) SetCoordinator(consumerGroup string, brokerID int32, addr string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	broker := p.add(brokerID, host, port)
+	broker := p.add(brokerID, addr)
 	p.groupCoordinator[consumerGroup] = broker
 }
 

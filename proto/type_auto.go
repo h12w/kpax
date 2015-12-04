@@ -1,8 +1,10 @@
 package proto
 
+import "h12.me/wipro"
+
 type RequestOrResponse struct {
 	Size int32
-	M
+	wipro.M
 }
 type Request struct {
 	APIKey         int16
@@ -15,7 +17,7 @@ type Response struct {
 	CorrelationID   int32
 	ResponseMessage ResponseMessage
 }
-type ResponseMessage M
+type ResponseMessage wipro.M
 type MessageSet []OffsetMessage
 type OffsetMessage struct {
 	Offset       int64
@@ -129,12 +131,10 @@ type OffsetsInPartition struct {
 	ErrorCode ErrorCode
 	Offsets   []int64
 }
-type ConsumerMetadataRequest string
-type ConsumerMetadataResponse struct {
-	ErrorCode       ErrorCode
-	CoordinatorID   int32
-	CoordinatorHost string
-	CoordinatorPort int32
+type GroupCoordinatorRequest string
+type GroupCoordinatorResponse struct {
+	ErrorCode ErrorCode
+	Broker    Broker
 }
 type OffsetCommitRequestV0 struct {
 	ConsumerGroupID        string
@@ -202,10 +202,6 @@ type OffsetFetchRequestV1 struct {
 	ConsumerGroup     string
 	PartitionInTopics []PartitionInTopic
 }
-type OffsetFetchRequestV2 struct {
-	ConsumerGroup     string
-	PartitionInTopics []PartitionInTopic
-}
 type OffsetFetchResponse []OffsetMetadataInTopic
 type OffsetMetadataInTopic struct {
 	TopicName                  string
@@ -216,5 +212,100 @@ type OffsetMetadataInPartition struct {
 	Offset    int64
 	Metadata  string
 	ErrorCode ErrorCode
+}
+type JoinGroupRequest struct {
+	GroupID        string
+	SessionTimeout int32
+	MemberID       string
+	ProtocolType   string
+	GroupProtocols GroupProtocols
+}
+type GroupProtocols []GroupProtocol
+type GroupProtocol struct {
+	ProtocolName     string
+	ProtocolMetadata ProtocolMetadata
+}
+type ProtocolMetadata struct {
+	Version      int16
+	Subscription Subscription
+	UserData     []byte
+}
+type Subscription []string
+type JoinGroupResponse struct {
+	ErrorCode         ErrorCode
+	GenerationID      int32
+	GroupProtocolName string
+	LeaderID          string
+	MemberID          string
+	MemberWithMetas   MemberWithMetas
+}
+type MemberWithMetas []MemberWithMeta
+type MemberWithMeta struct {
+	MemberID       string
+	MemberMetadata []byte
+}
+type SyncGroupRequest struct {
+	GroupID          string
+	GenerationID     int32
+	MemberID         string
+	GroupAssignments GroupAssignments
+}
+type GroupAssignments []GroupAssignment
+type GroupAssignment struct {
+	MemberID         string
+	MemberAssignment MemberAssignment
+}
+type MemberAssignment struct {
+	Version              int16
+	PartitionAssignments PartitionAssignments
+}
+type PartitionAssignments []PartitionAssignment
+type PartitionAssignment struct {
+	Topic      string
+	Partitions []int32
+}
+type SyncGroupResponse struct {
+	ErrorCode        ErrorCode
+	MemberAssignment MemberAssignment
+}
+type HeartbeatRequest struct {
+	GroupID      string
+	GenerationID int32
+	MemberID     string
+}
+type HeartbeatResponse ErrorCode
+type LeaveGroupRequest struct {
+	GroupID  string
+	MemberID string
+}
+type LeaveGroupResponse ErrorCode
+type ListGroupsRequest struct {
+}
+type ListGroupsResponse struct {
+	ErrorCode ErrorCode
+	Groups    Groups
+}
+type Groups []Group
+type Group struct {
+	GroupID      string
+	ProtocolType string
+}
+type DescribeGroupsRequest []string
+type DescribeGroupsResponse []GroupDescription
+type GroupDescription struct {
+	ErrorCode    ErrorCode
+	GroupID      string
+	State        string
+	ProtocolType string
+	Protocol     string
+	Members      Members
+}
+type Members []Member
+type Member struct {
+	MemberID         string
+	ClientID         string
+	ClientHost       string
+	MemberMetadata   []byte
+	MemberAssignment MemberAssignment
 }
 type ErrorCode int16
