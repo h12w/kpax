@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"h12.me/wipro"
+	"h12.me/wipro/gen"
 )
 
 func main() {
@@ -15,25 +15,28 @@ func main() {
 		fmt.Println("goj: from BNF to Go JSON")
 		fmt.Println("go: from BNF to Go")
 		fmt.Println("gof: from BNF to Go funcs")
+		fmt.Println("goe: from HTML to Go errors")
 		return
 	}
-	bnfFile := os.Args[2]
+	file := os.Args[2]
 	switch os.Args[1] {
 	case "bnf":
-		fromHTMLToBNF()
+		fromHTMLToBNF(file, os.Stdout)
 	case "bnfj":
-		bnf := wipro.ParseBNF(bnfFile)
+		bnf := gen.ParseBNF(file)
 		fmt.Println(bnf.JSON())
 	case "goj":
-		bnf := wipro.ParseBNF(bnfFile)
+		bnf := gen.ParseBNF(file)
 		fmt.Println(bnf.GoTypes().JSON())
 	case "go":
-		bnf := wipro.ParseBNF(bnfFile)
+		bnf := gen.ParseBNF(file)
 		goTypes := bnf.GoTypes().RemoveDecl("RequestMessage")
 		goTypes.Fprint(os.Stdout)
 	case "gof":
-		bnf := wipro.ParseBNF(bnfFile)
+		bnf := gen.ParseBNF(file)
 		goTypes := bnf.GoTypes()
 		goTypes.GoFuncs(os.Stdout)
+	case "goe":
+		genErrorCodes(file, os.Stdout)
 	}
 }

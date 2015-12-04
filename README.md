@@ -1,10 +1,12 @@
 h12.me/kafka
 ============
 
+[![GoDoc](https://godoc.org/h12.me/kafka?status.svg)](https://godoc.org/h12.me/kafka)
+
 A modular & idiomatic Kafka client in Go
 ----------------------------------------
 
-Compatible with Kafka 0.8.2 or later.
+Compatible with Kafka from 0.8.0 to 0.9.0.
 
 Install
 -------
@@ -21,7 +23,7 @@ Design
 ### Modular
 
 * **proto**: Kafka Wire Protocol (automatically generated types and
-  marshal/unmarshal functions from
+  marshal/unmarshal functions by [wipro](https://github.com/h12w/wipro) from
   [the HTML spec](https://cwiki.apache.org/confluence/display/KAFKA/A+Guide+To+The+Kafka+Protocol)).
 * **broker**: client that talks to a single Kafka broker (concurrent,
   synchronous API wraps inside asynchronous request/response IO).

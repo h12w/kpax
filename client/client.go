@@ -55,8 +55,6 @@ func New(config *Config) (*C, error) {
 
 func (c *C) NewRequest(req proto.RequestMessage) *proto.Request {
 	return &proto.Request{
-		APIKey:         req.APIKey(),
-		APIVersion:     req.APIVersion(),
 		ClientID:       c.config.ClientID,
 		RequestMessage: req,
 	}
@@ -114,14 +112,14 @@ func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 	}
 	for _, broker := range brokers {
 		for i := 0; i < 2; i++ { // twice
-			m, err := c.getConsumerMetadata(broker, consumerGroup)
+			m, err := c.getGroupCoordinator(broker, consumerGroup)
 			if err != nil {
 				return err
 			}
 			if m.ErrorCode.HasError() {
 				return ErrCoordNotFound
 			}
-			c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
+			c.pool.SetCoordinator(consumerGroup, m.Broker.NodeID, m.Broker.Addr())
 			return nil
 		}
 	}
@@ -140,7 +138,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 		for i := range m.Brokers {
 			b := &m.Brokers[i]
-			c.pool.Add(b.NodeID, b.Host, b.Port)
+			c.pool.Add(b.NodeID, b.Addr())
 		}
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
@@ -180,10 +178,10 @@ func (c *C) getTopicMetadata(broker *broker.B, topic string) (*proto.TopicMetada
 	return resp, nil
 }
 
-func (c *C) getConsumerMetadata(broker *broker.B, consumerGroup string) (*proto.ConsumerMetadataResponse, error) {
-	creq := proto.ConsumerMetadataRequest(consumerGroup)
+func (c *C) getGroupCoordinator(broker *broker.B, consumerGroup string) (*proto.GroupCoordinatorResponse, error) {
+	creq := proto.GroupCoordinatorRequest(consumerGroup)
 	req := c.NewRequest(&creq)
-	resp := &proto.ConsumerMetadataResponse{}
+	resp := &proto.GroupCoordinatorResponse{}
 	if err := broker.Do(req, resp); err != nil {
 		return nil, err
 	}
