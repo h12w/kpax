@@ -16,7 +16,7 @@ var (
 
 const (
 	ErrUnknown ErrorCode = iota - 1
-	NoError
+	noError
 	ErrOffsetOutOfRange
 	ErrInvalidMessage
 	ErrUnknownTopicOrPartition
@@ -62,4 +62,12 @@ func (code ErrorCode) Error() string {
 		return errTexts[code]
 	}
 	return fmt.Sprintf("proto: unknown error: %d", code)
+}
+
+func (code ErrorCode) HasError() bool {
+	switch code {
+	case noError, ErrReplicaNotAvailable:
+		return false
+	}
+	return true
 }

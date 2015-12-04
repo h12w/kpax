@@ -70,7 +70,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 		if t.TopicName == topic {
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
-				if p.ErrorCode != proto.NoError {
+				if p.ErrorCode.HasError() {
 					return 0, p.ErrorCode
 				}
 				return p.Offset, nil
@@ -120,7 +120,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 				continue
 			}
 			start := 0
-			if p.ErrorCode != proto.NoError {
+			if p.ErrorCode.HasError() {
 				return nil, p.ErrorCode
 			}
 			for k := range p.MessageSet {
@@ -173,7 +173,7 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 			for j := range t.ErrorInPartitions {
 				p := &t.ErrorInPartitions[j]
 				if p.Partition == partition {
-					if p.ErrorCode != proto.NoError {
+					if p.ErrorCode.HasError() {
 						return p.ErrorCode
 					}
 					return nil
