@@ -118,7 +118,7 @@ func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
 			if err != nil {
 				return err
 			}
-			if m.ErrorCode != proto.NoError {
+			if m.ErrorCode.HasError() {
 				return ErrCoordNotFound
 			}
 			c.pool.SetCoordinator(consumerGroup, m.CoordinatorID, m.CoordinatorHost, m.CoordinatorPort)
@@ -144,15 +144,22 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
-			if t.ErrorCode != proto.NoError {
+			if t.ErrorCode.HasError() {
 				log.Warnf("topic error %v", t.ErrorCode)
 			}
 			if t.TopicName == topic {
 				partitions := make([]int32, len(t.PartitionMetadatas))
+				if t.ErrorCode.HasError() {
+					return t.ErrorCode
+				}
 				for i := range t.PartitionMetadatas {
 					partition := &t.PartitionMetadatas[i]
+					if partition.ErrorCode.HasError() {
+						return partition.ErrorCode
+					}
 					partitions[i] = partition.PartitionID
 					if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
+						log.Debugf("cannot set leader %s, %d, %d", topic, partition.PartitionID, partition.Leader)
 						return ErrLeaderNotFound
 					}
 				}
@@ -179,6 +186,9 @@ func (c *C) getConsumerMetadata(broker *broker.B, consumerGroup string) (*proto.
 	resp := &proto.ConsumerMetadataResponse{}
 	if err := broker.Do(req, resp); err != nil {
 		return nil, err
+	}
+	if resp.ErrorCode.HasError() {
+		return nil, resp.ErrorCode
 	}
 	return resp, nil
 }

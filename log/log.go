@@ -28,7 +28,7 @@ const (
 )
 
 var gmu sync.Mutex
-var gl Logger = &DefaultLogger{level: InfoLevel}
+var gl Logger = &DefaultLogger{level: DebugLevel}
 
 func SetLogger(logger Logger) {
 	gmu.Lock()
