@@ -110,7 +110,6 @@ func (p *brokerPool) GetCoordinator(consumerGroup string) (*broker.B, error) {
 	defer p.mu.Unlock()
 	broker, ok := p.groupCoordinator[consumerGroup]
 	if !ok {
-		log.Debugf("cannot find coordinator for group %s", consumerGroup)
 		return nil, ErrCoordNotFound
 	}
 	return broker, nil
