@@ -31,6 +31,7 @@ Design
 * **producer**: fault tolerant high-level producer (batching and partitioning strategy).
 * **consumer**: fault tolerant high-level consumer (consumer group and offset commit).
 * **log**: replaceable global logger
+* **kafpro**: command line tool to query Kafka wire API
 
 ### Error Handling
 
