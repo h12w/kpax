@@ -79,7 +79,7 @@ func (c *C) Coordinator(topic, consumerGroup string) (*broker.B, error) {
 	if coord, err := c.pool.GetCoordinator(consumerGroup); err == nil {
 		return coord, nil
 	}
-	if err := c.updateFromConsumerMetadata(topic, consumerGroup); err != nil {
+	if err := c.updateCoordinator(topic, consumerGroup); err != nil {
 		return nil, err
 	}
 	return c.pool.GetCoordinator(consumerGroup)
@@ -105,23 +105,21 @@ func (c *C) CoordinatorIsDown(consumerGroup string) {
 	c.pool.DeleteCoordinator(consumerGroup)
 }
 
-func (c *C) updateFromConsumerMetadata(topic, consumerGroup string) error {
+func (c *C) updateCoordinator(topic, consumerGroup string) error {
 	brokers, err := c.pool.Brokers()
 	if err != nil {
 		return err
 	}
 	for _, broker := range brokers {
-		for i := 0; i < 2; i++ { // twice
-			m, err := c.getGroupCoordinator(broker, consumerGroup)
-			if err != nil {
-				return err
-			}
-			if m.ErrorCode.HasError() {
-				return ErrCoordNotFound
-			}
-			c.pool.SetCoordinator(consumerGroup, m.Broker.NodeID, m.Broker.Addr())
-			return nil
+		m, err := c.getGroupCoordinator(broker, consumerGroup)
+		if err != nil {
+			continue
 		}
+		if m.ErrorCode.HasError() {
+			continue
+		}
+		c.pool.SetCoordinator(consumerGroup, m.Broker.NodeID, m.Broker.Addr())
+		return nil
 	}
 	return nil
 }

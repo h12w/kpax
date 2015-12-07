@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"h12.me/kafka/client"
@@ -71,7 +72,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
 				if p.ErrorCode.HasError() {
-					return 0, p.ErrorCode
+					return 0, fmt.Errorf("fail to get offset for (%s, %d): %v", topic, p.Partition, p.ErrorCode)
 				}
 				return p.Offset, nil
 			}

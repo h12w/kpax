@@ -28,6 +28,11 @@ func DefaultConfig() *Config {
 	}
 }
 
+func (c *Config) WithAddr(addr string) *Config {
+	c.Addr = addr
+	return c
+}
+
 type B struct {
 	config *Config
 	cid    int32
