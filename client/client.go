@@ -75,14 +75,14 @@ func (c *C) Partitions(topic string) ([]int32, error) {
 	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
-func (c *C) Coordinator(topic, consumerGroup string) (*broker.B, error) {
-	if coord, err := c.pool.GetCoordinator(consumerGroup); err == nil {
+func (c *C) Coordinator(topic, group string) (*broker.B, error) {
+	if coord, err := c.pool.GetCoordinator(group); err == nil {
 		return coord, nil
 	}
-	if err := c.updateCoordinator(topic, consumerGroup); err != nil {
+	if err := c.updateCoordinator(topic, group); err != nil {
 		return nil, err
 	}
-	return c.pool.GetCoordinator(consumerGroup)
+	return c.pool.GetCoordinator(group)
 }
 
 func (c *C) Leader(topic string, partition int32) (*broker.B, error) {
@@ -100,25 +100,25 @@ func (c *C) LeaderIsDown(topic string, partition int32) {
 	c.pool.DeleteLeader(topic, partition)
 }
 
-func (c *C) CoordinatorIsDown(consumerGroup string) {
-	log.Warnf("coordinator (%s) is down", consumerGroup)
-	c.pool.DeleteCoordinator(consumerGroup)
+func (c *C) CoordinatorIsDown(group string) {
+	log.Warnf("coordinator (%s) is down", group)
+	c.pool.DeleteCoordinator(group)
 }
 
-func (c *C) updateCoordinator(topic, consumerGroup string) error {
+func (c *C) updateCoordinator(topic, group string) error {
 	brokers, err := c.pool.Brokers()
 	if err != nil {
 		return err
 	}
 	for _, broker := range brokers {
-		m, err := c.getGroupCoordinator(broker, consumerGroup)
+		m, err := c.getGroupCoordinator(broker, group)
 		if err != nil {
 			continue
 		}
 		if m.ErrorCode.HasError() {
 			continue
 		}
-		c.pool.SetCoordinator(consumerGroup, m.Broker.NodeID, m.Broker.Addr())
+		c.pool.SetCoordinator(group, m.Broker.NodeID, m.Broker.Addr())
 		return nil
 	}
 	return nil
@@ -175,8 +175,8 @@ func (c *C) getTopicMetadata(broker *broker.B, topic string) (*proto.TopicMetada
 	return resp, nil
 }
 
-func (c *C) getGroupCoordinator(broker *broker.B, consumerGroup string) (*proto.GroupCoordinatorResponse, error) {
-	creq := proto.GroupCoordinatorRequest(consumerGroup)
+func (c *C) getGroupCoordinator(broker *broker.B, group string) (*proto.GroupCoordinatorResponse, error) {
+	creq := proto.GroupCoordinatorRequest(group)
 	req := c.NewRequest(&creq)
 	resp := &proto.GroupCoordinatorResponse{}
 	if err := broker.Do(req, resp); err != nil {
