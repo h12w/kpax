@@ -132,7 +132,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	for _, broker := range brokers {
 		m, err := c.getTopicMetadata(broker, topic)
 		if err != nil {
-			return err
+			continue
 		}
 		for i := range m.Brokers {
 			b := &m.Brokers[i]
@@ -141,22 +141,21 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
 			if t.ErrorCode.HasError() {
-				log.Warnf("topic error %v", t.ErrorCode)
+				continue
 			}
 			if t.TopicName == topic {
 				partitions := make([]int32, len(t.PartitionMetadatas))
 				if t.ErrorCode.HasError() {
-					return t.ErrorCode
+					continue
 				}
 				for i := range t.PartitionMetadatas {
 					partition := &t.PartitionMetadatas[i]
 					if partition.ErrorCode.HasError() {
-						return partition.ErrorCode
+						continue
 					}
 					partitions[i] = partition.PartitionID
 					if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
-						log.Debugf("cannot set leader %s, %d, %d", topic, partition.PartitionID, partition.Leader)
-						return ErrLeaderNotFound
+						continue
 					}
 				}
 				c.topics.addPartitions(topic, partitions)
