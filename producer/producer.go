@@ -79,7 +79,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		req := p.getProducerRequest(topic, partition, messageSet)
 
 		err = p.doSentMessage(leader, req)
-		if err == proto.ErrConn {
+		if proto.IsNotLeader(err) {
 			p.client.LeaderIsDown(topic, partition)
 		}
 		return err
@@ -126,7 +126,7 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 	messageSet := getMessageSet(key, value)
 	req := p.getProducerRequest(topic, partition, messageSet)
 	err = p.doSentMessage(leader, req)
-	if err == proto.ErrConn {
+	if proto.IsNotLeader(err) {
 		p.client.LeaderIsDown(topic, partition)
 	}
 	return err

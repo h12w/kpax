@@ -105,7 +105,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 		return nil, err
 	}
 	if err := leader.Do(req, &resp); err != nil {
-		if err == proto.ErrConn {
+		if proto.IsNotLeader(err) {
 			c.client.LeaderIsDown(topic, partition)
 		}
 		return nil, err
@@ -163,7 +163,7 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 		return err
 	}
 	if err := coord.Do(req, &resp); err != nil {
-		if err == proto.ErrConn {
+		if proto.IsNotCoordinator(err) {
 			c.client.CoordinatorIsDown(consumerGroup)
 		}
 		return err

@@ -29,3 +29,19 @@ func (code ErrorCode) HasError() bool {
 	}
 	return true
 }
+
+func IsNotLeader(err error) bool {
+	switch err {
+	case ErrConn, ErrUnknown, ErrNotLeaderForPartition:
+		return true
+	}
+	return false
+}
+
+func IsNotCoordinator(err error) bool {
+	switch err {
+	case ErrConn, ErrUnknown, ErrNotCoordinatorForGroupCode:
+		return true
+	}
+	return false
+}
