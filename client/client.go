@@ -110,18 +110,21 @@ func (c *C) updateCoordinator(topic, group string) error {
 	if err != nil {
 		return err
 	}
+	var merr MultiError
 	for _, broker := range brokers {
 		m, err := c.getGroupCoordinator(broker, group)
 		if err != nil {
+			merr = append(merr, err)
 			continue
 		}
 		if m.ErrorCode.HasError() {
+			merr = append(merr, m.ErrorCode)
 			continue
 		}
 		c.pool.SetCoordinator(group, m.Broker.NodeID, m.Broker.Addr())
 		return nil
 	}
-	return nil
+	return merr
 }
 
 func (c *C) updateFromTopicMetadata(topic string) error {
@@ -129,9 +132,11 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	if err != nil {
 		return err
 	}
+	var merr MultiError
 	for _, broker := range brokers {
 		m, err := c.getTopicMetadata(broker, topic)
 		if err != nil {
+			merr = append(merr, err)
 			continue
 		}
 		for i := range m.Brokers {
@@ -141,20 +146,24 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
 			if t.ErrorCode.HasError() {
+				merr = append(merr, t.ErrorCode)
 				continue
 			}
 			if t.TopicName == topic {
 				partitions := make([]int32, len(t.PartitionMetadatas))
 				if t.ErrorCode.HasError() {
+					merr = append(merr, t.ErrorCode)
 					continue
 				}
 				for i := range t.PartitionMetadatas {
 					partition := &t.PartitionMetadatas[i]
 					if partition.ErrorCode.HasError() {
+						merr = append(merr, partition.ErrorCode)
 						continue
 					}
 					partitions[i] = partition.PartitionID
 					if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
+						merr = append(merr, err)
 						continue
 					}
 				}
@@ -163,7 +172,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 			}
 		}
 	}
-	return fmt.Errorf("topic %s not found", topic)
+	return merr
 }
 
 func (c *C) getTopicMetadata(broker *broker.B, topic string) (*proto.TopicMetadataResponse, error) {
@@ -181,9 +190,6 @@ func (c *C) getGroupCoordinator(broker *broker.B, group string) (*proto.GroupCoo
 	resp := &proto.GroupCoordinatorResponse{}
 	if err := broker.Do(req, resp); err != nil {
 		return nil, err
-	}
-	if resp.ErrorCode.HasError() {
-		return nil, resp.ErrorCode
 	}
 	return resp, nil
 }
