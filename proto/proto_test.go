@@ -1,6 +1,7 @@
 package proto
 
 import (
+	"fmt"
 	"math/rand"
 	"net"
 	"testing"
@@ -61,16 +62,14 @@ func TestProduceFetch(t *testing.T) {
 	}
 }
 
-func sendReceive(t *testing.T, conn net.Conn, req *Request, resp *Response) {
-	if err := req.Send(conn); err != nil {
-		t.Fatal(t)
+func TestGroupCoordinator(t *testing.T) {
+	k, err := kafka.New()
+	if err != nil {
+		t.Fatal(err)
 	}
-	if err := resp.Receive(conn); err != nil {
-		t.Fatal(resp)
-	}
-	if resp.CorrelationID != req.CorrelationID {
-		t.Fatalf("correlation id: expect %d but got %d", req.CorrelationID, resp.CorrelationID)
-	}
+	group := kafka.RandomGroup()
+	coord := getCoord(t, k, group)
+	fmt.Println(group, coord)
 }
 
 func getTopicMetadata(t *testing.T, k *kafka.Cluster, topic string) *TopicMetadataResponse {
@@ -122,6 +121,24 @@ func getLeader(t *testing.T, k *kafka.Cluster, topic string, partitionID int32) 
 		t.Fatalf("fail to find leader in topic %s partition %d", topic, partitionID)
 	}
 	return leaderAddr
+}
+
+func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
+	reqMsg := GroupCoordinatorRequest(group)
+	req := &Request{
+		RequestMessage: &reqMsg,
+	}
+	respMsg := &GroupCoordinatorResponse{}
+	resp := &Response{ResponseMessage: respMsg}
+	conn, err := net.Dial("tcp", k.AnyBroker())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sendReceive(t, conn, req, resp)
+	if respMsg.ErrorCode.HasError() {
+		t.Fatal(respMsg.ErrorCode)
+	}
+	return respMsg.Broker.Addr()
 }
 
 func produceMessage(t *testing.T, conn net.Conn, topic string, partition int32, key, value string) {
@@ -209,4 +226,16 @@ func fetchMessage(t *testing.T, conn net.Conn, topic string, partition int32, of
 		}
 	}
 	return result
+}
+
+func sendReceive(t *testing.T, conn net.Conn, req *Request, resp *Response) {
+	if err := req.Send(conn); err != nil {
+		t.Fatal(t)
+	}
+	if err := resp.Receive(conn); err != nil {
+		t.Fatal(resp)
+	}
+	if resp.CorrelationID != req.CorrelationID {
+		t.Fatalf("correlation id: expect %d but got %d", req.CorrelationID, resp.CorrelationID)
+	}
 }

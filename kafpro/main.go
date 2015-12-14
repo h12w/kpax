@@ -18,9 +18,11 @@ const (
 
 type Config struct {
 	Broker  string
-	Leader  LeaderConfig
+	Meta    MetaConfig
 	Coord   CoordConfig
 	Offset  OffsetConfig
+	Commit  CommitConfig
+	Time    TimeConfig
 	Consume ConsumeConfig
 }
 
@@ -34,14 +36,28 @@ type OffsetConfig struct {
 	Partition int
 }
 
+type TimeConfig struct {
+	Topic     string
+	Partition int
+	Time      int
+}
+
 type ConsumeConfig struct {
 	Topic     string
 	Partition int
 	Offset    int
 }
 
-type LeaderConfig struct {
+type MetaConfig struct {
 	Topic string
+}
+
+type CommitConfig struct {
+	GroupName string
+	Topic     string
+	Partition int
+	Offset    int
+	Retention int // millisecond
 }
 
 func main() {
@@ -57,11 +73,11 @@ func main() {
 	os.Args = append(os.Args[0:1], os.Args[2:]...)
 
 	switch subCmd {
-	case "leader":
-		flag.StringVar(&cfg.Leader.Topic, "topic", "", "topic name")
+	case "meta":
+		flag.StringVar(&cfg.Meta.Topic, "topic", "", "topic name")
 		flag.Parse()
 		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
-		if err := leader(br, &cfg.Leader); err != nil {
+		if err := meta(br, &cfg.Meta); err != nil {
 			log.Fatal(err)
 		}
 	case "coord":
@@ -78,6 +94,26 @@ func main() {
 		flag.Parse()
 		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
 		if err := offset(br, &cfg.Offset); err != nil {
+			log.Fatal(err)
+		}
+	case "commit":
+		flag.StringVar(&cfg.Commit.GroupName, "group", "", "group name")
+		flag.StringVar(&cfg.Commit.Topic, "topic", "", "topic name")
+		flag.IntVar(&cfg.Commit.Partition, "partition", 0, "partition")
+		flag.IntVar(&cfg.Commit.Offset, "offset", 0, "offset")
+		flag.IntVar(&cfg.Commit.Retention, "retention", 0, "retention")
+		flag.Parse()
+		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
+		if err := commit(br, &cfg.Commit); err != nil {
+			log.Fatal(err)
+		}
+	case "time":
+		flag.StringVar(&cfg.Offset.Topic, "topic", "", "topic name")
+		flag.IntVar(&cfg.Offset.Partition, "partition", 0, "partition")
+		flag.IntVar(&cfg.Offset.Partition, "time", 0, "time")
+		flag.Parse()
+		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
+		if err := timeOffset(br, &cfg.Time); err != nil {
 			log.Fatal(err)
 		}
 	case "consume":
@@ -104,16 +140,18 @@ Usage:
 
 The commands are:
 
-	leader   TopicMetadataRequest
+	meta     TopicMetadataRequest
 	consume  FetchRequest
+	time     OffsetRequest
 	offset   OffsetFetchRequestV1
+	commit   OffsetCommitRequestV1
 	coord    GroupCoordinatorRequest
 
 `)
 	flag.PrintDefaults()
 }
 
-func leader(br *broker.B, cfg *LeaderConfig) error {
+func meta(br *broker.B, cfg *MetaConfig) error {
 	req := &proto.Request{
 		ClientID:       clientID,
 		RequestMessage: &proto.TopicMetadataRequest{cfg.Topic},
@@ -174,6 +212,73 @@ func offset(br *broker.B, cfg *OffsetConfig) error {
 			}
 		}
 	}
+	return nil
+}
+
+func commit(br *broker.B, cfg *CommitConfig) error {
+	req := &proto.Request{
+		ClientID: clientID,
+		RequestMessage: &proto.OffsetCommitRequestV1{
+			ConsumerGroupID: cfg.GroupName,
+			OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
+				{
+					TopicName: cfg.Topic,
+					OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
+						{
+							Partition: int32(cfg.Partition),
+							Offset:    int64(cfg.Offset),
+							// TimeStamp in milliseconds
+							TimeStamp: time.Now().Add(time.Duration(cfg.Retention)*time.Millisecond).Unix() * 1000,
+						},
+					},
+				},
+			},
+		},
+	}
+	resp := proto.OffsetCommitResponse{}
+	if err := br.Do(req, &resp); err != nil {
+		return err
+	}
+	for i := range resp {
+		t := &resp[i]
+		if t.TopicName == cfg.Topic {
+			for j := range t.ErrorInPartitions {
+				p := &t.ErrorInPartitions[j]
+				if int(p.Partition) == cfg.Partition {
+					if p.ErrorCode.HasError() {
+						return p.ErrorCode
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func timeOffset(br *broker.B, cfg *TimeConfig) error {
+	req := &proto.Request{
+		ClientID: clientID,
+		RequestMessage: &proto.OffsetRequest{
+			ReplicaID: -1,
+			TimeInTopics: []proto.TimeInTopic{
+				{
+					TopicName: cfg.Topic,
+					TimeInPartitions: []proto.TimeInPartition{
+						{
+							Partition:          int32(cfg.Partition),
+							Time:               int64(cfg.Time),
+							MaxNumberOfOffsets: 10,
+						},
+					},
+				},
+			},
+		},
+	}
+	resp := proto.OffsetResponse{}
+	if err := br.Do(req, &resp); err != nil {
+		return err
+	}
+	fmt.Println(toJSON(&resp))
 	return nil
 }
 

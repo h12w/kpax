@@ -6,8 +6,6 @@ h12.me/kafka
 A modular & idiomatic Kafka client in Go
 ----------------------------------------
 
-Compatible with Kafka from 0.8.0 to 0.9.0.
-
 Install
 -------
 
@@ -32,6 +30,11 @@ Design
 * **consumer**: fault tolerant high-level consumer (consumer group and offset commit).
 * **log**: replaceable global logger
 * **kafpro**: command line tool to query Kafka wire API
+
+### Compatibility
+
+* proto supports API from 0.8.0 to 0.9.0.
+* other packages are compatible with 0.8.2.
 
 ### Error Handling
 
