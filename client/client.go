@@ -18,14 +18,12 @@ var (
 type Config struct {
 	Brokers      []string
 	BrokerConfig broker.Config
-	ClientID     string
 }
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
 		Brokers:      brokers,
 		BrokerConfig: *broker.DefaultConfig(),
-		ClientID:     "h12.me/kafka",
 	}
 }
 
@@ -50,13 +48,6 @@ func New(config *Config) (*C, error) {
 		c.pool.AddAddr(addr)
 	}
 	return c, nil
-}
-
-func (c *C) NewRequest(req broker.RequestMessage) *broker.Request {
-	return &broker.Request{
-		ClientID:       c.config.ClientID,
-		RequestMessage: req,
-	}
 }
 
 func (c *C) Partitions(topic string) ([]int32, error) {
@@ -111,13 +102,9 @@ func (c *C) updateCoordinator(topic, group string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		m, err := c.getGroupCoordinator(broker, group)
+		m, err := broker.GroupCoordinator(group)
 		if err != nil {
 			merr = append(merr, err)
-			continue
-		}
-		if m.ErrorCode.HasError() {
-			merr = append(merr, m.ErrorCode)
 			continue
 		}
 		c.pool.SetCoordinator(group, m.Broker.NodeID, m.Broker.Addr())
@@ -133,7 +120,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		m, err := c.getTopicMetadata(broker, topic)
+		m, err := broker.TopicMetadata(topic)
 		if err != nil {
 			merr = append(merr, err)
 			continue
@@ -172,23 +159,4 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 	}
 	return merr
-}
-
-func (c *C) getTopicMetadata(b *broker.B, topic string) (*broker.TopicMetadataResponse, error) {
-	req := c.NewRequest(&broker.TopicMetadataRequest{topic})
-	resp := &broker.TopicMetadataResponse{}
-	if err := b.Do(req, resp); err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (c *C) getGroupCoordinator(b *broker.B, group string) (*broker.GroupCoordinatorResponse, error) {
-	creq := broker.GroupCoordinatorRequest(group)
-	req := c.NewRequest(&creq)
-	resp := &broker.GroupCoordinatorResponse{}
-	if err := b.Do(req, resp); err != nil {
-		return nil, err
-	}
-	return resp, nil
 }
