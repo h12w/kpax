@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"h12.me/kafka/broker"
-	"h12.me/kafka/proto"
 )
 
 const (
@@ -49,7 +49,7 @@ type ConsumeConfig struct {
 }
 
 type MetaConfig struct {
-	Topic string
+	Topics []string
 }
 
 type CommitConfig struct {
@@ -74,9 +74,11 @@ func main() {
 
 	switch subCmd {
 	case "meta":
-		flag.StringVar(&cfg.Meta.Topic, "topic", "", "topic name")
+		var topicsArg string
+		flag.StringVar(&topicsArg, "topics", "", "topic names seperated by comma")
 		flag.Parse()
 		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
+		cfg.Meta.Topics = strings.Split(topicsArg, ",")
 		if err := meta(br, &cfg.Meta); err != nil {
 			log.Fatal(err)
 		}
@@ -152,12 +154,8 @@ The commands are:
 }
 
 func meta(br *broker.B, cfg *MetaConfig) error {
-	req := &proto.Request{
-		ClientID:       clientID,
-		RequestMessage: &proto.TopicMetadataRequest{cfg.Topic},
-	}
-	resp := &proto.TopicMetadataResponse{}
-	if err := br.Do(req, resp); err != nil {
+	resp, err := br.TopicMetadata(cfg.Topics...)
+	if err != nil {
 		return err
 	}
 	fmt.Println(toJSON(&resp))
@@ -165,12 +163,12 @@ func meta(br *broker.B, cfg *MetaConfig) error {
 }
 
 func coord(br *broker.B, coord *CoordConfig) error {
-	reqMsg := proto.GroupCoordinatorRequest(coord.GroupName)
-	req := &proto.Request{
+	reqMsg := broker.GroupCoordinatorRequest(coord.GroupName)
+	req := &broker.Request{
 		ClientID:       clientID,
 		RequestMessage: &reqMsg,
 	}
-	resp := &proto.GroupCoordinatorResponse{}
+	resp := &broker.GroupCoordinatorResponse{}
 	if err := br.Do(req, resp); err != nil {
 		return err
 	}
@@ -182,11 +180,11 @@ func coord(br *broker.B, coord *CoordConfig) error {
 }
 
 func offset(br *broker.B, cfg *OffsetConfig) error {
-	req := &proto.Request{
+	req := &broker.Request{
 		ClientID: clientID,
-		RequestMessage: &proto.OffsetFetchRequestV1{
+		RequestMessage: &broker.OffsetFetchRequestV1{
 			ConsumerGroup: cfg.GroupName,
-			PartitionInTopics: []proto.PartitionInTopic{
+			PartitionInTopics: []broker.PartitionInTopic{
 				{
 					TopicName:  cfg.Topic,
 					Partitions: []int32{int32(cfg.Partition)},
@@ -194,7 +192,7 @@ func offset(br *broker.B, cfg *OffsetConfig) error {
 			},
 		},
 	}
-	resp := proto.OffsetFetchResponse{}
+	resp := broker.OffsetFetchResponse{}
 	if err := br.Do(req, &resp); err != nil {
 		return err
 	}
@@ -216,14 +214,14 @@ func offset(br *broker.B, cfg *OffsetConfig) error {
 }
 
 func commit(br *broker.B, cfg *CommitConfig) error {
-	req := &proto.Request{
+	req := &broker.Request{
 		ClientID: clientID,
-		RequestMessage: &proto.OffsetCommitRequestV1{
+		RequestMessage: &broker.OffsetCommitRequestV1{
 			ConsumerGroupID: cfg.GroupName,
-			OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
+			OffsetCommitInTopicV1s: []broker.OffsetCommitInTopicV1{
 				{
 					TopicName: cfg.Topic,
-					OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
+					OffsetCommitInPartitionV1s: []broker.OffsetCommitInPartitionV1{
 						{
 							Partition: int32(cfg.Partition),
 							Offset:    int64(cfg.Offset),
@@ -235,7 +233,7 @@ func commit(br *broker.B, cfg *CommitConfig) error {
 			},
 		},
 	}
-	resp := proto.OffsetCommitResponse{}
+	resp := broker.OffsetCommitResponse{}
 	if err := br.Do(req, &resp); err != nil {
 		return err
 	}
@@ -256,14 +254,14 @@ func commit(br *broker.B, cfg *CommitConfig) error {
 }
 
 func timeOffset(br *broker.B, cfg *TimeConfig) error {
-	req := &proto.Request{
+	req := &broker.Request{
 		ClientID: clientID,
-		RequestMessage: &proto.OffsetRequest{
+		RequestMessage: &broker.OffsetRequest{
 			ReplicaID: -1,
-			TimeInTopics: []proto.TimeInTopic{
+			TimeInTopics: []broker.TimeInTopic{
 				{
 					TopicName: cfg.Topic,
-					TimeInPartitions: []proto.TimeInPartition{
+					TimeInPartitions: []broker.TimeInPartition{
 						{
 							Partition:          int32(cfg.Partition),
 							Time:               int64(cfg.Time),
@@ -274,7 +272,7 @@ func timeOffset(br *broker.B, cfg *TimeConfig) error {
 			},
 		},
 	}
-	resp := proto.OffsetResponse{}
+	resp := broker.OffsetResponse{}
 	if err := br.Do(req, &resp); err != nil {
 		return err
 	}
@@ -283,16 +281,16 @@ func timeOffset(br *broker.B, cfg *TimeConfig) error {
 }
 
 func consume(br *broker.B, cfg *ConsumeConfig) error {
-	req := &proto.Request{
+	req := &broker.Request{
 		ClientID: clientID,
-		RequestMessage: &proto.FetchRequest{
+		RequestMessage: &broker.FetchRequest{
 			ReplicaID:   -1,
 			MaxWaitTime: int32(time.Second / time.Millisecond),
 			MinBytes:    int32(1024),
-			FetchOffsetInTopics: []proto.FetchOffsetInTopic{
+			FetchOffsetInTopics: []broker.FetchOffsetInTopic{
 				{
 					TopicName: cfg.Topic,
-					FetchOffsetInPartitions: []proto.FetchOffsetInPartition{
+					FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
 						{
 							Partition:   int32(cfg.Partition),
 							FetchOffset: int64(cfg.Offset),
@@ -303,7 +301,7 @@ func consume(br *broker.B, cfg *ConsumeConfig) error {
 			},
 		},
 	}
-	resp := proto.FetchResponse{}
+	resp := broker.FetchResponse{}
 	if err := br.Do(req, &resp); err != nil {
 		return err
 	}
