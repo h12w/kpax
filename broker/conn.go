@@ -4,8 +4,6 @@ import (
 	"net"
 	"sync"
 	"time"
-
-	"h12.me/kafka/proto"
 )
 
 type connection struct {
@@ -34,7 +32,7 @@ func (c *connection) sendLoop() {
 		c.conn.SetWriteDeadline(time.Now().Add(c.timeout))
 		if err := job.req.Send(c.conn); err != nil {
 			job.errChan <- err
-			if err == proto.ErrConn {
+			if err == ErrConn {
 				c.Close()
 				close(c.recvChan)
 			}
@@ -49,7 +47,7 @@ func (c *connection) receiveLoop() {
 		c.conn.SetReadDeadline(time.Now().Add(c.timeout))
 		if err := job.resp.Receive(c.conn); err != nil {
 			job.errChan <- err
-			if err == proto.ErrConn {
+			if err == ErrConn {
 				c.Close()
 			}
 		}

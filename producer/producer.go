@@ -8,7 +8,6 @@ import (
 	"h12.me/kafka/broker"
 	"h12.me/kafka/client"
 	"h12.me/kafka/log"
-	"h12.me/kafka/proto"
 )
 
 var (
@@ -30,7 +29,7 @@ type Config struct {
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
 		Client:             *client.DefaultConfig(brokers...),
-		RequiredAcks:       proto.AckLocal,
+		RequiredAcks:       broker.AckLocal,
 		Timeout:            10 * time.Second,
 		LeaderRecoveryTime: 60 * time.Second,
 	}
@@ -79,7 +78,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		req := p.getProducerRequest(topic, partition, messageSet)
 
 		err = p.doSentMessage(leader, req)
-		if proto.IsNotLeader(err) {
+		if broker.IsNotLeader(err) {
 			p.client.LeaderIsDown(topic, partition)
 		}
 		return err
@@ -88,11 +87,11 @@ func (p *P) Produce(topic string, key, value []byte) error {
 	return ErrProduceFailed
 }
 
-func getMessageSet(key, value []byte) []proto.OffsetMessage {
-	return []proto.OffsetMessage{
+func getMessageSet(key, value []byte) []broker.OffsetMessage {
+	return []broker.OffsetMessage{
 		{
-			SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
-				Message: proto.Message{
+			SizedMessage: broker.SizedMessage{CRCMessage: broker.CRCMessage{
+				Message: broker.Message{
 					Key:   key,
 					Value: value,
 				},
@@ -100,14 +99,14 @@ func getMessageSet(key, value []byte) []proto.OffsetMessage {
 	}
 }
 
-func (p *P) getProducerRequest(topic string, partition int32, messageSet []proto.OffsetMessage) *proto.Request {
-	return p.client.NewRequest(&proto.ProduceRequest{
+func (p *P) getProducerRequest(topic string, partition int32, messageSet []broker.OffsetMessage) *broker.Request {
+	return p.client.NewRequest(&broker.ProduceRequest{
 		RequiredAcks: p.config.RequiredAcks,
 		Timeout:      int32(p.config.Timeout / time.Millisecond),
-		MessageSetInTopics: []proto.MessageSetInTopic{
+		MessageSetInTopics: []broker.MessageSetInTopic{
 			{
 				TopicName: topic,
-				MessageSetInPartitions: []proto.MessageSetInPartition{
+				MessageSetInPartitions: []broker.MessageSetInPartition{
 					{
 						Partition:  partition,
 						MessageSet: messageSet,
@@ -126,14 +125,14 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 	messageSet := getMessageSet(key, value)
 	req := p.getProducerRequest(topic, partition, messageSet)
 	err = p.doSentMessage(leader, req)
-	if proto.IsNotLeader(err) {
+	if broker.IsNotLeader(err) {
 		p.client.LeaderIsDown(topic, partition)
 	}
 	return err
 }
 
-func (p *P) doSentMessage(leader *broker.B, req *proto.Request) error {
-	resp := proto.ProduceResponse{}
+func (p *P) doSentMessage(leader *broker.B, req *broker.Request) error {
+	resp := broker.ProduceResponse{}
 	if err := leader.Do(req, &resp); err != nil {
 		return err
 	}

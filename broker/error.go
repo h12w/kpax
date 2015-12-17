@@ -1,4 +1,4 @@
-package proto
+package broker
 
 import (
 	"errors"

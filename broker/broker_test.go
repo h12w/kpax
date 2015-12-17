@@ -1,12 +1,10 @@
 package broker
 
+/*
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
-
-	"h12.me/kafka/proto"
 )
 
 const (
@@ -21,16 +19,14 @@ func newTestBroker() *B {
 
 func TestMeta(t *testing.T) {
 	broker := newTestBroker()
-	req := &proto.Request{
-		APIKey:        proto.TopicMetadataRequestType,
-		APIVersion:    0,
+	req := &Request{
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.TopicMetadataRequest{
+		RequestMessage: &TopicMetadataRequest{
 			"test",
 		},
 	}
-	resp := &proto.TopicMetadataResponse{}
+	resp := &TopicMetadataResponse{}
 	if err := broker.Do(req, resp); err != nil {
 		t.Fatal(err)
 	}
@@ -39,19 +35,17 @@ func TestMeta(t *testing.T) {
 
 func TestConsumeAll(t *testing.T) {
 	broker := newTestBroker()
-	req := &proto.Request{
-		APIKey:        proto.FetchRequestType,
-		APIVersion:    0,
+	req := &Request{
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.FetchRequest{
+		RequestMessage: &FetchRequest{
 			ReplicaID:   -1,
 			MaxWaitTime: 0,
 			MinBytes:    0,
-			FetchOffsetInTopics: []proto.FetchOffsetInTopic{
+			FetchOffsetInTopics: []FetchOffsetInTopic{
 				{
 					TopicName: "test",
-					FetchOffsetInPartitions: []proto.FetchOffsetInPartition{
+					FetchOffsetInPartitions: []FetchOffsetInPartition{
 						{
 							Partition:   0,
 							FetchOffset: 0,
@@ -62,7 +56,7 @@ func TestConsumeAll(t *testing.T) {
 			},
 		},
 	}
-	resp := proto.FetchResponse{}
+	resp := FetchResponse{}
 	if err := broker.Do(req, &resp); err != nil {
 		t.Fatal(err)
 	}
@@ -83,19 +77,17 @@ func TestOffsetCommit(t *testing.T) {
 		Timeout:  time.Second,
 	})
 	tm := time.Now()
-	req := &proto.Request{
-		APIKey:        proto.OffsetCommitRequestType,
-		APIVersion:    1,
+	req := &Request{
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.OffsetCommitRequestV1{
+		RequestMessage: &OffsetCommitRequestV1{
 			ConsumerGroupID:           "test-1",
 			ConsumerGroupGenerationID: 1,
 			ConsumerID:                "consumer-1",
-			OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
+			OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
 				{
 					TopicName: "test",
-					OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
+					OffsetCommitInPartitionV1s: []OffsetCommitInPartitionV1{
 						{
 							Partition: 0,
 							Offset:    1,
@@ -107,7 +99,7 @@ func TestOffsetCommit(t *testing.T) {
 			},
 		},
 	}
-	resp := proto.OffsetCommitResponse{}
+	resp := OffsetCommitResponse{}
 	if err := broker.Do(req, &resp); err != nil {
 		t.Fatal(t)
 	}
@@ -116,14 +108,12 @@ func TestOffsetCommit(t *testing.T) {
 
 func TestOffsetFetch(t *testing.T) {
 	broker := newTestBroker()
-	req := &proto.Request{
-		APIKey:        proto.OffsetFetchRequestType,
-		APIVersion:    1,
+	req := &Request{
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.OffsetFetchRequestV1{
+		RequestMessage: &OffsetFetchRequestV1{
 			ConsumerGroup: "test-1",
-			PartitionInTopics: []proto.PartitionInTopic{
+			PartitionInTopics: []PartitionInTopic{
 				{
 					TopicName:  "test",
 					Partitions: []int32{0, 1, 2},
@@ -131,7 +121,7 @@ func TestOffsetFetch(t *testing.T) {
 			},
 		},
 	}
-	resp := proto.OffsetFetchResponse{}
+	resp := OffsetFetchResponse{}
 	if err := broker.Do(req, &resp); err != nil {
 		t.Fatal(err)
 	}
@@ -140,15 +130,13 @@ func TestOffsetFetch(t *testing.T) {
 
 func TestConsumerMeta(t *testing.T) {
 	broker := newTestBroker()
-	creq := proto.ConsumerMetadataRequest("test-1")
-	req := &proto.Request{
-		APIKey:         proto.ConsumerMetadataRequestType,
-		APIVersion:     0,
+	creq := GroupCoordinatorRequest("test-1")
+	req := &Request{
 		CorrelationID:  1,
 		ClientID:       "abc",
 		RequestMessage: &creq,
 	}
-	resp := proto.ConsumerMetadataResponse{}
+	resp := GroupCoordinatorResponse{}
 	if err := broker.Do(req, &resp); err != nil {
 		t.Fatal(err)
 	}
@@ -158,24 +146,22 @@ func TestConsumerMeta(t *testing.T) {
 func TestProduce(t *testing.T) {
 	broker := newTestBroker()
 	tm := time.Now()
-	req := &proto.Request{
-		APIKey:        proto.ProduceRequestType,
-		APIVersion:    0,
+	req := &Request{
 		CorrelationID: 1,
 		ClientID:      "abc",
-		RequestMessage: &proto.ProduceRequest{
+		RequestMessage: &ProduceRequest{
 			RequiredAcks: 1,
 			Timeout:      0,
-			MessageSetInTopics: []proto.MessageSetInTopic{
+			MessageSetInTopics: []MessageSetInTopic{
 				{
 					TopicName: "test",
-					MessageSetInPartitions: []proto.MessageSetInPartition{
+					MessageSetInPartitions: []MessageSetInPartition{
 						{
 							Partition: 0,
-							MessageSet: []proto.OffsetMessage{
+							MessageSet: []OffsetMessage{
 								{
-									SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
-										Message: proto.Message{
+									SizedMessage: SizedMessage{CRCMessage: CRCMessage{
+										Message: Message{
 											Key:   nil,
 											Value: []byte("hello " + tm.Format(time.RFC3339)),
 										},
@@ -187,14 +173,11 @@ func TestProduce(t *testing.T) {
 			},
 		},
 	}
-	resp := proto.ProduceResponse{}
+	resp := ProduceResponse{}
 	if err := broker.Do(req, &resp); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(toJSON(resp))
 }
 
-func toJSON(v interface{}) string {
-	buf, _ := json.MarshalIndent(v, "", "    ")
-	return string(buf)
-}
+*/

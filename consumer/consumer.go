@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"h12.me/kafka/broker"
 	"h12.me/kafka/client"
-	"h12.me/kafka/proto"
 )
 
 var (
@@ -49,16 +49,16 @@ func New(config *Config) (*C, error) {
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	req := c.client.NewRequest(&proto.OffsetFetchRequestV1{
+	req := c.client.NewRequest(&broker.OffsetFetchRequestV1{
 		ConsumerGroup: consumerGroup,
-		PartitionInTopics: []proto.PartitionInTopic{
+		PartitionInTopics: []broker.PartitionInTopic{
 			{
 				TopicName:  topic,
 				Partitions: []int32{partition},
 			},
 		},
 	})
-	resp := proto.OffsetFetchResponse{}
+	resp := broker.OffsetFetchResponse{}
 	coord, err := c.client.Coordinator(topic, consumerGroup)
 	if err != nil {
 		return 0, err
@@ -82,14 +82,14 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byte, err error) {
-	req := c.client.NewRequest(&proto.FetchRequest{
+	req := c.client.NewRequest(&broker.FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
 		MinBytes:    int32(c.config.MinBytes),
-		FetchOffsetInTopics: []proto.FetchOffsetInTopic{
+		FetchOffsetInTopics: []broker.FetchOffsetInTopic{
 			{
 				TopicName: topic,
-				FetchOffsetInPartitions: []proto.FetchOffsetInPartition{
+				FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
 					{
 						Partition:   partition,
 						FetchOffset: offset,
@@ -99,13 +99,13 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 			},
 		},
 	})
-	resp := proto.FetchResponse{}
+	resp := broker.FetchResponse{}
 	leader, err := c.client.Leader(topic, partition)
 	if err != nil {
 		return nil, err
 	}
 	if err := leader.Do(req, &resp); err != nil {
-		if proto.IsNotLeader(err) {
+		if broker.IsNotLeader(err) {
 			c.client.LeaderIsDown(topic, partition)
 		}
 		return nil, err
@@ -141,12 +141,12 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	req := c.client.NewRequest(&proto.OffsetCommitRequestV1{
+	req := c.client.NewRequest(&broker.OffsetCommitRequestV1{
 		ConsumerGroupID: consumerGroup,
-		OffsetCommitInTopicV1s: []proto.OffsetCommitInTopicV1{
+		OffsetCommitInTopicV1s: []broker.OffsetCommitInTopicV1{
 			{
 				TopicName: topic,
-				OffsetCommitInPartitionV1s: []proto.OffsetCommitInPartitionV1{
+				OffsetCommitInPartitionV1s: []broker.OffsetCommitInPartitionV1{
 					{
 						Partition: partition,
 						Offset:    offset,
@@ -157,13 +157,13 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 			},
 		},
 	})
-	resp := proto.OffsetCommitResponse{}
+	resp := broker.OffsetCommitResponse{}
 	coord, err := c.client.Coordinator(topic, consumerGroup)
 	if err != nil {
 		return err
 	}
 	if err := coord.Do(req, &resp); err != nil {
-		if proto.IsNotCoordinator(err) {
+		if broker.IsNotCoordinator(err) {
 			c.client.CoordinatorIsDown(consumerGroup)
 		}
 		return err
