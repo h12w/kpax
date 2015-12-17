@@ -7,7 +7,6 @@ import (
 
 	"h12.me/kafka/broker"
 	"h12.me/kafka/log"
-	"h12.me/kafka/proto"
 )
 
 var (
@@ -53,8 +52,8 @@ func New(config *Config) (*C, error) {
 	return c, nil
 }
 
-func (c *C) NewRequest(req proto.RequestMessage) *proto.Request {
-	return &proto.Request{
+func (c *C) NewRequest(req broker.RequestMessage) *broker.Request {
+	return &broker.Request{
 		ClientID:       c.config.ClientID,
 		RequestMessage: req,
 	}
@@ -175,20 +174,20 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	return merr
 }
 
-func (c *C) getTopicMetadata(broker *broker.B, topic string) (*proto.TopicMetadataResponse, error) {
-	req := c.NewRequest(&proto.TopicMetadataRequest{topic})
-	resp := &proto.TopicMetadataResponse{}
-	if err := broker.Do(req, resp); err != nil {
+func (c *C) getTopicMetadata(b *broker.B, topic string) (*broker.TopicMetadataResponse, error) {
+	req := c.NewRequest(&broker.TopicMetadataRequest{topic})
+	resp := &broker.TopicMetadataResponse{}
+	if err := b.Do(req, resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (c *C) getGroupCoordinator(broker *broker.B, group string) (*proto.GroupCoordinatorResponse, error) {
-	creq := proto.GroupCoordinatorRequest(group)
+func (c *C) getGroupCoordinator(b *broker.B, group string) (*broker.GroupCoordinatorResponse, error) {
+	creq := broker.GroupCoordinatorRequest(group)
 	req := c.NewRequest(&creq)
-	resp := &proto.GroupCoordinatorResponse{}
-	if err := broker.Do(req, resp); err != nil {
+	resp := &broker.GroupCoordinatorResponse{}
+	if err := b.Do(req, resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

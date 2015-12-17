@@ -6,8 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"h12.me/kafka/proto"
 )
 
 var (
@@ -41,8 +39,8 @@ type B struct {
 }
 
 type brokerJob struct {
-	req     *proto.Request
-	resp    *proto.Response
+	req     *Request
+	resp    *Response
 	errChan chan error
 }
 
@@ -54,12 +52,12 @@ func (b *B) Addr() string {
 	return b.config.Addr
 }
 
-func (b *B) Do(req *proto.Request, resp proto.ResponseMessage) error {
+func (b *B) Do(req *Request, resp ResponseMessage) error {
 	req.CorrelationID = atomic.AddInt32(&b.cid, 1)
 	errChan := make(chan error)
 	if err := b.sendJob(&brokerJob{
 		req:     req,
-		resp:    &proto.Response{ResponseMessage: resp},
+		resp:    &Response{ResponseMessage: resp},
 		errChan: errChan,
 	}); err != nil {
 		return err
