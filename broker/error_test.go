@@ -5,6 +5,7 @@ import (
 )
 
 func TestErrorEqual(t *testing.T) {
+	t.Parallel()
 	var err error
 	err = ErrOffsetOutOfRange
 	if err != ErrOffsetOutOfRange {
