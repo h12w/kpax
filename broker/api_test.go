@@ -11,6 +11,7 @@ import (
 )
 
 func TestTopicMetadata(t *testing.T) {
+	t.Parallel()
 	k, err := kafka.New()
 	if err != nil {
 		t.Fatal(err)
@@ -34,6 +35,7 @@ func TestTopicMetadata(t *testing.T) {
 }
 
 func TestProduceFetch(t *testing.T) {
+	t.Parallel()
 	k, err := kafka.New()
 	if err != nil {
 		t.Fatal(err)
@@ -63,6 +65,7 @@ func TestProduceFetch(t *testing.T) {
 }
 
 func TestGroupCoordinator(t *testing.T) {
+	t.Parallel()
 	k, err := kafka.New()
 	if err != nil {
 		t.Fatal(err)
