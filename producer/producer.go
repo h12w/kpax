@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"h12.me/kafka/broker"
-	"h12.me/kafka/client"
+	"h12.me/kafka/cluster"
 	"h12.me/kafka/log"
 )
 
@@ -20,7 +20,7 @@ func init() {
 }
 
 type Config struct {
-	Client             client.Config
+	Client             cluster.Config
 	RequiredAcks       int16
 	Timeout            time.Duration
 	LeaderRecoveryTime time.Duration
@@ -28,7 +28,7 @@ type Config struct {
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Client:             *client.DefaultConfig(brokers...),
+		Client:             *cluster.DefaultConfig(brokers...),
 		RequiredAcks:       broker.AckLocal,
 		Timeout:            10 * time.Second,
 		LeaderRecoveryTime: 60 * time.Second,
@@ -36,18 +36,18 @@ func DefaultConfig(brokers ...string) *Config {
 }
 
 type P struct {
-	client           *client.C
+	cluster          *cluster.C
 	config           *Config
 	topicPartitioner *topicPartitioner
 }
 
 func New(config *Config) (*P, error) {
-	client, err := client.New(&config.Client)
+	cluster, err := cluster.New(&config.Client)
 	if err != nil {
 		return nil, err
 	}
 	return &P{
-		client:           client,
+		cluster:          cluster,
 		config:           config,
 		topicPartitioner: newTopicPartitioner(),
 	}, nil
@@ -56,7 +56,7 @@ func New(config *Config) (*P, error) {
 func (p *P) Produce(topic string, key, value []byte) error {
 	partitioner := p.topicPartitioner.Get(topic)
 	if partitioner == nil {
-		partitions, err := p.client.Partitions(topic)
+		partitions, err := p.cluster.Partitions(topic)
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 			break
 		}
 
-		leader, err := p.client.Leader(topic, partition)
+		leader, err := p.cluster.Leader(topic, partition)
 		if err != nil {
 			partitioner.Skip(partition)
 			continue
@@ -79,7 +79,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 
 		err = p.doSentMessage(leader, req)
 		if broker.IsNotLeader(err) {
-			p.client.LeaderIsDown(topic, partition)
+			p.cluster.LeaderIsDown(topic, partition)
 		}
 		return err
 	}
@@ -100,25 +100,27 @@ func getMessageSet(key, value []byte) []broker.OffsetMessage {
 }
 
 func (p *P) getProducerRequest(topic string, partition int32, messageSet []broker.OffsetMessage) *broker.Request {
-	return p.client.NewRequest(&broker.ProduceRequest{
-		RequiredAcks: p.config.RequiredAcks,
-		Timeout:      int32(p.config.Timeout / time.Millisecond),
-		MessageSetInTopics: []broker.MessageSetInTopic{
-			{
-				TopicName: topic,
-				MessageSetInPartitions: []broker.MessageSetInPartition{
-					{
-						Partition:  partition,
-						MessageSet: messageSet,
+	return &broker.Request{
+		RequestMessage: &broker.ProduceRequest{
+			RequiredAcks: p.config.RequiredAcks,
+			Timeout:      int32(p.config.Timeout / time.Millisecond),
+			MessageSetInTopics: []broker.MessageSetInTopic{
+				{
+					TopicName: topic,
+					MessageSetInPartitions: []broker.MessageSetInPartition{
+						{
+							Partition:  partition,
+							MessageSet: messageSet,
+						},
 					},
 				},
 			},
 		},
-	})
+	}
 }
 
 func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
-	leader, err := p.client.Leader(topic, partition)
+	leader, err := p.cluster.Leader(topic, partition)
 	if err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 	req := p.getProducerRequest(topic, partition, messageSet)
 	err = p.doSentMessage(leader, req)
 	if broker.IsNotLeader(err) {
-		p.client.LeaderIsDown(topic, partition)
+		p.cluster.LeaderIsDown(topic, partition)
 	}
 	return err
 }

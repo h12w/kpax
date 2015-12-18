@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"h12.me/kafka/broker"
-	"h12.me/kafka/client"
+	"h12.me/kafka/cluster"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 )
 
 type Config struct {
-	Client          client.Config
+	Client          cluster.Config
 	MaxWaitTime     time.Duration
 	MinBytes        int
 	MaxBytes        int
@@ -24,7 +24,7 @@ type Config struct {
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Client:          *client.DefaultConfig(brokers...),
+		Client:          *cluster.DefaultConfig(brokers...),
 		MaxWaitTime:     100 * time.Millisecond,
 		MinBytes:        1,
 		MaxBytes:        1024 * 1024,
@@ -33,33 +33,35 @@ func DefaultConfig(brokers ...string) *Config {
 }
 
 type C struct {
-	client *client.C
-	config *Config
+	cluster *cluster.C
+	config  *Config
 }
 
 func New(config *Config) (*C, error) {
-	client, err := client.New(&config.Client)
+	cluster, err := cluster.New(&config.Client)
 	if err != nil {
 		return nil, err
 	}
 	return &C{
-		client: client,
-		config: config,
+		cluster: cluster,
+		config:  config,
 	}, nil
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	req := c.client.NewRequest(&broker.OffsetFetchRequestV1{
-		ConsumerGroup: consumerGroup,
-		PartitionInTopics: []broker.PartitionInTopic{
-			{
-				TopicName:  topic,
-				Partitions: []int32{partition},
+	req := &broker.Request{
+		RequestMessage: &broker.OffsetFetchRequestV1{
+			ConsumerGroup: consumerGroup,
+			PartitionInTopics: []broker.PartitionInTopic{
+				{
+					TopicName:  topic,
+					Partitions: []int32{partition},
+				},
 			},
 		},
-	})
+	}
 	resp := broker.OffsetFetchResponse{}
-	coord, err := c.client.Coordinator(topic, consumerGroup)
+	coord, err := c.cluster.Coordinator(topic, consumerGroup)
 	if err != nil {
 		return 0, err
 	}
@@ -82,31 +84,33 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byte, err error) {
-	req := c.client.NewRequest(&broker.FetchRequest{
-		ReplicaID:   -1,
-		MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
-		MinBytes:    int32(c.config.MinBytes),
-		FetchOffsetInTopics: []broker.FetchOffsetInTopic{
-			{
-				TopicName: topic,
-				FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
-					{
-						Partition:   partition,
-						FetchOffset: offset,
-						MaxBytes:    int32(c.config.MaxBytes),
+	req := &broker.Request{
+		RequestMessage: &broker.FetchRequest{
+			ReplicaID:   -1,
+			MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
+			MinBytes:    int32(c.config.MinBytes),
+			FetchOffsetInTopics: []broker.FetchOffsetInTopic{
+				{
+					TopicName: topic,
+					FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
+						{
+							Partition:   partition,
+							FetchOffset: offset,
+							MaxBytes:    int32(c.config.MaxBytes),
+						},
 					},
 				},
 			},
 		},
-	})
+	}
 	resp := broker.FetchResponse{}
-	leader, err := c.client.Leader(topic, partition)
+	leader, err := c.cluster.Leader(topic, partition)
 	if err != nil {
 		return nil, err
 	}
 	if err := leader.Do(req, &resp); err != nil {
 		if broker.IsNotLeader(err) {
-			c.client.LeaderIsDown(topic, partition)
+			c.cluster.LeaderIsDown(topic, partition)
 		}
 		return nil, err
 	}
@@ -141,7 +145,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	req := c.client.NewRequest(&broker.OffsetCommitRequestV1{
+	req := &broker.Request{RequestMessage: &broker.OffsetCommitRequestV1{
 		ConsumerGroupID: consumerGroup,
 		OffsetCommitInTopicV1s: []broker.OffsetCommitInTopicV1{
 			{
@@ -156,15 +160,16 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 				},
 			},
 		},
-	})
+	},
+	}
 	resp := broker.OffsetCommitResponse{}
-	coord, err := c.client.Coordinator(topic, consumerGroup)
+	coord, err := c.cluster.Coordinator(topic, consumerGroup)
 	if err != nil {
 		return err
 	}
 	if err := coord.Do(req, &resp); err != nil {
 		if broker.IsNotCoordinator(err) {
-			c.client.CoordinatorIsDown(consumerGroup)
+			c.cluster.CoordinatorIsDown(consumerGroup)
 		}
 		return err
 	}
