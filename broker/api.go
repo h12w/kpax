@@ -1,5 +1,9 @@
 package broker
 
+import (
+	"time"
+)
+
 func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
 	reqMsg := TopicMetadataRequest(topics)
 	req := Request{
@@ -25,6 +29,34 @@ func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {
 	}
 	if respMsg.ErrorCode.HasError() {
 		return nil, respMsg.ErrorCode
+	}
+	return respMsg, nil
+}
+
+func (b *B) Produce(topic string, partition int32, messageSet []OffsetMessage) (*ProduceResponse, error) {
+	cfg := &b.config.Producer
+	req := &Request{
+		RequestMessage: &ProduceRequest{
+			RequiredAcks: cfg.RequiredAcks,
+			Timeout:      int32(cfg.Timeout / time.Millisecond),
+			MessageSetInTopics: []MessageSetInTopic{
+				{
+					TopicName: topic,
+					MessageSetInPartitions: []MessageSetInPartition{
+						{
+							Partition:  partition,
+							MessageSet: messageSet,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	respMsg := &ProduceResponse{}
+	resp := Response{ResponseMessage: respMsg}
+	if err := b.Do(req, &resp); err != nil {
+		return nil, err
 	}
 	return respMsg, nil
 }
