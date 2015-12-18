@@ -40,7 +40,7 @@ func New(config *Config) (*C, error) {
 		topics: newTopicPartitions(),
 		pool: newBrokerPool(func(addr string) *broker.B {
 			cfg := config.BrokerConfig
-			cfg.Addr = addr
+			cfg.Connection.Addr = addr
 			return broker.New(&cfg)
 		}),
 	}

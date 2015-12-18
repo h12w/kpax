@@ -14,20 +14,36 @@ var (
 )
 
 type Config struct {
-	Addr     string
-	QueueLen int
-	Timeout  time.Duration
+	QueueLen   int
+	Connection ConnectionConfig
+	Producer   ProducerConfig
+}
+
+type ConnectionConfig struct {
+	Addr    string
+	Timeout time.Duration
+}
+
+type ProducerConfig struct {
+	RequiredAcks int16
+	Timeout      time.Duration
 }
 
 func DefaultConfig() *Config {
 	return &Config{
 		QueueLen: 1000,
-		Timeout:  30 * time.Second,
+		Connection: ConnectionConfig{
+			Timeout: 30 * time.Second,
+		},
+		Producer: ProducerConfig{
+			RequiredAcks: AckLocal,
+			Timeout:      10 * time.Second,
+		},
 	}
 }
 
 func (c *Config) WithAddr(addr string) *Config {
-	c.Addr = addr
+	c.Connection.Addr = addr
 	return c
 }
 
@@ -49,7 +65,7 @@ func New(config *Config) *B {
 }
 
 func (b *B) Addr() string {
-	return b.config.Addr
+	return b.config.Connection.Addr
 }
 
 func (b *B) Do(req *Request, resp ResponseMessage) error {
@@ -81,7 +97,8 @@ func (b *B) sendJob(job *brokerJob) error {
 }
 
 func (b *B) newConn() (*connection, error) {
-	conn, err := net.Dial("tcp", b.config.Addr)
+	cfg := &b.config.Connection
+	conn, err := net.Dial("tcp", cfg.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +106,7 @@ func (b *B) newConn() (*connection, error) {
 		conn:     conn,
 		sendChan: make(chan *brokerJob),
 		recvChan: make(chan *brokerJob, b.config.QueueLen),
-		timeout:  b.config.Timeout,
+		timeout:  cfg.Timeout,
 	}
 	go c.sendLoop()
 	go c.receiveLoop()

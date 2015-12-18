@@ -15,7 +15,7 @@ var (
 )
 
 type Config struct {
-	Client          cluster.Config
+	Cluster         cluster.Config
 	MaxWaitTime     time.Duration
 	MinBytes        int
 	MaxBytes        int
@@ -24,7 +24,7 @@ type Config struct {
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Client:          *cluster.DefaultConfig(brokers...),
+		Cluster:         *cluster.DefaultConfig(brokers...),
 		MaxWaitTime:     100 * time.Millisecond,
 		MinBytes:        1,
 		MaxBytes:        1024 * 1024,
@@ -38,7 +38,7 @@ type C struct {
 }
 
 func New(config *Config) (*C, error) {
-	cluster, err := cluster.New(&config.Client)
+	cluster, err := cluster.New(&config.Cluster)
 	if err != nil {
 		return nil, err
 	}

@@ -20,17 +20,13 @@ func init() {
 }
 
 type Config struct {
-	Client             cluster.Config
-	RequiredAcks       int16
-	Timeout            time.Duration
+	Cluster            cluster.Config
 	LeaderRecoveryTime time.Duration
 }
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Client:             *cluster.DefaultConfig(brokers...),
-		RequiredAcks:       broker.AckLocal,
-		Timeout:            10 * time.Second,
+		Cluster:            *cluster.DefaultConfig(brokers...),
 		LeaderRecoveryTime: 60 * time.Second,
 	}
 }
@@ -42,7 +38,7 @@ type P struct {
 }
 
 func New(config *Config) (*P, error) {
-	cluster, err := cluster.New(&config.Client)
+	cluster, err := cluster.New(&config.Cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +71,30 @@ func (p *P) Produce(topic string, key, value []byte) error {
 			partitioner.Skip(partition)
 			continue
 		}
-		req := p.getProducerRequest(topic, partition, messageSet)
-
-		err = p.doSentMessage(leader, req)
-		if broker.IsNotLeader(err) {
-			p.cluster.LeaderIsDown(topic, partition)
+		resp, err := leader.Produce(topic, partition, messageSet)
+		if err != nil {
+			if broker.IsNotLeader(err) {
+				p.cluster.LeaderIsDown(topic, partition)
+				continue
+			}
+			return err
 		}
-		return err
+		for i := range *resp {
+			t := &(*resp)[i]
+			if t.TopicName != topic {
+				continue
+			}
+			for j := range t.OffsetInPartitions {
+				p := &t.OffsetInPartitions[j]
+				if p.Partition != partition {
+					continue
+				}
+				if p.ErrorCode.HasError() {
+					return p.ErrorCode
+				}
+			}
+		}
+		return nil
 	}
 	log.Warnf("fail to find a usable partition")
 	return ErrProduceFailed
@@ -99,50 +112,31 @@ func getMessageSet(key, value []byte) []broker.OffsetMessage {
 	}
 }
 
-func (p *P) getProducerRequest(topic string, partition int32, messageSet []broker.OffsetMessage) *broker.Request {
-	return &broker.Request{
-		RequestMessage: &broker.ProduceRequest{
-			RequiredAcks: p.config.RequiredAcks,
-			Timeout:      int32(p.config.Timeout / time.Millisecond),
-			MessageSetInTopics: []broker.MessageSetInTopic{
-				{
-					TopicName: topic,
-					MessageSetInPartitions: []broker.MessageSetInPartition{
-						{
-							Partition:  partition,
-							MessageSet: messageSet,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
 	leader, err := p.cluster.Leader(topic, partition)
 	if err != nil {
 		return err
 	}
 	messageSet := getMessageSet(key, value)
-	req := p.getProducerRequest(topic, partition, messageSet)
-	err = p.doSentMessage(leader, req)
-	if broker.IsNotLeader(err) {
-		p.cluster.LeaderIsDown(topic, partition)
-	}
-	return err
-}
-
-func (p *P) doSentMessage(leader *broker.B, req *broker.Request) error {
-	resp := broker.ProduceResponse{}
-	if err := leader.Do(req, &resp); err != nil {
+	resp, err := leader.Produce(topic, partition, messageSet)
+	if err != nil {
+		if broker.IsNotLeader(err) {
+			p.cluster.LeaderIsDown(topic, partition)
+		}
 		return err
 	}
-	for i := range resp {
-		for j := range resp[i].OffsetInPartitions {
-			if errCode := resp[i].OffsetInPartitions[j].ErrorCode; errCode != 0 {
-				log.Warnf("produce error, code %d", errCode)
+	for i := range *resp {
+		t := &(*resp)[i]
+		if t.TopicName != topic {
+			continue
+		}
+		for j := range t.OffsetInPartitions {
+			p := &t.OffsetInPartitions[j]
+			if p.Partition != partition {
 				continue
+			}
+			if p.ErrorCode.HasError() {
+				return p.ErrorCode
 			}
 		}
 	}
