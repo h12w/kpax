@@ -69,5 +69,5 @@ Author
 Contributors
 ------------
 
-[Tao Huang](https://github.com/AnotherGoogleFans)
+* [Tao Huang](https://github.com/AnotherGoogleFans)
 
