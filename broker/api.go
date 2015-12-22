@@ -6,12 +6,11 @@ import (
 
 func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
 	reqMsg := TopicMetadataRequest(topics)
-	req := Request{
+	req := &Request{
 		RequestMessage: &reqMsg,
 	}
 	respMsg := &TopicMetadataResponse{}
-	resp := Response{ResponseMessage: respMsg}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := b.Do(req, respMsg); err != nil {
 		return nil, err
 	}
 	return respMsg, nil
@@ -19,12 +18,11 @@ func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
 
 func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {
 	reqMsg := GroupCoordinatorRequest(group)
-	req := Request{
+	req := &Request{
 		RequestMessage: &reqMsg,
 	}
 	respMsg := &GroupCoordinatorResponse{}
-	resp := Response{ResponseMessage: respMsg}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := b.Do(req, respMsg); err != nil {
 		return nil, err
 	}
 	if respMsg.ErrorCode.HasError() {
@@ -54,8 +52,7 @@ func (b *B) Produce(topic string, partition int32, messageSet []OffsetMessage) (
 	}
 
 	respMsg := &ProduceResponse{}
-	resp := Response{ResponseMessage: respMsg}
-	if err := b.Do(req, &resp); err != nil {
+	if err := b.Do(req, respMsg); err != nil {
 		return nil, err
 	}
 	return respMsg, nil
