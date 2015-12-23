@@ -9,12 +9,11 @@ func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
 	req := Request{
 		RequestMessage: &reqMsg,
 	}
-	respMsg := &TopicMetadataResponse{}
-	resp := Response{ResponseMessage: respMsg}
-	if err := b.Do(&req, &resp); err != nil {
+	respMsg := TopicMetadataResponse{}
+	if err := b.Do(&req, &respMsg); err != nil {
 		return nil, err
 	}
-	return respMsg, nil
+	return &respMsg, nil
 }
 
 func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {

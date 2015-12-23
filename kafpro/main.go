@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -158,7 +159,7 @@ func meta(br *broker.B, cfg *MetaConfig) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(toJSON(&resp))
+	fmt.Println(toJSON(resp))
 	return nil
 }
 
