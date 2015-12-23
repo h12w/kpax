@@ -60,3 +60,23 @@ func (req *Request) Send(conn io.Writer) error {
 func (resp *Response) Receive(conn io.Reader) error {
 	return wipro.Receive(conn, &RequestOrResponse{M: resp})
 }
+
+func (ms MessageSet) Values() (res [][]byte, _ error) {
+	for k := range ms {
+		m := &ms[k].SizedMessage.CRCMessage.Message
+		if m.Compressed() {
+			dms, err := m.Decompress()
+			if err != nil {
+				return nil, err
+			}
+			dvals, err := dms.Values()
+			if err != nil {
+				return nil, err
+			}
+			res = append(res, dvals...)
+		} else {
+			res = append(res, m.Value)
+		}
+	}
+	return res, nil
+}

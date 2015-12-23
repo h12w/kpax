@@ -165,10 +165,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 					break
 				}
 			}
-			for k := range p.MessageSet[start:] {
-				m := &p.MessageSet[k]
-				values = append(values, m.SizedMessage.CRCMessage.Message.Value)
-			}
+			return p.MessageSet[start:].Values()
 		}
 	}
 	return

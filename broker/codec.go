@@ -28,7 +28,7 @@ func (m *Message) decompressBytes() (bs []byte, err error) {
 	return bs, nil
 }
 
-func (m *Message) Decompress() (res []OffsetMessage, _ error) {
+func (m *Message) Decompress() (res MessageSet, _ error) {
 	bs, err := m.decompressBytes()
 	if err != nil {
 		return nil, err
