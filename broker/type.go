@@ -61,22 +61,24 @@ func (resp *Response) Receive(conn io.Reader) error {
 	return wipro.Receive(conn, &RequestOrResponse{M: resp})
 }
 
-func (ms MessageSet) Values() (res [][]byte, _ error) {
-	for k := range ms {
-		m := &ms[k].SizedMessage.CRCMessage.Message
-		if m.Compressed() {
-			dms, err := m.Decompress()
-			if err != nil {
-				return nil, err
-			}
-			dvals, err := dms.Values()
-			if err != nil {
-				return nil, err
-			}
-			res = append(res, dvals...)
-		} else {
-			res = append(res, m.Value)
+func (m OffsetMessage) Flatten() (res MessageSet, _ error) {
+	if cm := m.SizedMessage.CRCMessage.Message; cm.Compressed() {
+		ms, err := cm.Decompress()
+		if err != nil {
+			return nil, err
 		}
+		return ms.Flatten()
+	}
+	return MessageSet{m}, nil
+}
+
+func (ms MessageSet) Flatten() (res MessageSet, _ error) {
+	for _, m := range ms {
+		messages, err := m.Flatten()
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, messages...)
 	}
 	return res, nil
 }

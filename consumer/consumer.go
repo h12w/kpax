@@ -15,6 +15,12 @@ var (
 	ErrFailToFetchOffsetByTime = errors.New("fail to fetch offset by time")
 )
 
+type Message struct {
+	Key    []byte
+	Value  []byte
+	Offset int64
+}
+
 type Config struct {
 	Cluster         cluster.Config
 	MaxWaitTime     time.Duration
@@ -113,7 +119,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 	return 0, ErrOffsetNotFound
 }
 
-func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byte, err error) {
+func (c *C) Consume(topic string, partition int32, offset int64) (messages []Message, err error) {
 	req := &broker.Request{
 		RequestMessage: &broker.FetchRequest{
 			ReplicaID:   -1,
@@ -165,7 +171,18 @@ func (c *C) Consume(topic string, partition int32, offset int64) (values [][]byt
 					break
 				}
 			}
-			return p.MessageSet[start:].Values()
+			ms, err := p.MessageSet[start:].Flatten()
+			if err != nil {
+				return nil, err
+			}
+			for i := range ms {
+				m := &ms[i].SizedMessage.CRCMessage.Message
+				messages = append(messages, Message{
+					Key:    m.Key,
+					Value:  m.Value,
+					Offset: ms[i].Offset,
+				})
+			}
 		}
 	}
 	return
