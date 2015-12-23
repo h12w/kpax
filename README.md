@@ -60,3 +60,14 @@ Compatible with Kafka Server 0.8.2.
     - consumer request (-)
     - producer (-)
   + compression (-)
+
+Author
+------
+
+[Hǎiliàng Wáng](https://github.com/h12w)
+
+Contributors
+------------
+
+* [Tao Huang](https://github.com/AnotherGoogleFans)
+

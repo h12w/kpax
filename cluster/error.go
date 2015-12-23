@@ -1,11 +1,15 @@
 package cluster
 
 import (
-	"fmt"
+	"strings"
 )
 
 type MultiError []error
 
-func (e MultiError) Error() string {
-	return fmt.Sprint(e)
+func (es MultiError) Error() string {
+	ss := make([]string, len(es))
+	for i := range ss {
+		ss[i] = es[i].Error()
+	}
+	return strings.Join(ss, ", ")
 }
