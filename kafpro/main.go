@@ -39,7 +39,7 @@ type OffsetConfig struct {
 type TimeConfig struct {
 	Topic     string
 	Partition int
-	Time      int
+	Time      string
 }
 
 type ConsumeConfig struct {
@@ -110,9 +110,9 @@ func main() {
 			log.Fatal(err)
 		}
 	case "time":
-		flag.StringVar(&cfg.Offset.Topic, "topic", "", "topic name")
-		flag.IntVar(&cfg.Offset.Partition, "partition", 0, "partition")
-		flag.IntVar(&cfg.Offset.Partition, "time", 0, "time")
+		flag.StringVar(&cfg.Time.Topic, "topic", "", "topic name")
+		flag.IntVar(&cfg.Time.Partition, "partition", 0, "partition")
+		flag.StringVar(&cfg.Time.Time, "time", "", "time")
 		flag.Parse()
 		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
 		if err := timeOffset(br, &cfg.Time); err != nil {
@@ -254,26 +254,21 @@ func commit(br *broker.B, cfg *CommitConfig) error {
 }
 
 func timeOffset(br *broker.B, cfg *TimeConfig) error {
-	req := &broker.Request{
-		ClientID: clientID,
-		RequestMessage: &broker.OffsetRequest{
-			ReplicaID: -1,
-			TimeInTopics: []broker.TimeInTopic{
-				{
-					TopicName: cfg.Topic,
-					TimeInPartitions: []broker.TimeInPartition{
-						{
-							Partition:          int32(cfg.Partition),
-							Time:               int64(cfg.Time),
-							MaxNumberOfOffsets: 10,
-						},
-					},
-				},
-			},
-		},
+	var t time.Time
+	switch cfg.Time {
+	case "latest":
+		t = broker.Latest
+	case "earliest":
+		t = broker.Earliest
+	default:
+		var err error
+		t, err = time.Parse("2006-01-02T15:04:05", cfg.Time)
+		if err != nil {
+			return err
+		}
 	}
-	resp := broker.OffsetResponse{}
-	if err := br.Do(req, &resp); err != nil {
+	resp, err := br.OffsetByTime(cfg.Topic, int32(cfg.Partition), t)
+	if err != nil {
 		return err
 	}
 	fmt.Println(toJSON(&resp))

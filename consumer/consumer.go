@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrOffsetNotFound   = errors.New("offset not found")
-	ErrFailCommitOffset = errors.New("fail to commit offset")
+	ErrOffsetNotFound          = errors.New("offset not found")
+	ErrFailCommitOffset        = errors.New("fail to commit offset")
+	ErrFailToFetchOffsetByTime = errors.New("fail to fetch offset by time")
 )
 
 type Config struct {
@@ -46,6 +47,35 @@ func New(config *Config) (*C, error) {
 		cluster: cluster,
 		config:  config,
 	}, nil
+}
+
+func (c *C) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
+	leader, err := c.cluster.Leader(topic, partition)
+	if err != nil {
+		return -1, err
+	}
+	resp, err := leader.OffsetByTime(topic, partition, t)
+	if err != nil {
+		return -1, err
+	}
+	for _, t := range *resp {
+		if t.TopicName != topic {
+			continue
+		}
+		for _, p := range t.OffsetsInPartitions {
+			if p.Partition != partition {
+				continue
+			}
+			if p.ErrorCode.HasError() {
+				return -1, p.ErrorCode
+			}
+			if len(p.Offsets) == 0 {
+				return -1, ErrFailToFetchOffsetByTime
+			}
+			return p.Offsets[0], nil
+		}
+	}
+	return -1, ErrFailToFetchOffsetByTime
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
