@@ -128,7 +128,29 @@ func (t *Message) Unmarshal(r *wipro.Reader) {
 	t.MagicByte = r.ReadInt8()
 	t.Attributes = r.ReadInt8()
 	t.Key = r.ReadBytes()
-	t.Value = r.ReadBytes()
+	switch t.Attributes {
+	case 1:
+	case 2:
+		size := int(r.ReadInt32())
+		t.Value, r.Err = decodeSnappy(r.B[r.Offset : r.Offset+size])
+
+		offset := 0
+		rd := &wipro.Reader{B: t.Value}
+		for offset < len(rd.B) {
+			var m OffsetMessage
+			m.Unmarshal(rd)
+			if rd.Err != nil {
+				rd.Err = nil
+				rd.Offset = len(r.B)
+				return
+			}
+			//p(string(m.SizedMessage.CRCMessage.Message.Key))
+			//p(string(m.SizedMessage.CRCMessage.Message.Value))
+			//*t = append(*t, m)
+		}
+	default:
+		t.Value = r.ReadBytes()
+	}
 }
 
 func (t *TopicMetadataRequest) Marshal(w *wipro.Writer) {
