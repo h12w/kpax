@@ -59,8 +59,11 @@ Compatible with Kafka Server 0.8.2.
     - consumer response
     - consumer request (-)
     - producer (-)
-  + compression
+  + decompression
     - snappy
+    - gzip (-)
+  + compression
+    - snappy (-)
     - gzip (-)
 
 Author
