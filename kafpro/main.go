@@ -301,6 +301,15 @@ func consume(br *broker.B, cfg *ConsumeConfig) error {
 		return err
 	}
 	fmt.Println(toJSON(resp))
+	for _, t := range resp {
+		for _, p := range t.FetchMessageSetInPartitions {
+			ms, err := p.MessageSet.Flatten()
+			if err != nil {
+				return err
+			}
+			fmt.Println(toJSON(ms))
+		}
+	}
 	return nil
 }
 
