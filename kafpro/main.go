@@ -163,19 +163,11 @@ func meta(br *broker.B, cfg *MetaConfig) error {
 }
 
 func coord(br *broker.B, coord *CoordConfig) error {
-	reqMsg := broker.GroupCoordinatorRequest(coord.GroupName)
-	req := &broker.Request{
-		ClientID:       clientID,
-		RequestMessage: &reqMsg,
-	}
-	resp := &broker.GroupCoordinatorResponse{}
-	if err := br.Do(req, resp); err != nil {
+	resp, err := br.GroupCoordinator(coord.GroupName)
+	if err != nil {
 		return err
 	}
-	fmt.Println(toJSON(&resp))
-	if resp.ErrorCode.HasError() {
-		return resp.ErrorCode
-	}
+	fmt.Println(toJSON(resp))
 	return nil
 }
 
