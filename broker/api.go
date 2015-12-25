@@ -72,7 +72,7 @@ func (b *B) OffsetByTime(topic string, partition int32, t time.Time) (*OffsetRes
 	case Earliest:
 		milliSec = -2
 	default:
-		milliSec = t.Unix() * 1000
+		milliSec = t.UnixNano() / 1000000
 	}
 	req := &Request{
 		RequestMessage: &OffsetRequest{

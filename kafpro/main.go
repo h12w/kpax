@@ -256,7 +256,7 @@ func timeOffset(br *broker.B, cfg *TimeConfig) error {
 		var err error
 		t, err = time.Parse("2006-01-02T15:04:05", cfg.Time)
 		if err != nil {
-			return err
+			return fmt.Errorf("error parsing %s: %s", cfg.Time, err.Error())
 		}
 	}
 	resp, err := br.OffsetByTime(cfg.Topic, int32(cfg.Partition), t)
