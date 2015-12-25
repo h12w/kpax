@@ -28,7 +28,10 @@ The client is built on top of Kafka Wire Protocol (i.e. low-level API). The prot
 * **producer**: fault tolerant high-level producer (batching and partitioning strategy)
 * **consumer**: fault tolerant high-level consumer (consumer group and offset commit)
 * **log**: replaceable global logger
-* **kafpro**: command line tool to query Kafka wire API
+* **tools**
+    - **kafpro**: command line tool to query Kafka wire API
+    - **counter**: command line tool to count messages
+    - **filler**: command line tool to fill messages into a topic
 
 ### Compatibility
 
