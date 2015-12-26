@@ -42,6 +42,14 @@ type TimeConfig struct {
 	Time      string
 }
 
+type FindConfig struct {
+	Topic     string
+	Partition int
+	Time      timestamp
+}
+
+type timestamp time.Time
+
 type ConsumeConfig struct {
 	Topic     string
 	Partition int
@@ -118,6 +126,7 @@ func main() {
 		if err := timeOffset(br, &cfg.Time); err != nil {
 			log.Fatal(err)
 		}
+	case "find":
 	case "consume":
 		flag.StringVar(&cfg.Consume.Topic, "topic", "", "topic name")
 		flag.IntVar(&cfg.Consume.Partition, "partition", 0, "partition")

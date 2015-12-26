@@ -55,6 +55,78 @@ func New(config *Config) (*C, error) {
 	}, nil
 }
 
+func (c *C) getTime(topic string, partition int32, offset int64, getTime func([]byte) (time.Time, error)) (time.Time, error) {
+	messages, err := c.consumeBytes(topic, partition, offset, 1000)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if len(messages) == 0 {
+		return time.Time{}, fmt.Errorf("no messages at topic %s, partition %d, offset %d", topic, partition, offset)
+	}
+	return getTime(messages[0].Value)
+}
+
+func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
+	min, err := c.OffsetByTime(topic, partition, broker.Earliest)
+	if err != nil {
+		return -1, err
+	}
+	max, err := c.OffsetByTime(topic, partition, broker.Latest)
+	if err != nil {
+		return -1, err
+	}
+	const msgSize = 1024
+
+	mid := min + (max-min)/2
+	midTime, err := c.getTime(topic, partition, mid, getTime)
+	if err != nil {
+		return -1, err
+	}
+	for min <= max {
+		mid = min + (max-min)/2
+		midTime, err = c.getTime(topic, partition, mid, getTime)
+		if err != nil {
+			return -1, err
+		}
+		if midTime == keyTime {
+			return c.searchOffsetBackward(topic, partition, min, mid, keyTime, getTime)
+			for offset := mid; offset >= min; offset-- {
+				t, err := c.getTime(topic, partition, offset, getTime)
+				if err != nil {
+					return -1, err
+				}
+				if t.Before(keyTime) {
+					break
+				}
+				mid = offset
+			}
+			return mid, nil
+		} else if midTime.Before(keyTime) {
+			min = mid + 1
+		} else {
+			max = mid - 1
+		}
+	}
+	if midTime.Before(keyTime) {
+		return mid, nil
+	}
+	return c.searchOffsetBackward(topic, partition, min, mid, keyTime, getTime)
+}
+
+func (c *C) searchOffsetBackward(topic string, partition int32, min, max int64, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
+	for offset := max; offset >= min; offset-- {
+		t, err := c.getTime(topic, partition, offset, getTime)
+		if err != nil {
+			return -1, err
+		}
+		max = offset
+		if t.Before(keyTime) {
+			break
+		}
+	}
+	return max, nil
+}
+
 func (c *C) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
 	leader, err := c.cluster.Leader(topic, partition)
 	if err != nil {
@@ -120,6 +192,10 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (messages []Message, err error) {
+	return c.consumeBytes(topic, partition, offset, c.config.MaxBytes)
+}
+
+func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes int) (messages []Message, err error) {
 	req := &broker.Request{
 		RequestMessage: &broker.FetchRequest{
 			ReplicaID:   -1,
@@ -132,7 +208,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (messages []Mes
 						{
 							Partition:   partition,
 							FetchOffset: offset,
-							MaxBytes:    int32(c.config.MaxBytes),
+							MaxBytes:    int32(maxBytes),
 						},
 					},
 				},
