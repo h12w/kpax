@@ -19,6 +19,7 @@ func (m *Message) decompressBytes() (bs []byte, err error) {
 	)
 	switch m.Attributes & 0x03 {
 	case gzipCodec:
+		panic("gzip not supported yet")
 	case snappyCodec:
 		bs, err = decodeSnappy(m.Value)
 		if err != nil {
