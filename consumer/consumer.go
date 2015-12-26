@@ -56,75 +56,83 @@ func New(config *Config) (*C, error) {
 }
 
 func (c *C) getTime(topic string, partition int32, offset int64, getTime func([]byte) (time.Time, error)) (time.Time, error) {
-	messages, err := c.consumeBytes(topic, partition, offset, 10000)
+	const maxMessageSize = 10000
+	messages, err := c.consumeBytes(topic, partition, offset, maxMessageSize)
 	if err != nil {
 		return time.Time{}, err
 	}
 	if len(messages) == 0 {
 		return time.Time{}, fmt.Errorf("no messages at topic %s, partition %d, offset %d", topic, partition, offset)
 	}
+	if messages[0].Offset != offset {
+		return time.Time{}, fmt.Errorf("OFFSET MISMATCH!!! %d, %d", messages[0].Offset, offset)
+	}
 	return getTime(messages[0].Value)
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
-	min, err := c.OffsetByTime(topic, partition, broker.Earliest)
+	earliest, err := c.OffsetByTime(topic, partition, broker.Earliest)
 	if err != nil {
 		return -1, err
 	}
-	max, err := c.OffsetByTime(topic, partition, broker.Latest)
+	latest, err := c.OffsetByTime(topic, partition, broker.Latest)
 	if err != nil {
 		return -1, err
 	}
-	const msgSize = 1024
 
+	min, max := earliest, latest
 	mid := min + (max-min)/2
-	midTime, err := c.getTime(topic, partition, mid, getTime)
-	if err != nil {
-		return -1, err
-	}
 	for min <= max {
 		mid = min + (max-min)/2
-		midTime, err = c.getTime(topic, partition, mid, getTime)
+		midTime, err := c.getTime(topic, partition, mid, getTime)
 		if err != nil {
 			return -1, err
 		}
-		if midTime == keyTime {
-			return c.searchOffsetBackward(topic, partition, min, mid, keyTime, getTime)
-			for offset := mid; offset >= min; offset-- {
-				t, err := c.getTime(topic, partition, offset, getTime)
-				if err != nil {
-					return -1, err
-				}
-				if t.Before(keyTime) {
-					break
-				}
-				mid = offset
-			}
-			return mid, nil
+		if midTime.Equal(keyTime) {
+			return c.searchOffsetBefore(topic, partition, earliest, mid, latest, keyTime, getTime)
 		} else if midTime.Before(keyTime) {
 			min = mid + 1
 		} else {
 			max = mid - 1
 		}
 	}
-	if midTime.Before(keyTime) {
-		return mid, nil
-	}
-	return c.searchOffsetBackward(topic, partition, min, mid, keyTime, getTime)
+	return c.searchOffsetBefore(topic, partition, earliest, mid, latest, keyTime, getTime)
 }
 
-func (c *C) searchOffsetBackward(topic string, partition int32, min, max int64, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
-	for offset := max; offset >= min; offset-- {
-		t, err := c.getTime(topic, partition, offset, getTime)
+func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int64, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
+	const maxJitter = 1000 // time may be interleaved in a small range
+	midTime, err := c.getTime(topic, partition, mid, getTime)
+	if err != nil {
+		return -1, err
+	}
+	if midTime.Before(keyTime) {
+		mid -= maxJitter
+	} else {
+		mid -= 2 * maxJitter // we have passed the point, go back with double jitter
+	}
+	if mid < min {
+		mid = min
+	}
+	for offset := mid; offset <= max; offset++ {
+		messages, err := c.Consume(topic, partition, offset)
 		if err != nil {
 			return -1, err
 		}
-		max = offset
-		if t.Before(keyTime) {
-			break
+		if len(messages) == 0 {
+			return -1, ErrFailToFetchOffsetByTime
+		}
+		for _, message := range messages {
+			t, err := getTime(message.Value)
+			if err != nil {
+				return -1, err
+			}
+			if t.After(keyTime) || t.Equal(keyTime) {
+				return offset, nil
+			}
+			offset = message.Offset
 		}
 	}
-	return max, nil
+	return mid, nil
 }
 
 func (c *C) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
@@ -236,20 +244,26 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 			if p.Partition != partition {
 				continue
 			}
-			start := 0
 			if p.ErrorCode.HasError() {
 				return nil, p.ErrorCode
 			}
-			for k := range p.MessageSet {
-				m := &p.MessageSet[k]
+			ms := p.MessageSet
+			ms, err := ms.Flatten()
+			if err != nil {
+				return nil, err
+			}
+			for k := range ms {
+				m := &ms[k]
 				if m.Offset == offset {
-					start = k
+					ms = ms[k:]
 					break
 				}
 			}
-			ms, err := p.MessageSet[start:].Flatten()
-			if err != nil {
-				return nil, err
+			if len(ms) == 0 {
+				continue
+			}
+			if ms[0].Offset != offset {
+				return nil, fmt.Errorf("2: OFFSET MISMATCH %d %d", ms[0].Offset, offset)
 			}
 			for i := range ms {
 				m := &ms[i].SizedMessage.CRCMessage.Message
