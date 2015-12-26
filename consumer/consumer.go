@@ -56,7 +56,7 @@ func New(config *Config) (*C, error) {
 }
 
 func (c *C) getTime(topic string, partition int32, offset int64, getTime func([]byte) (time.Time, error)) (time.Time, error) {
-	messages, err := c.consumeBytes(topic, partition, offset, 1000)
+	messages, err := c.consumeBytes(topic, partition, offset, 10000)
 	if err != nil {
 		return time.Time{}, err
 	}
