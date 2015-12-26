@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	// TODO: "github.com/jessevdk/go-flags"
 	"h12.me/kafka/broker"
 )
 
@@ -57,7 +58,18 @@ type ConsumeConfig struct {
 }
 
 type MetaConfig struct {
-	Topics []string
+	Topics Topics
+}
+
+type Topics []string
+
+func (ts Topics) String() string {
+	return strings.Join(ts, ",")
+}
+
+func (ts *Topics) Set(s string) error {
+	*ts = strings.Split(s, ",")
+	return nil
 }
 
 type CommitConfig struct {
@@ -82,11 +94,9 @@ func main() {
 
 	switch subCmd {
 	case "meta":
-		var topicsArg string
-		flag.StringVar(&topicsArg, "topics", "", "topic names seperated by comma")
+		flag.Var(&cfg.Meta.Topics, "topics", "topic names seperated by comma")
 		flag.Parse()
 		br := broker.New(broker.DefaultConfig().WithAddr(cfg.Broker))
-		cfg.Meta.Topics = strings.Split(topicsArg, ",")
 		if err := meta(br, &cfg.Meta); err != nil {
 			log.Fatal(err)
 		}
