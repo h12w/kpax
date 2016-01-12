@@ -59,6 +59,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		partitioner = p.topicPartitioner.Add(topic, partitions)
 	}
 	messageSet := getMessageSet(key, value)
+nextPartition:
 	for i := 0; i < partitioner.Count(); i++ {
 		partition, err := partitioner.Partition(key)
 		if err != nil {
@@ -75,7 +76,7 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		if err != nil {
 			if broker.IsNotLeader(err) {
 				p.cluster.LeaderIsDown(topic, partition)
-				continue
+				continue nextPartition
 			}
 			return err
 		}
@@ -85,12 +86,16 @@ func (p *P) Produce(topic string, key, value []byte) error {
 				continue
 			}
 			for j := range t.OffsetInPartitions {
-				p := &t.OffsetInPartitions[j]
-				if p.Partition != partition {
+				pres := &t.OffsetInPartitions[j]
+				if pres.Partition != partition {
 					continue
 				}
-				if p.ErrorCode.HasError() {
-					return p.ErrorCode
+				if pres.ErrorCode.HasError() {
+					if broker.IsNotLeader(err) {
+						p.cluster.LeaderIsDown(topic, partition)
+						continue nextPartition
+					}
+					return pres.ErrorCode
 				}
 			}
 		}
