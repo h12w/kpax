@@ -245,6 +245,9 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 				continue
 			}
 			if p.ErrorCode.HasError() {
+				if broker.IsNotLeader(p.ErrorCode) {
+					c.cluster.LeaderIsDown(topic, partition)
+				}
 				return nil, p.ErrorCode
 			}
 			ms := p.MessageSet
