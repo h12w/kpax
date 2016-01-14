@@ -88,6 +88,7 @@ func TestProduceSnappy(t *testing.T) {
 	}
 	ms.Marshal(&w)
 	compressedValue := encodeSnappy(w.B)
+	fmt.Println(w.B)
 	resp, err := b.Produce(topic, partition, MessageSet{
 		{
 			SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
