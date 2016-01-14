@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"h12.me/realtest/kafka"
+	"h12.me/wipro"
 )
 
 func TestTopicMetadata(t *testing.T) {
@@ -58,6 +59,52 @@ func TestProduceFetch(t *testing.T) {
 	}
 	if m := messages[0]; m[0] != key || m[1] != value {
 		t.Fatalf("expect [%s %s] but got %v", key, value, m)
+	}
+}
+
+func TestProduceSnappy(t *testing.T) {
+	t.Parallel()
+	k, err := kafka.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	partitionCount := 2
+	partition := int32(1)
+	topic, err := k.NewRandomTopic(partitionCount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer k.DeleteTopic(topic)
+	leaderAddr := getLeader(t, k, topic, partition)
+	b := New(DefaultConfig().WithAddr(leaderAddr))
+	defer b.Close()
+	var w wipro.Writer
+	ms := MessageSet{
+		{SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
+			Attributes: 0,
+			Key:        nil,
+			Value:      []byte("hello"),
+		}}}},
+	}
+	ms.Marshal(&w)
+	compressedValue := encodeSnappy(w.B)
+	resp, err := b.Produce(topic, partition, MessageSet{
+		{
+			SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
+				Attributes: 2,
+				Key:        nil,
+				Value:      compressedValue,
+			}}}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, topic := range *resp {
+		for _, p := range topic.OffsetInPartitions {
+			if p.ErrorCode.HasError() {
+				t.Fatal(p.ErrorCode)
+			}
+		}
 	}
 }
 

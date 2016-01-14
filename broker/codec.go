@@ -46,6 +46,10 @@ func (m *Message) Decompress() (res MessageSet, _ error) {
 	return res, nil
 }
 
+func encodeSnappy(src []byte) []byte {
+	return snappy.Encode(nil, src)
+}
+
 func decodeSnappy(src []byte) ([]byte, error) {
 	if bytes.Equal(src[:8], []byte{130, 83, 78, 65, 80, 80, 89, 0}) {
 		result := make([]byte, 0, len(src))
