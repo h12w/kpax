@@ -7,6 +7,7 @@ import (
 
 	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
+	"h12.me/kafka/log"
 )
 
 var (
@@ -179,9 +180,14 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 	resp := broker.OffsetFetchResponse{}
 	coord, err := c.cluster.Coordinator(topic, consumerGroup)
 	if err != nil {
+		log.Debugf("fail to get coordinator %v", err)
 		return 0, err
 	}
 	if err := coord.Do(req, &resp); err != nil {
+		if broker.IsNotCoordinator(err) {
+			c.cluster.CoordinatorIsDown(consumerGroup)
+		}
+		log.Debugf("fail to get offset %v", err)
 		return 0, err
 	}
 	for i := range resp {
@@ -190,12 +196,17 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
 				if p.ErrorCode.HasError() {
+					if broker.IsNotCoordinator(err) {
+						c.cluster.CoordinatorIsDown(consumerGroup)
+					}
+					log.Debugf("fail to get offset %v", p.ErrorCode)
 					return 0, fmt.Errorf("fail to get offset for (%s, %d): %v", topic, p.Partition, p.ErrorCode)
 				}
 				return p.Offset, nil
 			}
 		}
 	}
+	log.Debugf("fail to get offset %v", ErrOffsetNotFound)
 	return 0, ErrOffsetNotFound
 }
 
@@ -226,12 +237,14 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 	resp := broker.FetchResponse{}
 	leader, err := c.cluster.Leader(topic, partition)
 	if err != nil {
+		log.Debugf("fail to get leader %v", err)
 		return nil, err
 	}
 	if err := leader.Do(req, &resp); err != nil {
 		if broker.IsNotLeader(err) {
 			c.cluster.LeaderIsDown(topic, partition)
 		}
+		log.Debugf("fail to consume %v", err)
 		return nil, err
 	}
 	for i := range resp {
@@ -248,6 +261,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 				if broker.IsNotLeader(p.ErrorCode) {
 					c.cluster.LeaderIsDown(topic, partition)
 				}
+				log.Debugf("fail to consume %v", p.ErrorCode)
 				return nil, p.ErrorCode
 			}
 			ms := p.MessageSet
@@ -266,6 +280,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 				continue
 			}
 			if ms[0].Offset != offset {
+				log.Debugf("offset mismatch")
 				return nil, fmt.Errorf("2: OFFSET MISMATCH %d %d", ms[0].Offset, offset)
 			}
 			for i := range ms {
@@ -302,12 +317,14 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 	resp := broker.OffsetCommitResponse{}
 	coord, err := c.cluster.Coordinator(topic, consumerGroup)
 	if err != nil {
+		log.Debugf("fail to get coordinator %v")
 		return err
 	}
 	if err := coord.Do(req, &resp); err != nil {
 		if broker.IsNotCoordinator(err) {
 			c.cluster.CoordinatorIsDown(consumerGroup)
 		}
+		log.Debugf("fail to commit %v", err)
 		return err
 	}
 	for i := range resp {
@@ -317,6 +334,10 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 				p := &t.ErrorInPartitions[j]
 				if p.Partition == partition {
 					if p.ErrorCode.HasError() {
+						if broker.IsNotCoordinator(err) {
+							c.cluster.CoordinatorIsDown(consumerGroup)
+						}
+						log.Debugf("fail to commit %v", p.ErrorCode)
 						return p.ErrorCode
 					}
 					return nil
@@ -324,5 +345,6 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 			}
 		}
 	}
+	log.Debugf("fail to commit %v", ErrFailCommitOffset)
 	return ErrFailCommitOffset
 }

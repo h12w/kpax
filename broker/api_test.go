@@ -48,14 +48,11 @@ func TestProduceFetch(t *testing.T) {
 	}
 	defer k.DeleteTopic(topic)
 	leaderAddr := getLeader(t, k, topic, partition)
-	conn, err := net.Dial("tcp", leaderAddr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer conn.Close()
+	b := New(DefaultConfig().WithAddr(leaderAddr))
+	defer b.Close()
 	key, value := "test key", "test value"
-	produceMessage(t, conn, topic, partition, key, value)
-	messages := fetchMessage(t, conn, topic, partition, 0)
+	produceMessage(t, b, topic, partition, key, value)
+	messages := fetchMessage(t, b, topic, partition, 0)
 	if len(messages) != 1 {
 		t.Fatalf("expect 1 message but got %v", messages)
 	}
@@ -76,18 +73,12 @@ func TestGroupCoordinator(t *testing.T) {
 }
 
 func getTopicMetadata(t *testing.T, k *kafka.Cluster, topic string) *TopicMetadataResponse {
-	conn, err := net.Dial("tcp", k.AnyBroker())
+	b := New(DefaultConfig().WithAddr(k.AnyBroker()))
+	defer b.Close()
+	respMsg, err := b.TopicMetadata(topic)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
-	req := &Request{
-		CorrelationID:  rand.Int31(),
-		RequestMessage: &TopicMetadataRequest{topic},
-	}
-	respMsg := &TopicMetadataResponse{}
-	resp := &Response{ResponseMessage: respMsg}
-	sendReceive(t, conn, req, resp)
 	brokers := k.Brokers()
 	for i := range brokers {
 		if respMsg.Brokers[i].Addr() != brokers[i] {
@@ -144,34 +135,17 @@ func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
 	return respMsg.Broker.Addr()
 }
 
-func produceMessage(t *testing.T, conn net.Conn, topic string, partition int32, key, value string) {
-	req := &Request{
-		CorrelationID: rand.Int31(),
-		RequestMessage: &ProduceRequest{
-			RequiredAcks: AckLocal,
-			Timeout:      int32(time.Second / time.Millisecond),
-			MessageSetInTopics: []MessageSetInTopic{
-				{
-					TopicName: topic,
-					MessageSetInPartitions: []MessageSetInPartition{
-						{
-							Partition: partition,
-							MessageSet: []OffsetMessage{
-								{
-									SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
-										Key:   []byte(key),
-										Value: []byte(value),
-									}}}},
-							},
-						},
-					},
-				},
-			},
-		},
+func produceMessage(t *testing.T, b *B, topic string, partition int32, key, value string) {
+	respMsg, err := b.Produce(topic, partition, []OffsetMessage{
+		{
+			SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
+				Key:   []byte(key),
+				Value: []byte(value),
+			}}}},
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
-	respMsg := &ProduceResponse{}
-	resp := &Response{ResponseMessage: respMsg}
-	sendReceive(t, conn, req, resp)
 	ok := false
 	for _, topicResp := range *respMsg {
 		if topicResp.TopicName == topic {
@@ -189,7 +163,7 @@ func produceMessage(t *testing.T, conn net.Conn, topic string, partition int32, 
 	}
 }
 
-func fetchMessage(t *testing.T, conn net.Conn, topic string, partition int32, offset int64) [][2]string {
+func fetchMessage(t *testing.T, b *B, topic string, partition int32, offset int64) [][2]string {
 	req := &Request{
 		CorrelationID: rand.Int31(),
 		RequestMessage: &FetchRequest{
@@ -211,8 +185,9 @@ func fetchMessage(t *testing.T, conn net.Conn, topic string, partition int32, of
 		},
 	}
 	respMsg := FetchResponse{}
-	resp := &Response{ResponseMessage: &respMsg}
-	sendReceive(t, conn, req, resp)
+	if err := b.Do(req, &respMsg); err != nil {
+		t.Fatal(err)
+	}
 	var result [][2]string
 	for _, t := range respMsg {
 		if t.TopicName == topic {
