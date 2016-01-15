@@ -25,5 +25,6 @@ messages = [
 produce = ProduceRequestPayload("topic1", 1, messages=messages)
 
 req = KafkaProtocol.encode_produce_request("abc", 2, payloads=[produce], acks=1, timeout=1000)
-print len(req)
-print "[]byte{" +''.join( [ "0x%02x, " % ord( x ) for x in req ] ).strip() + "}"
+print req
+#print len(req)
+#print "[]byte{" +''.join( [ "0x%02x, " % ord( x ) for x in req ] ).strip() + "}"
