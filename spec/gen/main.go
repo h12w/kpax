@@ -31,11 +31,12 @@ func main() {
 	case "go":
 		bnf := gen.ParseBNF(file)
 		goTypes := bnf.GoTypes().RemoveDecl("RequestMessage")
-		goTypes.Fprint(os.Stdout)
+		goTypes.PackageName = "broker"
+		goTypes.Marshal(os.Stdout)
 	case "gof":
 		bnf := gen.ParseBNF(file)
 		goTypes := bnf.GoTypes()
-		goTypes.GoFuncs(os.Stdout)
+		goTypes.GoFuncs(os.Stdout, "broker")
 	case "goe":
 		genErrorCodes(file, os.Stdout)
 	}
