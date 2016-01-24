@@ -37,7 +37,7 @@ func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {
 }
 
 // TODO: produce multiple topics
-func (b *B) Produce(topic string, partition int32, messageSet []OffsetMessage) (*ProduceResponse, error) {
+func (b *B) Produce(topic string, partition int32, messageSet MessageSet) (*ProduceResponse, error) {
 	cfg := &b.config.Producer
 	req := &Request{
 		RequestMessage: &ProduceRequest{
