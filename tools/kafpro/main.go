@@ -18,29 +18,29 @@ const (
 )
 
 type Config struct {
-	Broker  string
-	Meta    MetaConfig
-	Coord   CoordConfig
-	Offset  OffsetConfig
-	Commit  CommitConfig
-	Time    TimeConfig
-	Consume ConsumeConfig
+	Broker  string        `long:"broker"`
+	Meta    MetaConfig    `command:"meta"`
+	Coord   CoordConfig   `command:"coord"`
+	Offset  OffsetConfig  `command:"offset"`
+	Commit  CommitConfig  `command:"commit"`
+	Time    TimeConfig    `command:"time"`
+	Consume ConsumeConfig `command:"consume"`
 }
 
 type CoordConfig struct {
-	GroupName string
+	GroupName string `long:"group"`
 }
 
 type OffsetConfig struct {
-	GroupName string
-	Topic     string
-	Partition int
+	GroupName string `long:"group"`
+	Topic     string `long:"topic"`
+	Partition int    `long:"partition"`
 }
 
 type TimeConfig struct {
-	Topic     string
-	Partition int
-	Time      string
+	Topic     string `long:"topic"`
+	Partition int    `long:"partition"`
+	Time      string `long:"time"`
 }
 
 type timestamp time.Time
@@ -59,13 +59,13 @@ func (t *timestamp) Set(s string) error {
 }
 
 type ConsumeConfig struct {
-	Topic     string
-	Partition int
-	Offset    int
+	Topic     string `long:"topic"`
+	Partition int    `long:"partition"`
+	Offset    int    `long:"offset"`
 }
 
 type MetaConfig struct {
-	Topics Topics
+	Topics Topics `long:"topics"`
 }
 
 type Topics []string
@@ -80,14 +80,27 @@ func (ts *Topics) Set(s string) error {
 }
 
 type CommitConfig struct {
-	GroupName string
-	Topic     string
-	Partition int
-	Offset    int
-	Retention int // millisecond
+	GroupName string `long:"group"`
+	Topic     string `long:"topic"`
+	Partition int    `long:"partition"`
+	Offset    int    `long:"offset"`
+	Retention int    `long:"retention"` // millisecond
 }
 
 func main() {
+
+	/*
+		var opts opts
+		parser := flags.NewParser(&opts, flags.HelpFlag|flags.PassDoubleDash)
+		_, err := parser.Parse()
+		if err != nil {
+			fmt.Fprint(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Println(parser.Active.Name)
+		fmt.Println(opts)
+	*/
+
 	var cfg Config
 	flag.StringVar(&cfg.Broker, "broker", "", "broker address")
 
