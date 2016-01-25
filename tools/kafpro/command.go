@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -103,13 +104,22 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	if err != nil {
 		return err
 	}
+	var wg sync.WaitGroup
+	wg.Add(len(partitions))
 	var cnt int64
 	for _, partition := range partitions {
-		if err := cmd.consumePartition(cr, partition, &cnt); err != nil {
-			return err
-		}
+		go func(partition int32) error {
+			defer wg.Done()
+			if err := cmd.consumePartition(cr, partition, &cnt); err != nil {
+				return err
+			}
+			return nil
+		}(partition)
 	}
-	fmt.Println(cnt)
+	wg.Wait()
+	if cmd.Count {
+		fmt.Println(cnt)
+	}
 	return nil
 }
 
