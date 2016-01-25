@@ -110,9 +110,11 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	for _, partition := range partitions {
 		go func(partition int32) error {
 			defer wg.Done()
-			if err := cmd.consumePartition(cr, partition, &cnt); err != nil {
+			partCnt, err := cmd.consumePartition(cr, partition)
+			if err != nil {
 				return err
 			}
+			atomic.AddInt64(&cnt, partCnt)
 			return nil
 		}(partition)
 	}
@@ -123,17 +125,18 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	return nil
 }
 
-func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, cnt *int64) error {
+func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32) (int64, error) {
 	timeFunc := unmarshalTime("json", cmd.TimeField)
 	offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	jitterCnt := 0
+	cnt := int64(0)
 	for jitterCnt <= 1000 {
 		messages, err := cr.Consume(cmd.Topic, partition, offset)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if len(messages) == 0 {
 			break
@@ -141,14 +144,13 @@ func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, cnt
 		for _, msg := range messages {
 			t, err := timeFunc(msg.Value)
 			if err != nil {
-				return err
+				return 0, err
 			}
 			if !t.Before(time.Time(cmd.Start)) && t.Before(time.Time(cmd.End)) {
-				if cmd.Count {
-					atomic.AddInt64(cnt, 1)
-				} else {
+				if !cmd.Count {
 					fmt.Println(string(msg.Value))
 				}
+				cnt++
 			}
 			if t.After(time.Time(cmd.End)) {
 				jitterCnt++
@@ -156,7 +158,7 @@ func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, cnt
 		}
 		offset = messages[len(messages)-1].Offset + 1
 	}
-	return nil
+	return cnt, nil
 }
 
 type MetaConfig struct {
