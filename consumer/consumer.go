@@ -45,13 +45,17 @@ type C struct {
 	config  *Config
 }
 
-func New(config *Config) (*C, error) {
-	cluster, err := cluster.New(&config.Cluster)
-	if err != nil {
-		return nil, err
+func New(config *Config, cl *cluster.C) (*C, error) {
+	if cl == nil {
+		var err error
+		cl, err = cluster.New(&config.Cluster)
+		if err != nil {
+			return nil, err
+		}
 	}
+	config.Cluster = *cl.Config
 	return &C{
-		cluster: cluster,
+		cluster: cl,
 		config:  config,
 	}, nil
 }

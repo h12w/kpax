@@ -28,7 +28,7 @@ func DefaultConfig(brokers ...string) *Config {
 }
 
 type C struct {
-	config *Config
+	*Config
 	topics *topicPartitions
 	pool   *brokerPool
 	mu     sync.Mutex
@@ -36,7 +36,7 @@ type C struct {
 
 func New(config *Config) (*C, error) {
 	c := &C{
-		config: config,
+		Config: config,
 		topics: newTopicPartitions(),
 		pool: newBrokerPool(func(addr string) *broker.B {
 			cfg := config.BrokerConfig

@@ -50,7 +50,6 @@ func (p *brokerPool) addAddr(addr string) *broker.B {
 	}
 	broker := p.newBroker(addr)
 	p.addrBroker[addr] = broker
-	log.Debugf("broker %s added to pool", addr)
 	return broker
 }
 
