@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"h12.me/kafka/broker"
@@ -12,15 +13,15 @@ import (
 )
 
 type Config struct {
-	Brokers Brokers      `long:"brokers"`
-	Meta    MetaConfig   `command:"meta"`
-	Coord   CoordConfig  `command:"coord"`
-	Offset  OffsetConfig `command:"offset"`
-	Commit  CommitConfig `command:"commit"`
-
-	Time TimeCommand `command:"time" description:"get offset based on time"`
+	ConfigFile string  `long:"config" default:"config.json"`
+	Brokers    Brokers `long:"brokers" json:"brokers"`
 
 	Consume ConsumeCommand `command:"consume"`
+
+	Meta   MetaConfig   `command:"meta"`
+	Coord  CoordConfig  `command:"coord"`
+	Offset OffsetConfig `command:"offset"`
+	Commit CommitConfig `command:"commit"`
 }
 
 type Brokers []string
@@ -38,12 +39,6 @@ type OffsetConfig struct {
 	GroupName string `long:"group"`
 	Topic     string `long:"topic"`
 	Partition int    `long:"partition"`
-}
-
-type TimeCommand struct {
-	Topic     string    `long:"topic"`
-	Start     Timestamp `long:"start"`
-	TimeField string    `long:"time-field"`
 }
 
 type Timestamp time.Time
@@ -64,27 +59,6 @@ func (t *Timestamp) UnmarshalFlag(value string) error {
 			return fmt.Errorf("error parsing %s: %s", value, err.Error())
 		}
 		*t = Timestamp(tm)
-	}
-	return nil
-}
-
-func (cmd *TimeCommand) Exec(cl *cluster.C) error {
-	// TODO: detect format
-	partitions, err := cl.Partitions(cmd.Topic)
-	if err != nil {
-		return err
-	}
-	cr, err := consumer.New(consumer.DefaultConfig(), cl)
-	if err != nil {
-		return err
-	}
-	timeFunc := unmarshalTime("json", cmd.TimeField)
-	for _, partition := range partitions {
-		offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
-		if err != nil {
-			return err
-		}
-		fmt.Println(partition, offset)
 	}
 	return nil
 }
@@ -116,6 +90,7 @@ type ConsumeCommand struct {
 	Start     Timestamp `long:"start"`
 	End       Timestamp `long:"end"`
 	TimeField string    `long:"time-field"`
+	Count     bool      `long:"count"`
 }
 
 func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
@@ -128,71 +103,49 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	if err != nil {
 		return err
 	}
-	timeFunc := unmarshalTime("json", cmd.TimeField)
+	var cnt int64
 	for _, partition := range partitions {
-		offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
+		if err := cmd.consumePartition(cr, partition, &cnt); err != nil {
+			return err
+		}
+	}
+	fmt.Println(cnt)
+	return nil
+}
+
+func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, cnt *int64) error {
+	timeFunc := unmarshalTime("json", cmd.TimeField)
+	offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
+	if err != nil {
+		return err
+	}
+	jitterCnt := 0
+	for jitterCnt <= 1000 {
+		messages, err := cr.Consume(cmd.Topic, partition, offset)
 		if err != nil {
 			return err
 		}
-		jitterCnt := 0
-		for jitterCnt <= 1000 {
-			messages, err := cr.Consume(cmd.Topic, partition, offset)
+		if len(messages) == 0 {
+			break
+		}
+		for _, msg := range messages {
+			t, err := timeFunc(msg.Value)
 			if err != nil {
 				return err
 			}
-			if len(messages) == 0 {
-				break
-			}
-			for _, msg := range messages {
-				fmt.Println(string(msg.Value))
-				t, err := timeFunc(msg.Value)
-				if err != nil {
-					return err
-				}
-				if t.After(time.Time(cmd.End)) {
-					jitterCnt++
+			if !t.Before(time.Time(cmd.Start)) && t.Before(time.Time(cmd.End)) {
+				if cmd.Count {
+					atomic.AddInt64(cnt, 1)
+				} else {
+					fmt.Println(string(msg.Value))
 				}
 			}
-			offset = messages[len(messages)-1].Offset + 1
+			if t.After(time.Time(cmd.End)) {
+				jitterCnt++
+			}
 		}
+		offset = messages[len(messages)-1].Offset + 1
 	}
-	return nil
-	/*
-		req := &broker.Request{
-			ClientID: clientID,
-			RequestMessage: &broker.FetchRequest{
-				ReplicaID:   -1,
-				MaxWaitTime: int32(time.Second / time.Millisecond),
-				MinBytes:    int32(1024),
-				FetchOffsetInTopics: []broker.FetchOffsetInTopic{
-					{
-						TopicName: cfg.Topic,
-						FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
-							{
-								Partition:   int32(cfg.Partition),
-								FetchOffset: int64(cfg.Offset),
-								MaxBytes:    int32(1000),
-							},
-						},
-					},
-				},
-			},
-		}
-		resp := broker.FetchResponse{}
-		if err := br.Do(req, &resp); err != nil {
-			return err
-		}
-		fmt.Println(toJSON(resp))
-		for _, t := range resp {
-			for _, p := range t.FetchMessageSetInPartitions {
-				ms, err := p.MessageSet.Flatten()
-				if err != nil {
-					return err
-				}
-				fmt.Println(toJSON(ms))
-			}
-		}
-	*/
 	return nil
 }
 

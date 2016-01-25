@@ -124,7 +124,7 @@ func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int6
 			return -1, err
 		}
 		if len(messages) == 0 {
-			return -1, ErrFailToFetchOffsetByTime
+			return -1, fmt.Errorf("fail to search offset: zero message count")
 		}
 		for _, message := range messages {
 			t, err := getTime(message.Value)

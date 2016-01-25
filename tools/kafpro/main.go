@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"runtime"
 	"time"
 
 	"github.com/jessevdk/go-flags"
@@ -15,24 +17,43 @@ const (
 	clientID = "h12.me/kafka/kafpro"
 )
 
-func main() {
+func parseJSON(cfg interface{}) error {
+	var fileConfig struct {
+		ConfigFile string `long:"config" default:"config.json"`
+	}
+	parser := flags.NewParser(&fileConfig, flags.IgnoreUnknown)
+	if _, err := parser.Parse(); err != nil {
+		return err
+	}
+	f, err := os.Open(fileConfig.ConfigFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return json.NewDecoder(f).Decode(cfg)
+}
 
+func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+}
+
+func main() {
 	var cfg Config
+	if err := parseJSON(&cfg); err != nil {
+	}
 	parser := flags.NewParser(&cfg, flags.HelpFlag|flags.PassDoubleDash)
 	_, err := parser.Parse()
 	if err != nil {
 		log.Fatal(err)
 	}
-	c, err := cluster.New(cluster.DefaultConfig(cfg.Brokers...))
+	kafkaConfig := cluster.DefaultConfig(cfg.Brokers...)
+	kafkaConfig.BrokerConfig.ClientID = clientID
+	c, err := cluster.New(kafkaConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	//fmt.Println(toJSON(cfg))
 	switch parser.Active.Name {
-	case "time":
-		if err := cfg.Time.Exec(c); err != nil {
-			log.Fatal(err)
-		}
 	case "consume":
 		if err := cfg.Consume.Exec(c); err != nil {
 			log.Fatal(err)

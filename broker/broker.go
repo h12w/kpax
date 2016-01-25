@@ -15,6 +15,7 @@ var (
 
 type Config struct {
 	QueueLen   int
+	ClientID   string
 	Connection ConnectionConfig
 	Producer   ProducerConfig
 }
@@ -70,6 +71,7 @@ func (b *B) Addr() string {
 
 func (b *B) Do(req *Request, resp ResponseMessage) error {
 	req.CorrelationID = atomic.AddInt32(&b.cid, 1)
+	req.ClientID = b.config.ClientID
 	errChan := make(chan error)
 	if err := b.sendJob(&brokerJob{
 		req:     req,
