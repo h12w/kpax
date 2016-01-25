@@ -6,7 +6,7 @@ import (
 
 var (
 	Earliest = time.Time{}
-	Latest   = time.Time{}.Add(time.Nanosecond)
+	Latest   = time.Date(9999, 12, 31, 23, 59, 59, 999999999, time.UTC)
 )
 
 func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {

@@ -33,6 +33,10 @@ func main() {
 		if err := cfg.Time.Exec(c); err != nil {
 			log.Fatal(err)
 		}
+	case "consume":
+		if err := cfg.Consume.Exec(c); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	/*
@@ -216,44 +220,6 @@ func commit(br *broker.B, cfg *CommitConfig) error {
 					}
 				}
 			}
-		}
-	}
-	return nil
-}
-
-func consume(br *broker.B, cfg *ConsumeConfig) error {
-	req := &broker.Request{
-		ClientID: clientID,
-		RequestMessage: &broker.FetchRequest{
-			ReplicaID:   -1,
-			MaxWaitTime: int32(time.Second / time.Millisecond),
-			MinBytes:    int32(1024),
-			FetchOffsetInTopics: []broker.FetchOffsetInTopic{
-				{
-					TopicName: cfg.Topic,
-					FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
-						{
-							Partition:   int32(cfg.Partition),
-							FetchOffset: int64(cfg.Offset),
-							MaxBytes:    int32(1000),
-						},
-					},
-				},
-			},
-		},
-	}
-	resp := broker.FetchResponse{}
-	if err := br.Do(req, &resp); err != nil {
-		return err
-	}
-	fmt.Println(toJSON(resp))
-	for _, t := range resp {
-		for _, p := range t.FetchMessageSetInPartitions {
-			ms, err := p.MessageSet.Flatten()
-			if err != nil {
-				return err
-			}
-			fmt.Println(toJSON(ms))
 		}
 	}
 	return nil
