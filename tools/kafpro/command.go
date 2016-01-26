@@ -77,15 +77,8 @@ func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
 			if err := json.Unmarshal(msg, &m); err != nil {
 				return time.Time{}, err
 			}
-			timeField, ok := m[field].(string)
-			if !ok {
-				return time.Time{}, fmt.Errorf("%v does not contains string field %s", m, field)
-			}
-			t, err := time.Parse(time.RFC3339Nano, timeField)
-			if err != nil {
-				return time.Time{}, err
-			}
-			return t, nil
+			timeField, _ := m[field].(string)
+			return parseTime(timeField)
 		}
 	case "url":
 		return func(msg []byte) (time.Time, error) {
@@ -93,19 +86,23 @@ func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
 			if err != nil {
 				return time.Time{}, err
 			}
-			timeField := values.Get(field)
-			t, err := time.Parse(time.RFC3339Nano, timeField)
-			if err != nil {
-				unix, err := strconv.Atoi(timeField)
-				if err != nil {
-					return time.Time{}, err
-				}
-				return time.Unix(int64(unix), 0), err
-			}
-			return t, nil
+			return parseTime(values.Get(field))
 		}
 	}
 	return nil
+}
+
+// parseTime parses time as RFC3339 or unix timestamp
+func parseTime(timeText string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339Nano, timeText)
+	if err != nil {
+		unix, err := strconv.Atoi(timeText)
+		if err != nil {
+			return time.Time{}, err
+		}
+		return time.Unix(int64(unix), 0), err
+	}
+	return t, err
 }
 
 type ConsumeCommand struct {
