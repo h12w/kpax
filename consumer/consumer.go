@@ -75,14 +75,14 @@ func (c *C) getTime(topic string, partition int32, offset int64, getTime func([]
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
-	earliest, err := c.OffsetByTime(topic, partition, broker.Earliest)
+	earliest, err := c.cluster.OffsetByTime(topic, partition, broker.Earliest)
 	if err != nil {
 		return -1, err
 	}
 	if keyTime == broker.Earliest {
 		return earliest, nil
 	}
-	latest, err := c.OffsetByTime(topic, partition, broker.Latest)
+	latest, err := c.cluster.OffsetByTime(topic, partition, broker.Latest)
 	if err != nil {
 		return -1, err
 	}
@@ -140,35 +140,6 @@ func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int6
 		}
 	}
 	return mid, nil
-}
-
-func (c *C) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
-	leader, err := c.cluster.Leader(topic, partition)
-	if err != nil {
-		return -1, err
-	}
-	resp, err := leader.OffsetByTime(topic, partition, t)
-	if err != nil {
-		return -1, err
-	}
-	for _, t := range *resp {
-		if t.TopicName != topic {
-			continue
-		}
-		for _, p := range t.OffsetsInPartitions {
-			if p.Partition != partition {
-				continue
-			}
-			if p.ErrorCode.HasError() {
-				return -1, p.ErrorCode
-			}
-			if len(p.Offsets) == 0 {
-				return -1, ErrFailToFetchOffsetByTime
-			}
-			return p.Offsets[0], nil
-		}
-	}
-	return -1, ErrFailToFetchOffsetByTime
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {

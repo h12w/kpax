@@ -65,7 +65,7 @@ func (b *B) Produce(topic string, partition int32, messageSet MessageSet) (*Prod
 	return respMsg, nil
 }
 
-func (b *B) OffsetByTime(topic string, partition int32, t time.Time) (*OffsetResponse, error) {
+func (b *B) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
 	var milliSec int64
 	switch t {
 	case Latest:
@@ -94,9 +94,26 @@ func (b *B) OffsetByTime(topic string, partition int32, t time.Time) (*OffsetRes
 	}
 	respMsg := &OffsetResponse{}
 	if err := b.Do(req, respMsg); err != nil {
-		return nil, err
+		return -1, err
 	}
-	return respMsg, nil
+	for _, t := range *respMsg {
+		if t.TopicName != topic {
+			continue
+		}
+		for _, p := range t.OffsetsInPartitions {
+			if p.Partition != partition {
+				continue
+			}
+			if p.ErrorCode.HasError() {
+				return -1, p.ErrorCode
+			}
+			if len(p.Offsets) == 0 {
+				return -1, fmt.Errorf("failt to fetch offset for %s, %d", topic, partition)
+			}
+			return p.Offsets[0], nil
+		}
+	}
+	return -1, fmt.Errorf("failt to fetch offset for %s, %d", topic, partition)
 }
 
 type OffsetCommit struct {

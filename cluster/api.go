@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"time"
+
 	"h12.me/kafka/broker"
 )
 
@@ -16,4 +18,12 @@ func (c *C) Commit(commit *broker.OffsetCommit) error {
 		return err
 	}
 	return nil
+}
+
+func (c *C) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
+	leader, err := c.Leader(topic, partition)
+	if err != nil {
+		return -1, err
+	}
+	return leader.OffsetByTime(topic, partition, t)
 }
