@@ -116,7 +116,6 @@ type ConsumeCommand struct {
 
 func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	// TODO: detect format
-	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
 		return err
@@ -128,6 +127,7 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	var wg sync.WaitGroup
 	wg.Add(len(partitions))
 	var cnt int64
+	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
 	for _, partition := range partitions {
 		go func(partition int32) error {
 			defer wg.Done()
@@ -147,7 +147,7 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	return nil
 }
 
-func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, timeFunc TimeUnmarshalFunc) (int64, error) {
+func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, timeFunc consumer.GetTimeFunc) (int64, error) {
 	offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
 	if err != nil {
 		return 0, err
@@ -201,6 +201,7 @@ type CommitCommand struct {
 	GroupName string    `long:"group"`
 	Topic     string    `long:"topic"`
 	Start     Timestamp `long:"start"`
+	Format    string    `long:"format" default:"json"`
 	TimeField string    `long:"time-field"`
 	Retention int       `long:"retention"` // millisecond
 }

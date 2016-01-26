@@ -37,7 +37,6 @@ func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {
 	return respMsg, nil
 }
 
-// TODO: produce multiple topics
 func (b *B) Produce(topic string, partition int32, messageSet MessageSet) (*ProduceResponse, error) {
 	cfg := &b.config.Producer
 	req := &Request{
@@ -65,7 +64,77 @@ func (b *B) Produce(topic string, partition int32, messageSet MessageSet) (*Prod
 	return respMsg, nil
 }
 
-func (b *B) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
+type ConsumeRequest struct {
+	Topic       string
+	Partition   int32
+	Offset      int64
+	MaxWaitTime time.Duration
+	MinBytes    int
+	MaxBytes    int
+}
+
+func (c *B) Consume(fr *ConsumeRequest) (messages MessageSet, err error) {
+	req := &Request{
+		RequestMessage: &FetchRequest{
+			ReplicaID:   -1,
+			MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
+			MinBytes:    int32(fr.MinBytes),
+			FetchOffsetInTopics: []FetchOffsetInTopic{
+				{
+					TopicName: fr.Topic,
+					FetchOffsetInPartitions: []FetchOffsetInPartition{
+						{
+							Partition:   fr.Partition,
+							FetchOffset: fr.Offset,
+							MaxBytes:    int32(fr.MaxBytes),
+						},
+					},
+				},
+			},
+		},
+	}
+	resp := FetchResponse{}
+	if err := c.Do(req, &resp); err != nil {
+		return nil, err
+	}
+	for i := range resp {
+		t := &resp[i]
+		if t.TopicName != fr.Topic {
+			continue
+		}
+		for j := range t.FetchMessageSetInPartitions {
+			p := &t.FetchMessageSetInPartitions[j]
+			if p.Partition != fr.Partition {
+				continue
+			}
+			if p.ErrorCode.HasError() {
+				return nil, p.ErrorCode
+			}
+			ms := p.MessageSet
+			ms, err := ms.Flatten()
+			if err != nil {
+				return nil, err
+			}
+			for k := range ms {
+				m := &ms[k]
+				if m.Offset == fr.Offset {
+					ms = ms[k:]
+					break
+				}
+			}
+			if len(ms) == 0 {
+				continue
+			}
+			if ms[0].Offset != fr.Offset {
+				return nil, fmt.Errorf("2: OFFSET MISMATCH %d %d", ms[0].Offset, fr.Offset)
+			}
+			return ms, nil
+		}
+	}
+	return nil, nil
+}
+
+func (b *B) SegmentOffset(topic string, partition int32, t time.Time) (int64, error) {
 	var milliSec int64
 	switch t {
 	case Latest:

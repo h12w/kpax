@@ -20,10 +20,10 @@ func (c *C) Commit(commit *broker.OffsetCommit) error {
 	return nil
 }
 
-func (c *C) OffsetByTime(topic string, partition int32, t time.Time) (int64, error) {
+func (c *C) SegmentOffset(topic string, partition int32, t time.Time) (int64, error) {
 	leader, err := c.Leader(topic, partition)
 	if err != nil {
 		return -1, err
 	}
-	return leader.OffsetByTime(topic, partition, t)
+	return leader.SegmentOffset(topic, partition, t)
 }

@@ -59,7 +59,9 @@ func New(config *Config, cl *cluster.C) (*C, error) {
 	}, nil
 }
 
-func (c *C) getTime(topic string, partition int32, offset int64, getTime func([]byte) (time.Time, error)) (time.Time, error) {
+type GetTimeFunc func([]byte) (time.Time, error)
+
+func (c *C) getTime(topic string, partition int32, offset int64, getTime GetTimeFunc) (time.Time, error) {
 	const maxMessageSize = 10000
 	messages, err := c.consumeBytes(topic, partition, offset, maxMessageSize)
 	if err != nil {
@@ -74,15 +76,15 @@ func (c *C) getTime(topic string, partition int32, offset int64, getTime func([]
 	return getTime(messages[0].Value)
 }
 
-func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
-	earliest, err := c.cluster.OffsetByTime(topic, partition, broker.Earliest)
+func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime GetTimeFunc) (int64, error) {
+	earliest, err := c.cluster.SegmentOffset(topic, partition, broker.Earliest)
 	if err != nil {
 		return -1, err
 	}
 	if keyTime == broker.Earliest {
 		return earliest, nil
 	}
-	latest, err := c.cluster.OffsetByTime(topic, partition, broker.Latest)
+	latest, err := c.cluster.SegmentOffset(topic, partition, broker.Latest)
 	if err != nil {
 		return -1, err
 	}
@@ -96,7 +98,7 @@ func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time,
 			return -1, err
 		}
 		if midTime.Equal(keyTime) {
-			return c.searchOffsetBefore(topic, partition, earliest, mid, latest, keyTime, getTime)
+			break
 		} else if midTime.Before(keyTime) {
 			min = mid + 1
 		} else {
