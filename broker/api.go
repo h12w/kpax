@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -96,4 +97,50 @@ func (b *B) OffsetByTime(topic string, partition int32, t time.Time) (*OffsetRes
 		return nil, err
 	}
 	return respMsg, nil
+}
+
+type OffsetCommit struct {
+	Topic     string
+	Partition int32
+	Group     string
+	Offset    int64
+	Retention time.Duration
+}
+
+func (b *B) Commit(commit *OffsetCommit) error {
+	req := &Request{RequestMessage: &OffsetCommitRequestV1{
+		ConsumerGroupID: commit.Group,
+		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
+			{
+				TopicName: commit.Topic,
+				OffsetCommitInPartitionV1s: []OffsetCommitInPartitionV1{
+					{
+						Partition: commit.Partition,
+						Offset:    commit.Offset,
+						// TimeStamp in milliseconds
+						TimeStamp: time.Now().Add(commit.Retention).Unix() * 1000,
+					},
+				},
+			},
+		},
+	}}
+	resp := OffsetCommitResponse{}
+	if err := b.Do(req, &resp); err != nil {
+		return err
+	}
+	for i := range resp {
+		t := &resp[i]
+		if t.TopicName == commit.Topic {
+			for j := range t.ErrorInPartitions {
+				p := &t.ErrorInPartitions[j]
+				if p.Partition == commit.Partition {
+					if p.ErrorCode.HasError() {
+						return p.ErrorCode
+					}
+					return nil
+				}
+			}
+		}
+	}
+	return fmt.Errorf("fail to commit offset: %v", commit)
 }

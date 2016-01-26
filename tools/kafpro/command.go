@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -18,11 +21,11 @@ type Config struct {
 	Brokers    Brokers `long:"brokers" json:"brokers"`
 
 	Consume ConsumeCommand `command:"consume"`
+	Commit  CommitCommand  `command:"commit"`
 
 	Meta   MetaConfig   `command:"meta"`
 	Coord  CoordConfig  `command:"coord"`
 	Offset OffsetConfig `command:"offset"`
-	Commit CommitConfig `command:"commit"`
 }
 
 type Brokers []string
@@ -64,6 +67,8 @@ func (t *Timestamp) UnmarshalFlag(value string) error {
 	return nil
 }
 
+type TimeUnmarshalFunc func([]byte) (time.Time, error)
+
 func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
 	switch format {
 	case "json":
@@ -82,6 +87,23 @@ func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
 			}
 			return t, nil
 		}
+	case "url":
+		return func(msg []byte) (time.Time, error) {
+			values, err := url.ParseQuery(string(msg))
+			if err != nil {
+				return time.Time{}, err
+			}
+			timeField := values.Get(field)
+			t, err := time.Parse(time.RFC3339Nano, timeField)
+			if err != nil {
+				unix, err := strconv.Atoi(timeField)
+				if err != nil {
+					return time.Time{}, err
+				}
+				return time.Unix(int64(unix), 0), err
+			}
+			return t, nil
+		}
 	}
 	return nil
 }
@@ -90,12 +112,14 @@ type ConsumeCommand struct {
 	Topic     string    `long:"topic"`
 	Start     Timestamp `long:"start"`
 	End       Timestamp `long:"end"`
+	Format    string    `long:"format" default:"json"`
 	TimeField string    `long:"time-field"`
 	Count     bool      `long:"count"`
 }
 
 func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	// TODO: detect format
+	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
 		return err
@@ -110,9 +134,10 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	for _, partition := range partitions {
 		go func(partition int32) error {
 			defer wg.Done()
-			partCnt, err := cmd.consumePartition(cr, partition)
+			partCnt, err := cmd.consumePartition(cr, partition, timeFunc)
 			if err != nil {
-				return err
+				log.Println(err)
+				return nil
 			}
 			atomic.AddInt64(&cnt, partCnt)
 			return nil
@@ -125,8 +150,7 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	return nil
 }
 
-func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32) (int64, error) {
-	timeFunc := unmarshalTime("json", cmd.TimeField)
+func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, timeFunc TimeUnmarshalFunc) (int64, error) {
 	offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
 	if err != nil {
 		return 0, err
@@ -144,7 +168,7 @@ func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32) (in
 		for _, msg := range messages {
 			t, err := timeFunc(msg.Value)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("fail to parse time from %s: %v", string(msg.Value), err)
 			}
 			if !t.Before(time.Time(cmd.Start)) && t.Before(time.Time(cmd.End)) {
 				if !cmd.Count {
@@ -176,10 +200,53 @@ func (ts *Topics) Set(s string) error {
 	return nil
 }
 
-type CommitConfig struct {
-	GroupName string `long:"group"`
-	Topic     string `long:"topic"`
-	Partition int    `long:"partition"`
-	Offset    int    `long:"offset"`
-	Retention int    `long:"retention"` // millisecond
+type CommitCommand struct {
+	GroupName string    `long:"group"`
+	Topic     string    `long:"topic"`
+	Start     Timestamp `long:"start"`
+	TimeField string    `long:"time-field"`
+	Retention int       `long:"retention"` // millisecond
+}
+
+func (cmd *CommitCommand) Exec(cl *cluster.C) error {
+	/*
+		req := &broker.Request{
+			ClientID: clientID,
+			RequestMessage: &broker.OffsetCommitRequestV1{
+				ConsumerGroupID: cfg.GroupName,
+				OffsetCommitInTopicV1s: []broker.OffsetCommitInTopicV1{
+					{
+						TopicName: cfg.Topic,
+						OffsetCommitInPartitionV1s: []broker.OffsetCommitInPartitionV1{
+							{
+								Partition: int32(cfg.Partition),
+								Offset:    int64(cfg.Offset),
+								// TimeStamp in milliseconds
+								TimeStamp: time.Now().Add(time.Duration(cfg.Retention)*time.Millisecond).Unix() * 1000,
+							},
+						},
+					},
+				},
+			},
+		}
+		resp := broker.OffsetCommitResponse{}
+		if err := br.Do(req, &resp); err != nil {
+			return err
+		}
+		for i := range resp {
+			t := &resp[i]
+			if t.TopicName == cfg.Topic {
+				for j := range t.ErrorInPartitions {
+					p := &t.ErrorInPartitions[j]
+					if int(p.Partition) == cfg.Partition {
+						if p.ErrorCode.HasError() {
+							return p.ErrorCode
+						}
+					}
+				}
+			}
+		}
+	*/
+	return nil
+
 }

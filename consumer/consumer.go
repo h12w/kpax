@@ -12,7 +12,6 @@ import (
 
 var (
 	ErrOffsetNotFound          = errors.New("offset not found")
-	ErrFailCommitOffset        = errors.New("fail to commit offset")
 	ErrFailToFetchOffsetByTime = errors.New("fail to fetch offset by time")
 )
 
@@ -79,6 +78,9 @@ func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time,
 	earliest, err := c.OffsetByTime(topic, partition, broker.Earliest)
 	if err != nil {
 		return -1, err
+	}
+	if keyTime == broker.Earliest {
+		return earliest, nil
 	}
 	latest, err := c.OffsetByTime(topic, partition, broker.Latest)
 	if err != nil {
@@ -301,54 +303,10 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	req := &broker.Request{RequestMessage: &broker.OffsetCommitRequestV1{
-		ConsumerGroupID: consumerGroup,
-		OffsetCommitInTopicV1s: []broker.OffsetCommitInTopicV1{
-			{
-				TopicName: topic,
-				OffsetCommitInPartitionV1s: []broker.OffsetCommitInPartitionV1{
-					{
-						Partition: partition,
-						Offset:    offset,
-						// TimeStamp in milliseconds
-						TimeStamp: time.Now().Add(c.config.OffsetRetention).Unix() * 1000,
-					},
-				},
-			},
-		},
-	},
-	}
-	resp := broker.OffsetCommitResponse{}
-	coord, err := c.cluster.Coordinator(topic, consumerGroup)
-	if err != nil {
-		log.Debugf("fail to get coordinator %v")
-		return err
-	}
-	if err := coord.Do(req, &resp); err != nil {
-		if broker.IsNotCoordinator(err) {
-			c.cluster.CoordinatorIsDown(consumerGroup)
-		}
-		log.Debugf("fail to commit %v", err)
-		return err
-	}
-	for i := range resp {
-		t := &resp[i]
-		if t.TopicName == topic {
-			for j := range t.ErrorInPartitions {
-				p := &t.ErrorInPartitions[j]
-				if p.Partition == partition {
-					if p.ErrorCode.HasError() {
-						if broker.IsNotCoordinator(err) {
-							c.cluster.CoordinatorIsDown(consumerGroup)
-						}
-						log.Debugf("fail to commit %v", p.ErrorCode)
-						return p.ErrorCode
-					}
-					return nil
-				}
-			}
-		}
-	}
-	log.Debugf("fail to commit %v", ErrFailCommitOffset)
-	return ErrFailCommitOffset
+	return c.cluster.Commit(&broker.OffsetCommit{
+		Topic:     topic,
+		Partition: partition,
+		Group:     consumerGroup,
+		Offset:    offset,
+	})
 }
