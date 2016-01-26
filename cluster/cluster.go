@@ -102,12 +102,12 @@ func (c *C) updateCoordinator(topic, group string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		m, err := broker.GroupCoordinator(group)
+		coord, err := broker.GroupCoordinator(group)
 		if err != nil {
 			merr = append(merr, err)
 			continue
 		}
-		c.pool.SetCoordinator(group, m.Broker.NodeID, m.Broker.Addr())
+		c.pool.SetCoordinator(group, coord.NodeID, coord.Addr())
 		return nil
 	}
 	return merr

@@ -2,12 +2,12 @@ package producer
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 
 	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
-	"h12.me/kafka/log"
 )
 
 var (
@@ -64,7 +64,7 @@ nextPartition:
 		partition, err := partitioner.Partition(key)
 		if err != nil {
 			p.topicPartitioner.Delete(topic)
-			break
+			return err
 		}
 
 		leader, err := p.cluster.Leader(topic, partition)
@@ -72,37 +72,22 @@ nextPartition:
 			partitioner.Skip(partition)
 			continue
 		}
-		resp, err := leader.Produce(topic, partition, messageSet)
-		if err != nil {
+		if err := (&broker.Produce{
+			Topic:        topic,
+			Partition:    partition,
+			MessageSet:   messageSet,
+			RequiredAcks: broker.AckLocal,
+			AckTimeout:   10 * time.Second,
+		}).Exec(leader); err != nil {
 			if broker.IsNotLeader(err) {
 				p.cluster.LeaderIsDown(topic, partition)
 				continue nextPartition
 			}
 			return err
 		}
-		for i := range *resp {
-			t := &(*resp)[i]
-			if t.TopicName != topic {
-				continue
-			}
-			for j := range t.OffsetInPartitions {
-				pres := &t.OffsetInPartitions[j]
-				if pres.Partition != partition {
-					continue
-				}
-				if pres.ErrorCode.HasError() {
-					if broker.IsNotLeader(err) {
-						p.cluster.LeaderIsDown(topic, partition)
-						continue nextPartition
-					}
-					return pres.ErrorCode
-				}
-			}
-		}
 		return nil
 	}
-	log.Warnf("fail to find a usable partition")
-	return ErrProduceFailed
+	return fmt.Errorf("fail to produce to all partitions in %s", topic)
 }
 
 func getMessageSet(key, value []byte) []broker.OffsetMessage {
@@ -123,27 +108,17 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 		return err
 	}
 	messageSet := getMessageSet(key, value)
-	resp, err := leader.Produce(topic, partition, messageSet)
-	if err != nil {
+	if err := (&broker.Produce{
+		Topic:        topic,
+		Partition:    partition,
+		MessageSet:   messageSet,
+		RequiredAcks: broker.AckLocal,
+		AckTimeout:   10 * time.Second,
+	}).Exec(leader); err != nil {
 		if broker.IsNotLeader(err) {
 			p.cluster.LeaderIsDown(topic, partition)
 		}
 		return err
-	}
-	for i := range *resp {
-		t := &(*resp)[i]
-		if t.TopicName != topic {
-			continue
-		}
-		for j := range t.OffsetInPartitions {
-			p := &t.OffsetInPartitions[j]
-			if p.Partition != partition {
-				continue
-			}
-			if p.ErrorCode.HasError() {
-				return p.ErrorCode
-			}
-		}
 	}
 	return nil
 }

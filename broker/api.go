@@ -22,7 +22,7 @@ func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
 	return respMsg, nil
 }
 
-func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {
+func (b *B) GroupCoordinator(group string) (*Broker, error) {
 	reqMsg := GroupCoordinatorRequest(group)
 	req := &Request{
 		RequestMessage: &reqMsg,
@@ -34,22 +34,29 @@ func (b *B) GroupCoordinator(group string) (*GroupCoordinatorResponse, error) {
 	if respMsg.ErrorCode.HasError() {
 		return nil, respMsg.ErrorCode
 	}
-	return respMsg, nil
+	return &respMsg.Broker, nil
 }
 
-func (b *B) Produce(topic string, partition int32, messageSet MessageSet) (*ProduceResponse, error) {
-	cfg := &b.config.Producer
+type Produce struct {
+	Topic        string
+	Partition    int32
+	MessageSet   MessageSet
+	RequiredAcks int16
+	AckTimeout   time.Duration
+}
+
+func (p *Produce) Exec(b *B) error {
 	req := &Request{
 		RequestMessage: &ProduceRequest{
-			RequiredAcks: cfg.RequiredAcks,
-			Timeout:      int32(cfg.Timeout / time.Millisecond),
+			RequiredAcks: p.RequiredAcks,
+			Timeout:      int32(p.AckTimeout / time.Millisecond),
 			MessageSetInTopics: []MessageSetInTopic{
 				{
-					TopicName: topic,
+					TopicName: p.Topic,
 					MessageSetInPartitions: []MessageSetInPartition{
 						{
-							Partition:  partition,
-							MessageSet: messageSet,
+							Partition:  p.Partition,
+							MessageSet: p.MessageSet,
 						},
 					},
 				},
@@ -57,23 +64,39 @@ func (b *B) Produce(topic string, partition int32, messageSet MessageSet) (*Prod
 		},
 	}
 
-	respMsg := &ProduceResponse{}
-	if err := b.Do(req, respMsg); err != nil {
-		return nil, err
+	respMsg := ProduceResponse{}
+	if err := b.Do(req, &respMsg); err != nil {
+		return err
 	}
-	return respMsg, nil
+	for i := range respMsg {
+		t := &respMsg[i]
+		if t.TopicName != p.Topic {
+			continue
+		}
+		for j := range t.OffsetInPartitions {
+			pres := &t.OffsetInPartitions[j]
+			if pres.Partition != p.Partition {
+				continue
+			}
+			if pres.ErrorCode.HasError() {
+				return pres.ErrorCode
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("fail to produce to %s, %d", p.Topic, p.Partition)
 }
 
-type ConsumeRequest struct {
+type Consume struct {
 	Topic       string
 	Partition   int32
 	Offset      int64
-	MaxWaitTime time.Duration
 	MinBytes    int
 	MaxBytes    int
+	MaxWaitTime time.Duration
 }
 
-func (c *B) Consume(fr *ConsumeRequest) (messages MessageSet, err error) {
+func (fr *Consume) Do(c *B) (messages MessageSet, err error) {
 	req := &Request{
 		RequestMessage: &FetchRequest{
 			ReplicaID:   -1,

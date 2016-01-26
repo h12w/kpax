@@ -91,27 +91,22 @@ func TestProduceSnappy(t *testing.T) {
 	ms.Marshal(&w)
 	compressedValue := encodeSnappy(w.B[4:])
 	fmt.Println(w.B)
-	resp, err := b.Produce(topic, partition, MessageSet{
-		{
-			SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
-				Attributes: 2,
-				Key:        nil,
-				Value:      compressedValue,
-			}}}},
-	})
-
-	if len(*resp) != 1 || len((*resp)[0].OffsetInPartitions) != 1 {
-		t.Fatal("expect 1 resp")
+	if err := (&Produce{
+		Topic:     topic,
+		Partition: partition,
+		MessageSet: MessageSet{
+			{
+				SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
+					Attributes: 2,
+					Key:        nil,
+					Value:      compressedValue,
+				}}}},
+		},
+		RequiredAcks: AckLocal,
+		AckTimeout:   10 * time.Second,
+	}).Exec(b); err != nil {
+		t.Fatal(err)
 	}
-
-	for _, topic := range *resp {
-		for _, p := range topic.OffsetInPartitions {
-			if p.ErrorCode.HasError() {
-				t.Fatal(p.ErrorCode)
-			}
-		}
-	}
-	t.Log(*resp)
 }
 
 func TestGroupCoordinator(t *testing.T) {
@@ -189,30 +184,21 @@ func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
 }
 
 func produceMessage(t *testing.T, b *B, topic string, partition int32, key, value string) {
-	respMsg, err := b.Produce(topic, partition, []OffsetMessage{
-		{
-			SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
-				Key:   []byte(key),
-				Value: []byte(value),
-			}}}},
-	})
-	if err != nil {
+	if err := (&Produce{
+		Topic:     topic,
+		Partition: partition,
+		MessageSet: MessageSet{
+			{
+				SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
+					Key:   []byte(key),
+					Value: []byte(value),
+				}}},
+			},
+		},
+		RequiredAcks: AckLocal,
+		AckTimeout:   10 * time.Second,
+	}).Exec(b); err != nil {
 		t.Fatal(err)
-	}
-	ok := false
-	for _, topicResp := range *respMsg {
-		if topicResp.TopicName == topic {
-			for _, partitionResp := range topicResp.OffsetInPartitions {
-				if partitionResp.Partition == partition {
-					if ok = (partitionResp.ErrorCode == NoError); !ok {
-						t.Fatal(partitionResp.ErrorCode)
-					}
-				}
-			}
-		}
-	}
-	if !ok {
-		t.Fatal("produce failed")
 	}
 }
 

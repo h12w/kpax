@@ -17,17 +17,11 @@ type Config struct {
 	QueueLen   int
 	ClientID   string
 	Connection ConnectionConfig
-	Producer   ProducerConfig
 }
 
 type ConnectionConfig struct {
 	Addr    string
 	Timeout time.Duration
-}
-
-type ProducerConfig struct {
-	RequiredAcks int16
-	Timeout      time.Duration
 }
 
 func DefaultConfig() *Config {
@@ -36,10 +30,10 @@ func DefaultConfig() *Config {
 		Connection: ConnectionConfig{
 			Timeout: 30 * time.Second,
 		},
-		Producer: ProducerConfig{
-			RequiredAcks: AckLocal,
-			Timeout:      10 * time.Second,
-		},
+		// Producer: ProducerConfig{
+		// 	RequiredAcks: AckLocal,
+		// 	Timeout:      10 * time.Second,
+		// },
 	}
 }
 
