@@ -1,32 +1,57 @@
-package broker
+package proto
 
 import (
 	"fmt"
 	"time"
-)
 
-type Doer interface {
-	Do(req RequestMessage, resp ResponseMessage) error
-}
+	"h12.me/kafka/common"
+)
 
 var (
 	Earliest = time.Time{}
 	Latest   = time.Date(9999, 12, 31, 23, 59, 59, 999999999, time.UTC)
 )
 
-func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
-	req := TopicMetadataRequest(topics)
+type client struct {
+	id   string
+	doer common.Doer
+}
+
+func (r *Response) ID() int32     { return r.CorrelationID }
+func (r *Request) ID() int32      { return r.CorrelationID }
+func (r *Request) SetID(id int32) { r.CorrelationID = id }
+
+func (c client) Do(req RequestMessage, resp ResponseMessage) error {
+	return c.doer.Do(
+		&Request{
+			ClientID:       c.id,
+			RequestMessage: req,
+		},
+		&Response{
+			ResponseMessage: resp,
+		},
+	)
+}
+
+const clientID = "h12.me/kafka"
+
+type Metadata []string
+
+func (m Metadata) Fetch(b common.Doer) (*TopicMetadataResponse, error) {
+	req := TopicMetadataRequest([]string(m))
 	resp := TopicMetadataResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
 }
 
-func (b *B) GroupCoordinator(group string) (*Broker, error) {
+type GroupCoordinator string
+
+func (group GroupCoordinator) Fetch(b common.Doer) (*Broker, error) {
 	req := GroupCoordinatorRequest(group)
 	resp := GroupCoordinatorResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return nil, err
 	}
 	if resp.ErrorCode.HasError() {
@@ -43,7 +68,7 @@ type Produce struct {
 	AckTimeout   time.Duration
 }
 
-func (p *Produce) Exec(b Doer) error {
+func (p *Produce) Exec(b common.Doer) error {
 	req := ProduceRequest{
 		RequiredAcks: p.RequiredAcks,
 		Timeout:      int32(p.AckTimeout / time.Millisecond),
@@ -61,7 +86,7 @@ func (p *Produce) Exec(b Doer) error {
 	}
 
 	resp := ProduceResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return err
 	}
 	for i := range resp {
@@ -92,7 +117,7 @@ type Consume struct {
 	MaxWaitTime time.Duration
 }
 
-func (fr *Consume) Exec(c *B) (messages MessageSet, err error) {
+func (fr *Consume) Exec(c common.Doer) (messages MessageSet, err error) {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
@@ -111,7 +136,7 @@ func (fr *Consume) Exec(c *B) (messages MessageSet, err error) {
 		},
 	}
 	resp := FetchResponse{}
-	if err := c.Do(&req, &resp); err != nil {
+	if err := (client{clientID, c}).Do(&req, &resp); err != nil {
 		return nil, err
 	}
 	for i := range resp {
@@ -151,54 +176,66 @@ func (fr *Consume) Exec(c *B) (messages MessageSet, err error) {
 	return nil, nil
 }
 
-func (b *B) FetchOffset(topic string, partition int32, consumerGroup string) (int64, error) {
+type FetchOffset struct {
+	Topic     string
+	Partition int32
+	Group     string
+}
+
+func (o *FetchOffset) Exec(b common.Doer) (int64, error) {
 	req := OffsetFetchRequestV1{
-		ConsumerGroup: consumerGroup,
+		ConsumerGroup: o.Group,
 		PartitionInTopics: []PartitionInTopic{
 			{
-				TopicName:  topic,
-				Partitions: []int32{partition},
+				TopicName:  o.Topic,
+				Partitions: []int32{o.Partition},
 			},
 		},
 	}
 	resp := OffsetFetchResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return -1, err
 	}
 	for i := range resp {
 		t := &resp[i]
-		if t.TopicName == topic {
+		if t.TopicName == o.Topic {
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
 				if p.ErrorCode.HasError() {
-					return -1, fmt.Errorf("fail to get offset for (%s, %d): %v", topic, partition, p.ErrorCode)
+					return -1, fmt.Errorf("fail to get offset for (%s, %d): %v", o.Topic, o.Partition, p.ErrorCode)
 				}
 				return p.Offset, nil
 			}
 		}
 	}
 
-	return -1, fmt.Errorf("fail to get offset for (%s, %d)", topic, partition)
+	return -1, fmt.Errorf("fail to get offset for (%s, %d)", o.Topic, o.Partition)
 }
 
-func (b *B) SegmentOffset(topic string, partition int32, t time.Time) (int64, error) {
+type FetchSegmentOffset struct {
+	Topic     string
+	Partition int32
+	Time      time.Time
+}
+
+func (o *FetchSegmentOffset) Exec(b common.Doer) (int64, error) {
 	var milliSec int64
-	switch t {
+	switch o.Time {
 	case Latest:
 		milliSec = -1
 	case Earliest:
 		milliSec = -2
 	default:
-		milliSec = t.UnixNano() / 1000000
+		milliSec = o.Time.UnixNano() / 1000000
 	}
 	req := OffsetRequest{
 		ReplicaID: -1,
 		TimeInTopics: []TimeInTopic{
 			{
-				TopicName: topic,
+				TopicName: o.Topic,
 				TimeInPartitions: []TimeInPartition{
 					{
-						Partition:          partition,
+						Partition:          o.Partition,
 						Time:               milliSec,
 						MaxNumberOfOffsets: 1,
 					},
@@ -207,27 +244,27 @@ func (b *B) SegmentOffset(topic string, partition int32, t time.Time) (int64, er
 		},
 	}
 	resp := OffsetResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return -1, err
 	}
 	for _, t := range resp {
-		if t.TopicName != topic {
+		if t.TopicName != o.Topic {
 			continue
 		}
 		for _, p := range t.OffsetsInPartitions {
-			if p.Partition != partition {
+			if p.Partition != o.Partition {
 				continue
 			}
 			if p.ErrorCode.HasError() {
 				return -1, p.ErrorCode
 			}
 			if len(p.Offsets) == 0 {
-				return -1, fmt.Errorf("failt to fetch offset for %s, %d", topic, partition)
+				return -1, fmt.Errorf("failt to fetch offset for %s, %d", o.Topic, o.Partition)
 			}
 			return p.Offsets[0], nil
 		}
 	}
-	return -1, fmt.Errorf("failt to fetch offset for %s, %d", topic, partition)
+	return -1, fmt.Errorf("failt to fetch offset for %s, %d", o.Topic, o.Partition)
 }
 
 type CommitOffset struct {
@@ -238,7 +275,7 @@ type CommitOffset struct {
 	Retention time.Duration
 }
 
-func (commit *CommitOffset) Exec(b Doer) error {
+func (commit *CommitOffset) Exec(b common.Doer) error {
 	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
@@ -256,7 +293,7 @@ func (commit *CommitOffset) Exec(b Doer) error {
 		},
 	}
 	resp := OffsetCommitResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return err
 	}
 	for i := range resp {

@@ -1,4 +1,4 @@
-package broker
+package proto
 
 import (
 	"encoding/json"

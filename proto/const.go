@@ -1,4 +1,4 @@
-package broker
+package proto
 
 const (
 	AckNone  = 0

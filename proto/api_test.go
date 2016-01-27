@@ -1,4 +1,4 @@
-package broker
+package proto
 
 import (
 	"fmt"
@@ -6,8 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"h12.me/kafka/broker"
 	"h12.me/realtest/kafka"
 	"h12.me/wipro"
+)
+
+var (
+	New           = broker.New
+	DefaultConfig = broker.DefaultConfig
 )
 
 func TestTopicMetadata(t *testing.T) {
@@ -122,7 +128,7 @@ func TestGroupCoordinator(t *testing.T) {
 func getTopicMetadata(t *testing.T, k *kafka.Cluster, topic string) *TopicMetadataResponse {
 	b := New(DefaultConfig().WithAddr(k.AnyBroker()))
 	defer b.Close()
-	respMsg, err := b.TopicMetadata(topic)
+	respMsg, err := Metadata{topic}.Fetch(b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +188,7 @@ func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
 	return respMsg.Broker.Addr()
 }
 
-func produceMessage(t *testing.T, b *B, topic string, partition int32, key, value string) {
+func produceMessage(t *testing.T, b *broker.B, topic string, partition int32, key, value string) {
 	if err := (&Produce{
 		Topic:     topic,
 		Partition: partition,
@@ -201,7 +207,7 @@ func produceMessage(t *testing.T, b *B, topic string, partition int32, key, valu
 	}
 }
 
-func fetchMessage(t *testing.T, b *B, topic string, partition int32, offset int64) [][2]string {
+func fetchMessage(t *testing.T, b *broker.B, topic string, partition int32, offset int64) [][2]string {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(time.Second / time.Millisecond),
@@ -220,7 +226,7 @@ func fetchMessage(t *testing.T, b *B, topic string, partition int32, offset int6
 		},
 	}
 	resp := FetchResponse{}
-	if err := b.Do(&req, &resp); err != nil {
+	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		t.Fatal(err)
 	}
 	var result [][2]string

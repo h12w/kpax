@@ -4,6 +4,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"h12.me/wipro"
 )
 
 type connection struct {
@@ -32,7 +34,7 @@ func (c *connection) sendLoop() {
 		c.conn.SetWriteDeadline(time.Now().Add(c.timeout))
 		if err := job.req.Send(c.conn); err != nil {
 			job.errChan <- err
-			if err == ErrConn {
+			if err == wipro.ErrConn {
 				c.Close()
 				close(c.recvChan)
 			}
@@ -47,11 +49,11 @@ func (c *connection) receiveLoop() {
 		c.conn.SetReadDeadline(time.Now().Add(c.timeout))
 		if err := job.resp.Receive(c.conn); err != nil {
 			job.errChan <- err
-			if err == ErrConn {
+			if err == wipro.ErrConn {
 				c.Close()
 			}
 		}
-		if job.resp.CorrelationID != job.req.CorrelationID {
+		if job.resp.ID() != job.req.ID() {
 			job.errChan <- ErrCorrelationIDMismatch
 		}
 		job.errChan <- nil

@@ -1,4 +1,4 @@
-package broker
+package proto
 
 const (
 	NoError                             ErrorCode = 0
