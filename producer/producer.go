@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
+	"h12.me/kafka/proto"
 )
 
 var (
@@ -72,14 +72,14 @@ nextPartition:
 			partitioner.Skip(partition)
 			continue
 		}
-		if err := (&broker.Produce{
+		if err := (&proto.Payload{
 			Topic:        topic,
 			Partition:    partition,
 			MessageSet:   messageSet,
-			RequiredAcks: broker.AckLocal,
+			RequiredAcks: proto.AckLocal,
 			AckTimeout:   10 * time.Second,
-		}).Exec(leader); err != nil {
-			if broker.IsNotLeader(err) {
+		}).Produce(leader); err != nil {
+			if proto.IsNotLeader(err) {
 				p.cluster.LeaderIsDown(topic, partition)
 				continue nextPartition
 			}
@@ -90,11 +90,11 @@ nextPartition:
 	return fmt.Errorf("fail to produce to all partitions in %s", topic)
 }
 
-func getMessageSet(key, value []byte) []broker.OffsetMessage {
-	return []broker.OffsetMessage{
+func getMessageSet(key, value []byte) []proto.OffsetMessage {
+	return []proto.OffsetMessage{
 		{
-			SizedMessage: broker.SizedMessage{CRCMessage: broker.CRCMessage{
-				Message: broker.Message{
+			SizedMessage: proto.SizedMessage{CRCMessage: proto.CRCMessage{
+				Message: proto.Message{
 					Key:   key,
 					Value: value,
 				},
@@ -108,14 +108,14 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 		return err
 	}
 	messageSet := getMessageSet(key, value)
-	if err := (&broker.Produce{
+	if err := (&proto.Payload{
 		Topic:        topic,
 		Partition:    partition,
 		MessageSet:   messageSet,
-		RequiredAcks: broker.AckLocal,
+		RequiredAcks: proto.AckLocal,
 		AckTimeout:   10 * time.Second,
-	}).Exec(leader); err != nil {
-		if broker.IsNotLeader(err) {
+	}).Produce(leader); err != nil {
+		if proto.IsNotLeader(err) {
 			p.cluster.LeaderIsDown(topic, partition)
 		}
 		return err

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
 	"h12.me/kafka/log"
+	"h12.me/kafka/proto"
 )
 
 var (
@@ -77,14 +77,14 @@ func (c *C) getTime(topic string, partition int32, offset int64, getTime GetTime
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime GetTimeFunc) (int64, error) {
-	earliest, err := c.cluster.SegmentOffset(topic, partition, broker.Earliest)
+	earliest, err := c.cluster.SegmentOffset(topic, partition, proto.Earliest)
 	if err != nil {
 		return -1, err
 	}
-	if keyTime == broker.Earliest {
+	if keyTime == proto.Earliest {
 		return earliest, nil
 	}
-	latest, err := c.cluster.SegmentOffset(topic, partition, broker.Latest)
+	latest, err := c.cluster.SegmentOffset(topic, partition, proto.Latest)
 	if err != nil {
 		return -1, err
 	}
@@ -150,9 +150,9 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 		log.Debugf("fail to get coordinator %v", err)
 		return 0, err
 	}
-	offset, err := coord.FetchOffset(topic, partition, consumerGroup)
+	offset, err := (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(coord)
 	if err != nil {
-		if broker.IsNotCoordinator(err) {
+		if proto.IsNotCoordinator(err) {
 			c.cluster.CoordinatorIsDown(consumerGroup)
 		}
 		log.Debugf("fail to get offset %v", err)
@@ -171,7 +171,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 		log.Debugf("fail to get leader %v", err)
 		return nil, err
 	}
-	ms, err := (&broker.Consume{
+	ms, err := (&proto.Consume{
 		Topic:       topic,
 		Partition:   partition,
 		Offset:      offset,
@@ -180,7 +180,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 		MaxWaitTime: c.config.MaxWaitTime,
 	}).Exec(leader)
 	if err != nil {
-		if broker.IsNotLeader(err) {
+		if proto.IsNotLeader(err) {
 			c.cluster.LeaderIsDown(topic, partition)
 		}
 		return nil, err
@@ -197,7 +197,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	return c.cluster.Commit(&broker.CommitOffset{
+	return c.cluster.Commit(&proto.Offset{
 		Topic:     topic,
 		Partition: partition,
 		Group:     consumerGroup,

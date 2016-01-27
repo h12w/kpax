@@ -7,6 +7,7 @@ import (
 
 	"h12.me/kafka/broker"
 	"h12.me/kafka/log"
+	"h12.me/kafka/proto"
 )
 
 var (
@@ -102,7 +103,7 @@ func (c *C) updateCoordinator(topic, group string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		coord, err := broker.GroupCoordinator(group)
+		coord, err := proto.GroupCoordinator(group).Fetch(broker)
 		if err != nil {
 			merr = append(merr, err)
 			continue
@@ -120,7 +121,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		m, err := broker.TopicMetadata(topic)
+		m, err := proto.Metadata{topic}.Fetch(broker)
 		if err != nil {
 			merr = append(merr, err)
 			continue

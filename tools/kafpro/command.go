@@ -11,9 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
 	"h12.me/kafka/consumer"
+	"h12.me/kafka/proto"
 )
 
 type Config struct {
@@ -54,9 +54,9 @@ func (t Timestamp) MarshalJSON() ([]byte, error) {
 func (t *Timestamp) UnmarshalFlag(value string) error {
 	switch value {
 	case "latest":
-		*t = Timestamp(broker.Latest)
+		*t = Timestamp(proto.Latest)
 	case "earliest":
-		*t = Timestamp(broker.Earliest)
+		*t = Timestamp(proto.Earliest)
 	default:
 		tm, err := time.Parse("2006-01-02T15:04:05", value)
 		if err != nil {

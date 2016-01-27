@@ -3,17 +3,17 @@ package cluster
 import (
 	"time"
 
-	"h12.me/kafka/broker"
+	"h12.me/kafka/proto"
 )
 
-func (c *C) Commit(commit *broker.CommitOffset) error {
-	coord, err := c.Coordinator(commit.Topic, commit.Group)
+func (c *C) Commit(offset *proto.Offset) error {
+	coord, err := c.Coordinator(offset.Topic, offset.Group)
 	if err != nil {
 		return err
 	}
-	if err := commit.Exec(coord); err != nil {
-		if broker.IsNotCoordinator(err) {
-			c.CoordinatorIsDown(commit.Group)
+	if err := offset.Commit(coord); err != nil {
+		if proto.IsNotCoordinator(err) {
+			c.CoordinatorIsDown(offset.Group)
 		}
 		return err
 	}
@@ -25,9 +25,9 @@ func (c *C) SegmentOffset(topic string, partition int32, t time.Time) (int64, er
 	if err != nil {
 		return -1, err
 	}
-	offset, err := leader.SegmentOffset(topic, partition, t)
+	offset, err := (&proto.SegmentOffset{Topic: topic, Partition: partition, Time: t}).Fetch(leader)
 	if err != nil {
-		if broker.IsNotLeader(err) {
+		if proto.IsNotLeader(err) {
 			c.LeaderIsDown(topic, partition)
 		}
 		return -1, err
