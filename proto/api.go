@@ -68,7 +68,21 @@ type Payload struct {
 	AckTimeout   time.Duration
 }
 
-func (p *Payload) Produce(b common.Doer) error {
+func (p *Payload) Produce(c common.Cluster) error {
+	leader, err := c.Leader(p.Topic, p.Partition)
+	if err != nil {
+		return err
+	}
+	if err := p.DoProduce(leader); err != nil {
+		if IsNotLeader(err) {
+			c.LeaderIsDown(p.Topic, p.Partition)
+		}
+		return err
+	}
+	return nil
+}
+
+func (p *Payload) DoProduce(b common.Doer) error {
 	req := ProduceRequest{
 		RequiredAcks: p.RequiredAcks,
 		Timeout:      int32(p.AckTimeout / time.Millisecond),
@@ -117,7 +131,22 @@ type Messages struct {
 	MaxWaitTime time.Duration
 }
 
-func (fr *Messages) Consume(c common.Doer) (messages MessageSet, err error) {
+func (m *Messages) Consume(c common.Cluster) (MessageSet, error) {
+	leader, err := c.Leader(m.Topic, m.Partition)
+	if err != nil {
+		return nil, err
+	}
+	ms, err := m.DoConsume(leader)
+	if err != nil {
+		if IsNotLeader(err) {
+			c.LeaderIsDown(m.Topic, m.Partition)
+		}
+		return nil, err
+	}
+	return ms, nil
+}
+
+func (fr *Messages) DoConsume(c common.Doer) (messages MessageSet, err error) {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
@@ -184,7 +213,21 @@ type Offset struct {
 	Retention time.Duration
 }
 
-func (commit *Offset) Commit(b common.Doer) error {
+func (o *Offset) Commit(c common.Cluster) error {
+	coord, err := c.Coordinator(o.Group)
+	if err != nil {
+		return err
+	}
+	if err := o.DoCommit(coord); err != nil {
+		if IsNotCoordinator(err) {
+			c.CoordinatorIsDown(o.Group)
+		}
+		return err
+	}
+	return nil
+}
+
+func (commit *Offset) DoCommit(b common.Doer) error {
 	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
@@ -222,7 +265,22 @@ func (commit *Offset) Commit(b common.Doer) error {
 	return fmt.Errorf("fail to commit offset: %v", commit)
 }
 
-func (o *Offset) Fetch(b common.Doer) (int64, error) {
+func (o *Offset) Fetch(c common.Cluster) (int64, error) {
+	coord, err := c.Coordinator(o.Group)
+	if err != nil {
+		return -1, err
+	}
+	offset, err := o.DoFetch(coord)
+	if err != nil {
+		if IsNotCoordinator(err) {
+			c.CoordinatorIsDown(o.Group)
+		}
+		return -1, err
+	}
+	return offset, nil
+}
+
+func (o *Offset) DoFetch(b common.Doer) (int64, error) {
 	req := OffsetFetchRequestV1{
 		ConsumerGroup: o.Group,
 		PartitionInTopics: []PartitionInTopic{
@@ -258,7 +316,22 @@ type SegmentOffset struct {
 	Time      time.Time
 }
 
-func (o *SegmentOffset) Fetch(b common.Doer) (int64, error) {
+func (o *SegmentOffset) Fetch(c common.Cluster) (int64, error) {
+	leader, err := c.Leader(o.Topic, o.Partition)
+	if err != nil {
+		return -1, err
+	}
+	offset, err := o.DoFetch(leader)
+	if err != nil {
+		if IsNotLeader(err) {
+			c.LeaderIsDown(o.Topic, o.Partition)
+		}
+		return -1, err
+	}
+	return offset, nil
+}
+
+func (o *SegmentOffset) DoFetch(b common.Doer) (int64, error) {
 	var milliSec int64
 	switch o.Time {
 	case Latest:

@@ -66,24 +66,15 @@ nextPartition:
 			p.topicPartitioner.Delete(topic)
 			return err
 		}
-
-		leader, err := p.cluster.Leader(topic, partition)
-		if err != nil {
-			partitioner.Skip(partition)
-			continue
-		}
 		if err := (&proto.Payload{
 			Topic:        topic,
 			Partition:    partition,
 			MessageSet:   messageSet,
 			RequiredAcks: proto.AckLocal,
 			AckTimeout:   10 * time.Second,
-		}).Produce(leader); err != nil {
-			if proto.IsNotLeader(err) {
-				p.cluster.LeaderIsDown(topic, partition)
-				continue nextPartition
-			}
-			return err
+		}).Produce(p.cluster); err != nil {
+			partitioner.Skip(partition)
+			continue nextPartition
 		}
 		return nil
 	}
@@ -103,22 +94,12 @@ func getMessageSet(key, value []byte) []proto.OffsetMessage {
 }
 
 func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
-	leader, err := p.cluster.Leader(topic, partition)
-	if err != nil {
-		return err
-	}
 	messageSet := getMessageSet(key, value)
-	if err := (&proto.Payload{
+	return (&proto.Payload{
 		Topic:        topic,
 		Partition:    partition,
 		MessageSet:   messageSet,
 		RequiredAcks: proto.AckLocal,
 		AckTimeout:   10 * time.Second,
-	}).Produce(leader); err != nil {
-		if proto.IsNotLeader(err) {
-			p.cluster.LeaderIsDown(topic, partition)
-		}
-		return err
-	}
-	return nil
+	}).Produce(p.cluster)
 }

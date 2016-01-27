@@ -77,14 +77,22 @@ func (c *C) getTime(topic string, partition int32, offset int64, getTime GetTime
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime GetTimeFunc) (int64, error) {
-	earliest, err := c.cluster.SegmentOffset(topic, partition, proto.Earliest)
+	earliest, err := (&proto.SegmentOffset{
+		Topic:     topic,
+		Partition: partition,
+		Time:      proto.Earliest,
+	}).Fetch(c.cluster)
 	if err != nil {
 		return -1, err
 	}
 	if keyTime == proto.Earliest {
 		return earliest, nil
 	}
-	latest, err := c.cluster.SegmentOffset(topic, partition, proto.Latest)
+	latest, err := (&proto.SegmentOffset{
+		Topic:     topic,
+		Partition: partition,
+		Time:      proto.Latest,
+	}).Fetch(c.cluster)
 	if err != nil {
 		return -1, err
 	}
@@ -145,16 +153,8 @@ func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int6
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	coord, err := c.cluster.Coordinator(topic, consumerGroup)
+	offset, err := (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(c.cluster)
 	if err != nil {
-		log.Debugf("fail to get coordinator %v", err)
-		return 0, err
-	}
-	offset, err := (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(coord)
-	if err != nil {
-		if proto.IsNotCoordinator(err) {
-			c.cluster.CoordinatorIsDown(consumerGroup)
-		}
 		log.Debugf("fail to get offset %v", err)
 		return -1, err
 	}
@@ -166,11 +166,6 @@ func (c *C) Consume(topic string, partition int32, offset int64) (messages []Mes
 }
 
 func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes int) (messages []Message, err error) {
-	leader, err := c.cluster.Leader(topic, partition)
-	if err != nil {
-		log.Debugf("fail to get leader %v", err)
-		return nil, err
-	}
 	ms, err := (&proto.Messages{
 		Topic:       topic,
 		Partition:   partition,
@@ -178,11 +173,8 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 		MinBytes:    c.config.MinBytes,
 		MaxBytes:    maxBytes,
 		MaxWaitTime: c.config.MaxWaitTime,
-	}).Consume(leader)
+	}).Consume(c.cluster)
 	if err != nil {
-		if proto.IsNotLeader(err) {
-			c.cluster.LeaderIsDown(topic, partition)
-		}
 		return nil, err
 	}
 	for i := range ms {
@@ -197,10 +189,10 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	return c.cluster.Commit(&proto.Offset{
+	return (&proto.Offset{
 		Topic:     topic,
 		Partition: partition,
 		Group:     consumerGroup,
 		Offset:    offset,
-	})
+	}).Commit(c.cluster)
 }

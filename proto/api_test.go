@@ -96,7 +96,7 @@ func TestProduceSnappy(t *testing.T) {
 	ms.Marshal(&w)
 	compressedValue := encodeSnappy(w.B[4:])
 	fmt.Println(w.B)
-	if err := (&Produce{
+	if err := (&Payload{
 		Topic:     topic,
 		Partition: partition,
 		MessageSet: MessageSet{
@@ -109,7 +109,7 @@ func TestProduceSnappy(t *testing.T) {
 		},
 		RequiredAcks: AckLocal,
 		AckTimeout:   10 * time.Second,
-	}).Exec(b); err != nil {
+	}).DoProduce(b); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -189,7 +189,7 @@ func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
 }
 
 func produceMessage(t *testing.T, b *broker.B, topic string, partition int32, key, value string) {
-	if err := (&Produce{
+	if err := (&Payload{
 		Topic:     topic,
 		Partition: partition,
 		MessageSet: MessageSet{
@@ -202,7 +202,7 @@ func produceMessage(t *testing.T, b *broker.B, topic string, partition int32, ke
 		},
 		RequiredAcks: AckLocal,
 		AckTimeout:   10 * time.Second,
-	}).Exec(b); err != nil {
+	}).DoProduce(b); err != nil {
 		t.Fatal(err)
 	}
 }

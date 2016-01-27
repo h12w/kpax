@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"h12.me/kafka/broker"
+	"h12.me/kafka/common"
 	"h12.me/kafka/log"
 	"h12.me/kafka/proto"
 )
@@ -66,17 +67,17 @@ func (c *C) Partitions(topic string) ([]int32, error) {
 	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
-func (c *C) Coordinator(topic, group string) (*broker.B, error) {
+func (c *C) Coordinator(group string) (common.Doer, error) {
 	if coord, err := c.pool.GetCoordinator(group); err == nil {
 		return coord, nil
 	}
-	if err := c.updateCoordinator(topic, group); err != nil {
+	if err := c.updateCoordinator(group); err != nil {
 		return nil, err
 	}
 	return c.pool.GetCoordinator(group)
 }
 
-func (c *C) Leader(topic string, partition int32) (*broker.B, error) {
+func (c *C) Leader(topic string, partition int32) (common.Doer, error) {
 	if leader, err := c.pool.GetLeader(topic, partition); err == nil {
 		return leader, nil
 	}
@@ -96,7 +97,7 @@ func (c *C) CoordinatorIsDown(group string) {
 	c.pool.DeleteCoordinator(group)
 }
 
-func (c *C) updateCoordinator(topic, group string) error {
+func (c *C) updateCoordinator(group string) error {
 	brokers, err := c.pool.Brokers()
 	if err != nil {
 		return err
