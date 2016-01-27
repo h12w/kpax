@@ -145,46 +145,20 @@ func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int6
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	req := broker.OffsetFetchRequestV1{
-		ConsumerGroup: consumerGroup,
-		PartitionInTopics: []broker.PartitionInTopic{
-			{
-				TopicName:  topic,
-				Partitions: []int32{partition},
-			},
-		},
-	}
-	resp := broker.OffsetFetchResponse{}
 	coord, err := c.cluster.Coordinator(topic, consumerGroup)
 	if err != nil {
 		log.Debugf("fail to get coordinator %v", err)
 		return 0, err
 	}
-	if err := coord.Do(&req, &resp); err != nil {
+	offset, err := coord.FetchOffset(topic, partition, consumerGroup)
+	if err != nil {
 		if broker.IsNotCoordinator(err) {
 			c.cluster.CoordinatorIsDown(consumerGroup)
 		}
 		log.Debugf("fail to get offset %v", err)
-		return 0, err
+		return -1, err
 	}
-	for i := range resp {
-		t := &resp[i]
-		if t.TopicName == topic {
-			for j := range resp[i].OffsetMetadataInPartitions {
-				p := &t.OffsetMetadataInPartitions[j]
-				if p.ErrorCode.HasError() {
-					if broker.IsNotCoordinator(err) {
-						c.cluster.CoordinatorIsDown(consumerGroup)
-					}
-					log.Debugf("fail to get offset %v", p.ErrorCode)
-					return 0, fmt.Errorf("fail to get offset for (%s, %d): %v", topic, p.Partition, p.ErrorCode)
-				}
-				return p.Offset, nil
-			}
-		}
-	}
-	log.Debugf("fail to get offset %v", ErrOffsetNotFound)
-	return 0, ErrOffsetNotFound
+	return offset, nil
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (messages []Message, err error) {
@@ -223,7 +197,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 }
 
 func (c *C) Commit(topic string, partition int32, consumerGroup string, offset int64) error {
-	return c.cluster.Commit(&broker.OffsetCommit{
+	return c.cluster.Commit(&broker.CommitOffset{
 		Topic:     topic,
 		Partition: partition,
 		Group:     consumerGroup,

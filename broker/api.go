@@ -151,6 +151,36 @@ func (fr *Consume) Exec(c *B) (messages MessageSet, err error) {
 	return nil, nil
 }
 
+func (b *B) FetchOffset(topic string, partition int32, consumerGroup string) (int64, error) {
+	req := OffsetFetchRequestV1{
+		ConsumerGroup: consumerGroup,
+		PartitionInTopics: []PartitionInTopic{
+			{
+				TopicName:  topic,
+				Partitions: []int32{partition},
+			},
+		},
+	}
+	resp := OffsetFetchResponse{}
+	if err := b.Do(&req, &resp); err != nil {
+		return -1, err
+	}
+	for i := range resp {
+		t := &resp[i]
+		if t.TopicName == topic {
+			for j := range resp[i].OffsetMetadataInPartitions {
+				p := &t.OffsetMetadataInPartitions[j]
+				if p.ErrorCode.HasError() {
+					return -1, fmt.Errorf("fail to get offset for (%s, %d): %v", topic, partition, p.ErrorCode)
+				}
+				return p.Offset, nil
+			}
+		}
+	}
+
+	return -1, fmt.Errorf("fail to get offset for (%s, %d)", topic, partition)
+}
+
 func (b *B) SegmentOffset(topic string, partition int32, t time.Time) (int64, error) {
 	var milliSec int64
 	switch t {
@@ -200,7 +230,7 @@ func (b *B) SegmentOffset(topic string, partition int32, t time.Time) (int64, er
 	return -1, fmt.Errorf("failt to fetch offset for %s, %d", topic, partition)
 }
 
-type OffsetCommit struct {
+type CommitOffset struct {
 	Topic     string
 	Partition int32
 	Group     string
@@ -208,7 +238,7 @@ type OffsetCommit struct {
 	Retention time.Duration
 }
 
-func (commit *OffsetCommit) Exec(b Doer) error {
+func (commit *CommitOffset) Exec(b Doer) error {
 	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{

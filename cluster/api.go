@@ -6,7 +6,7 @@ import (
 	"h12.me/kafka/broker"
 )
 
-func (c *C) Commit(commit *broker.OffsetCommit) error {
+func (c *C) Commit(commit *broker.CommitOffset) error {
 	coord, err := c.Coordinator(commit.Topic, commit.Group)
 	if err != nil {
 		return err

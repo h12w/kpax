@@ -2,13 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"runtime"
 
 	"github.com/jessevdk/go-flags"
-	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
 )
 
@@ -151,7 +149,6 @@ The commands are:
 `)
 	flag.PrintDefaults()
 }
-*/
 
 func meta(br *broker.B, cfg *MetaConfig) error {
 	resp, err := br.TopicMetadata(cfg.Topics...)
@@ -204,6 +201,7 @@ func offset(br *broker.B, cfg *OffsetConfig) error {
 	}
 	return nil
 }
+*/
 
 func toJSON(v interface{}) string {
 	buf, _ := json.MarshalIndent(v, "", "\t")
