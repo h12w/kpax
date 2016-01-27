@@ -39,13 +39,14 @@ func (o *OffsetByTime) Search(cl common.Cluster, getTime GetTimeFunc) (int64, er
 			MaxBytes:    maxMessageSize,
 			MaxWaitTime: 100 * time.Millisecond,
 		},
+		cl,
 		getTime,
 	}
 	min, max := earliest, latest
 	mid := min + (max-min)/2
 	for min <= max {
 		mid = min + (max-min)/2
-		midTime, err := getter.get(cl, mid)
+		midTime, err := getter.get(mid)
 		if err != nil {
 			return -1, err
 		}
@@ -62,7 +63,7 @@ func (o *OffsetByTime) Search(cl common.Cluster, getTime GetTimeFunc) (int64, er
 
 func (o *OffsetByTime) searchOffsetBefore(cl common.Cluster, min, mid, max int64, getter timeGetter) (int64, error) {
 	const maxJitter = 1000 // time may be interleaved in a small range
-	midTime, err := getter.get(cl, mid)
+	midTime, err := getter.get(mid)
 	if err != nil {
 		return -1, err
 	}
@@ -99,12 +100,13 @@ func (o *OffsetByTime) searchOffsetBefore(cl common.Cluster, min, mid, max int64
 
 type timeGetter struct {
 	Messages
+	cl      common.Cluster
 	getTime GetTimeFunc
 }
 
-func (g *timeGetter) get(cl common.Cluster, offset int64) (time.Time, error) {
+func (g *timeGetter) get(offset int64) (time.Time, error) {
 	g.Offset = offset
-	messages, err := g.Consume(cl)
+	messages, err := g.Consume(g.cl)
 	if err != nil {
 		return time.Time{}, err
 	}
