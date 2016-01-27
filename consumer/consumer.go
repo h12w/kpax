@@ -171,14 +171,14 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 		log.Debugf("fail to get leader %v", err)
 		return nil, err
 	}
-	ms, err := (&proto.Consume{
+	ms, err := (&proto.Messages{
 		Topic:       topic,
 		Partition:   partition,
 		Offset:      offset,
 		MinBytes:    c.config.MinBytes,
 		MaxBytes:    maxBytes,
 		MaxWaitTime: c.config.MaxWaitTime,
-	}).Exec(leader)
+	}).Consume(leader)
 	if err != nil {
 		if proto.IsNotLeader(err) {
 			c.cluster.LeaderIsDown(topic, partition)

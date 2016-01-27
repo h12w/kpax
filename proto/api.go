@@ -108,7 +108,7 @@ func (p *Payload) Produce(b common.Doer) error {
 	return fmt.Errorf("fail to produce to %s, %d", p.Topic, p.Partition)
 }
 
-type Consume struct {
+type Messages struct {
 	Topic       string
 	Partition   int32
 	Offset      int64
@@ -117,7 +117,7 @@ type Consume struct {
 	MaxWaitTime time.Duration
 }
 
-func (fr *Consume) Exec(c common.Doer) (messages MessageSet, err error) {
+func (fr *Messages) Consume(c common.Doer) (messages MessageSet, err error) {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
