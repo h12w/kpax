@@ -4,8 +4,15 @@ import (
 	"io"
 )
 
-type Doer interface {
+type Broker interface {
 	Do(Request, Response) error
+}
+
+type Cluster interface {
+	Coordinator(group string) (Broker, error)
+	CoordinatorIsDown(group string)
+	Leader(topic string, partition int32) (Broker, error)
+	LeaderIsDown(topic string, partition int32)
 }
 
 type Request interface {
@@ -17,11 +24,4 @@ type Request interface {
 type Response interface {
 	Receive(io.Reader) error
 	ID() int32
-}
-
-type Cluster interface {
-	Coordinator(group string) (Doer, error)
-	CoordinatorIsDown(group string)
-	Leader(topic string, partition int32) (Doer, error)
-	LeaderIsDown(topic string, partition int32)
 }

@@ -14,7 +14,7 @@ var (
 
 type client struct {
 	id   string
-	doer common.Doer
+	doer common.Broker
 }
 
 func (r *Response) ID() int32     { return r.CorrelationID }
@@ -37,7 +37,7 @@ const clientID = "h12.me/kafka"
 
 type Metadata []string
 
-func (m Metadata) Fetch(b common.Doer) (*TopicMetadataResponse, error) {
+func (m Metadata) Fetch(b common.Broker) (*TopicMetadataResponse, error) {
 	req := TopicMetadataRequest([]string(m))
 	resp := TopicMetadataResponse{}
 	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
@@ -48,7 +48,7 @@ func (m Metadata) Fetch(b common.Doer) (*TopicMetadataResponse, error) {
 
 type GroupCoordinator string
 
-func (group GroupCoordinator) Fetch(b common.Doer) (*Broker, error) {
+func (group GroupCoordinator) Fetch(b common.Broker) (*Broker, error) {
 	req := GroupCoordinatorRequest(group)
 	resp := GroupCoordinatorResponse{}
 	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
@@ -82,7 +82,7 @@ func (p *Payload) Produce(c common.Cluster) error {
 	return nil
 }
 
-func (p *Payload) DoProduce(b common.Doer) error {
+func (p *Payload) DoProduce(b common.Broker) error {
 	req := ProduceRequest{
 		RequiredAcks: p.RequiredAcks,
 		Timeout:      int32(p.AckTimeout / time.Millisecond),
@@ -146,7 +146,7 @@ func (m *Messages) Consume(c common.Cluster) (MessageSet, error) {
 	return ms, nil
 }
 
-func (fr *Messages) DoConsume(c common.Doer) (messages MessageSet, err error) {
+func (fr *Messages) DoConsume(c common.Broker) (messages MessageSet, err error) {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
@@ -227,7 +227,7 @@ func (o *Offset) Commit(c common.Cluster) error {
 	return nil
 }
 
-func (commit *Offset) DoCommit(b common.Doer) error {
+func (commit *Offset) DoCommit(b common.Broker) error {
 	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
@@ -280,7 +280,7 @@ func (o *Offset) Fetch(c common.Cluster) (int64, error) {
 	return offset, nil
 }
 
-func (o *Offset) DoFetch(b common.Doer) (int64, error) {
+func (o *Offset) DoFetch(b common.Broker) (int64, error) {
 	req := OffsetFetchRequestV1{
 		ConsumerGroup: o.Group,
 		PartitionInTopics: []PartitionInTopic{
@@ -331,7 +331,7 @@ func (o *SegmentOffset) Fetch(c common.Cluster) (int64, error) {
 	return offset, nil
 }
 
-func (o *SegmentOffset) DoFetch(b common.Doer) (int64, error) {
+func (o *SegmentOffset) DoFetch(b common.Broker) (int64, error) {
 	var milliSec int64
 	switch o.Time {
 	case Latest:

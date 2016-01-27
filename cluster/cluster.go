@@ -67,7 +67,7 @@ func (c *C) Partitions(topic string) ([]int32, error) {
 	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
-func (c *C) Coordinator(group string) (common.Doer, error) {
+func (c *C) Coordinator(group string) (common.Broker, error) {
 	if coord, err := c.pool.GetCoordinator(group); err == nil {
 		return coord, nil
 	}
@@ -77,7 +77,7 @@ func (c *C) Coordinator(group string) (common.Doer, error) {
 	return c.pool.GetCoordinator(group)
 }
 
-func (c *C) Leader(topic string, partition int32) (common.Doer, error) {
+func (c *C) Leader(topic string, partition int32) (common.Broker, error) {
 	if leader, err := c.pool.GetLeader(topic, partition); err == nil {
 		return leader, nil
 	}
