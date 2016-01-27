@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"h12.me/kafka/cluster"
-	"h12.me/kafka/log"
 	"h12.me/kafka/proto"
 )
 
@@ -77,7 +76,7 @@ func (c *C) getTime(topic string, partition int32, offset int64, getTime GetTime
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime GetTimeFunc) (int64, error) {
-	earliest, err := (&proto.SegmentOffset{
+	earliest, err := (&proto.OffsetByTime{
 		Topic:     topic,
 		Partition: partition,
 		Time:      proto.Earliest,
@@ -88,7 +87,7 @@ func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time,
 	if keyTime == proto.Earliest {
 		return earliest, nil
 	}
-	latest, err := (&proto.SegmentOffset{
+	latest, err := (&proto.OffsetByTime{
 		Topic:     topic,
 		Partition: partition,
 		Time:      proto.Latest,
@@ -153,12 +152,7 @@ func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int6
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	offset, err := (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(c.cluster)
-	if err != nil {
-		log.Debugf("fail to get offset %v", err)
-		return -1, err
-	}
-	return offset, nil
+	return (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(c.cluster)
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (messages []Message, err error) {

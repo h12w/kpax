@@ -22,12 +22,16 @@ func init() {
 type Config struct {
 	Cluster            cluster.Config
 	LeaderRecoveryTime time.Duration
+	RequiredAcks       int16
+	AckTimeout         time.Duration
 }
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
 		Cluster:            *cluster.DefaultConfig(brokers...),
 		LeaderRecoveryTime: 60 * time.Second,
+		RequiredAcks:       proto.AckLocal,
+		AckTimeout:         10 * time.Second,
 	}
 }
 
@@ -70,8 +74,8 @@ nextPartition:
 			Topic:        topic,
 			Partition:    partition,
 			MessageSet:   messageSet,
-			RequiredAcks: proto.AckLocal,
-			AckTimeout:   10 * time.Second,
+			RequiredAcks: p.config.RequiredAcks,
+			AckTimeout:   p.config.AckTimeout,
 		}).Produce(p.cluster); err != nil {
 			partitioner.Skip(partition)
 			continue nextPartition
@@ -79,6 +83,17 @@ nextPartition:
 		return nil
 	}
 	return fmt.Errorf("fail to produce to all partitions in %s", topic)
+}
+
+func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
+	messageSet := getMessageSet(key, value)
+	return (&proto.Payload{
+		Topic:        topic,
+		Partition:    partition,
+		MessageSet:   messageSet,
+		RequiredAcks: p.config.RequiredAcks,
+		AckTimeout:   p.config.AckTimeout,
+	}).Produce(p.cluster)
 }
 
 func getMessageSet(key, value []byte) []proto.OffsetMessage {
@@ -91,15 +106,4 @@ func getMessageSet(key, value []byte) []proto.OffsetMessage {
 				},
 			}}},
 	}
-}
-
-func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
-	messageSet := getMessageSet(key, value)
-	return (&proto.Payload{
-		Topic:        topic,
-		Partition:    partition,
-		MessageSet:   messageSet,
-		RequiredAcks: proto.AckLocal,
-		AckTimeout:   10 * time.Second,
-	}).Produce(p.cluster)
 }
