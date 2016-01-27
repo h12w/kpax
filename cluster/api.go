@@ -11,7 +11,7 @@ func (c *C) Commit(commit *broker.OffsetCommit) error {
 	if err != nil {
 		return err
 	}
-	if err := coord.Commit(commit); err != nil {
+	if err := commit.Exec(coord); err != nil {
 		if broker.IsNotCoordinator(err) {
 			c.CoordinatorIsDown(commit.Group)
 		}

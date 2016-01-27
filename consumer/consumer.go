@@ -145,14 +145,12 @@ func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int6
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	req := &broker.Request{
-		RequestMessage: &broker.OffsetFetchRequestV1{
-			ConsumerGroup: consumerGroup,
-			PartitionInTopics: []broker.PartitionInTopic{
-				{
-					TopicName:  topic,
-					Partitions: []int32{partition},
-				},
+	req := broker.OffsetFetchRequestV1{
+		ConsumerGroup: consumerGroup,
+		PartitionInTopics: []broker.PartitionInTopic{
+			{
+				TopicName:  topic,
+				Partitions: []int32{partition},
 			},
 		},
 	}
@@ -162,7 +160,7 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 		log.Debugf("fail to get coordinator %v", err)
 		return 0, err
 	}
-	if err := coord.Do(req, &resp); err != nil {
+	if err := coord.Do(&req, &resp); err != nil {
 		if broker.IsNotCoordinator(err) {
 			c.cluster.CoordinatorIsDown(consumerGroup)
 		}
@@ -194,20 +192,18 @@ func (c *C) Consume(topic string, partition int32, offset int64) (messages []Mes
 }
 
 func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes int) (messages []Message, err error) {
-	req := &broker.Request{
-		RequestMessage: &broker.FetchRequest{
-			ReplicaID:   -1,
-			MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
-			MinBytes:    int32(c.config.MinBytes),
-			FetchOffsetInTopics: []broker.FetchOffsetInTopic{
-				{
-					TopicName: topic,
-					FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
-						{
-							Partition:   partition,
-							FetchOffset: offset,
-							MaxBytes:    int32(maxBytes),
-						},
+	req := broker.FetchRequest{
+		ReplicaID:   -1,
+		MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
+		MinBytes:    int32(c.config.MinBytes),
+		FetchOffsetInTopics: []broker.FetchOffsetInTopic{
+			{
+				TopicName: topic,
+				FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
+					{
+						Partition:   partition,
+						FetchOffset: offset,
+						MaxBytes:    int32(maxBytes),
 					},
 				},
 			},
@@ -219,7 +215,7 @@ func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes i
 		log.Debugf("fail to get leader %v", err)
 		return nil, err
 	}
-	if err := leader.Do(req, &resp); err != nil {
+	if err := leader.Do(&req, &resp); err != nil {
 		if broker.IsNotLeader(err) {
 			c.cluster.LeaderIsDown(topic, partition)
 		}

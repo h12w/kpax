@@ -2,7 +2,6 @@ package broker
 
 import (
 	"fmt"
-	"math/rand"
 	"net"
 	"testing"
 	"time"
@@ -203,32 +202,29 @@ func produceMessage(t *testing.T, b *B, topic string, partition int32, key, valu
 }
 
 func fetchMessage(t *testing.T, b *B, topic string, partition int32, offset int64) [][2]string {
-	req := &Request{
-		CorrelationID: rand.Int31(),
-		RequestMessage: &FetchRequest{
-			ReplicaID:   -1,
-			MaxWaitTime: int32(time.Second / time.Millisecond),
-			MinBytes:    1,
-			FetchOffsetInTopics: []FetchOffsetInTopic{
-				{
-					TopicName: topic,
-					FetchOffsetInPartitions: []FetchOffsetInPartition{
-						{
-							Partition:   partition,
-							FetchOffset: offset,
-							MaxBytes:    1024 * 1024,
-						},
+	req := FetchRequest{
+		ReplicaID:   -1,
+		MaxWaitTime: int32(time.Second / time.Millisecond),
+		MinBytes:    1,
+		FetchOffsetInTopics: []FetchOffsetInTopic{
+			{
+				TopicName: topic,
+				FetchOffsetInPartitions: []FetchOffsetInPartition{
+					{
+						Partition:   partition,
+						FetchOffset: offset,
+						MaxBytes:    1024 * 1024,
 					},
 				},
 			},
 		},
 	}
-	respMsg := FetchResponse{}
-	if err := b.Do(req, &respMsg); err != nil {
+	resp := FetchResponse{}
+	if err := b.Do(&req, &resp); err != nil {
 		t.Fatal(err)
 	}
 	var result [][2]string
-	for _, t := range respMsg {
+	for _, t := range resp {
 		if t.TopicName == topic {
 			for _, p := range t.FetchMessageSetInPartitions {
 				if p.Partition == partition {

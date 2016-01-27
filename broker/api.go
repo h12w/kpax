@@ -11,30 +11,24 @@ var (
 )
 
 func (b *B) TopicMetadata(topics ...string) (*TopicMetadataResponse, error) {
-	reqMsg := TopicMetadataRequest(topics)
-	req := &Request{
-		RequestMessage: &reqMsg,
-	}
-	respMsg := &TopicMetadataResponse{}
-	if err := b.Do(req, respMsg); err != nil {
+	req := TopicMetadataRequest(topics)
+	resp := TopicMetadataResponse{}
+	if err := b.Do(&req, &resp); err != nil {
 		return nil, err
 	}
-	return respMsg, nil
+	return &resp, nil
 }
 
 func (b *B) GroupCoordinator(group string) (*Broker, error) {
-	reqMsg := GroupCoordinatorRequest(group)
-	req := &Request{
-		RequestMessage: &reqMsg,
-	}
-	respMsg := &GroupCoordinatorResponse{}
-	if err := b.Do(req, respMsg); err != nil {
+	req := GroupCoordinatorRequest(group)
+	resp := GroupCoordinatorResponse{}
+	if err := b.Do(&req, &resp); err != nil {
 		return nil, err
 	}
-	if respMsg.ErrorCode.HasError() {
-		return nil, respMsg.ErrorCode
+	if resp.ErrorCode.HasError() {
+		return nil, resp.ErrorCode
 	}
-	return &respMsg.Broker, nil
+	return &resp.Broker, nil
 }
 
 type Produce struct {
@@ -46,30 +40,28 @@ type Produce struct {
 }
 
 func (p *Produce) Exec(b *B) error {
-	req := &Request{
-		RequestMessage: &ProduceRequest{
-			RequiredAcks: p.RequiredAcks,
-			Timeout:      int32(p.AckTimeout / time.Millisecond),
-			MessageSetInTopics: []MessageSetInTopic{
-				{
-					TopicName: p.Topic,
-					MessageSetInPartitions: []MessageSetInPartition{
-						{
-							Partition:  p.Partition,
-							MessageSet: p.MessageSet,
-						},
+	req := ProduceRequest{
+		RequiredAcks: p.RequiredAcks,
+		Timeout:      int32(p.AckTimeout / time.Millisecond),
+		MessageSetInTopics: []MessageSetInTopic{
+			{
+				TopicName: p.Topic,
+				MessageSetInPartitions: []MessageSetInPartition{
+					{
+						Partition:  p.Partition,
+						MessageSet: p.MessageSet,
 					},
 				},
 			},
 		},
 	}
 
-	respMsg := ProduceResponse{}
-	if err := b.Do(req, &respMsg); err != nil {
+	resp := ProduceResponse{}
+	if err := b.Do(&req, &resp); err != nil {
 		return err
 	}
-	for i := range respMsg {
-		t := &respMsg[i]
+	for i := range resp {
+		t := &resp[i]
 		if t.TopicName != p.Topic {
 			continue
 		}
@@ -96,28 +88,26 @@ type Consume struct {
 	MaxWaitTime time.Duration
 }
 
-func (fr *Consume) Do(c *B) (messages MessageSet, err error) {
-	req := &Request{
-		RequestMessage: &FetchRequest{
-			ReplicaID:   -1,
-			MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
-			MinBytes:    int32(fr.MinBytes),
-			FetchOffsetInTopics: []FetchOffsetInTopic{
-				{
-					TopicName: fr.Topic,
-					FetchOffsetInPartitions: []FetchOffsetInPartition{
-						{
-							Partition:   fr.Partition,
-							FetchOffset: fr.Offset,
-							MaxBytes:    int32(fr.MaxBytes),
-						},
+func (fr *Consume) Exec(c *B) (messages MessageSet, err error) {
+	req := FetchRequest{
+		ReplicaID:   -1,
+		MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
+		MinBytes:    int32(fr.MinBytes),
+		FetchOffsetInTopics: []FetchOffsetInTopic{
+			{
+				TopicName: fr.Topic,
+				FetchOffsetInPartitions: []FetchOffsetInPartition{
+					{
+						Partition:   fr.Partition,
+						FetchOffset: fr.Offset,
+						MaxBytes:    int32(fr.MaxBytes),
 					},
 				},
 			},
 		},
 	}
 	resp := FetchResponse{}
-	if err := c.Do(req, &resp); err != nil {
+	if err := c.Do(&req, &resp); err != nil {
 		return nil, err
 	}
 	for i := range resp {
@@ -167,28 +157,26 @@ func (b *B) SegmentOffset(topic string, partition int32, t time.Time) (int64, er
 	default:
 		milliSec = t.UnixNano() / 1000000
 	}
-	req := &Request{
-		RequestMessage: &OffsetRequest{
-			ReplicaID: -1,
-			TimeInTopics: []TimeInTopic{
-				{
-					TopicName: topic,
-					TimeInPartitions: []TimeInPartition{
-						{
-							Partition:          partition,
-							Time:               milliSec,
-							MaxNumberOfOffsets: 1,
-						},
+	req := OffsetRequest{
+		ReplicaID: -1,
+		TimeInTopics: []TimeInTopic{
+			{
+				TopicName: topic,
+				TimeInPartitions: []TimeInPartition{
+					{
+						Partition:          partition,
+						Time:               milliSec,
+						MaxNumberOfOffsets: 1,
 					},
 				},
 			},
 		},
 	}
-	respMsg := &OffsetResponse{}
-	if err := b.Do(req, respMsg); err != nil {
+	resp := OffsetResponse{}
+	if err := b.Do(&req, &resp); err != nil {
 		return -1, err
 	}
-	for _, t := range *respMsg {
+	for _, t := range resp {
 		if t.TopicName != topic {
 			continue
 		}
@@ -216,8 +204,8 @@ type OffsetCommit struct {
 	Retention time.Duration
 }
 
-func (b *B) Commit(commit *OffsetCommit) error {
-	req := &Request{RequestMessage: &OffsetCommitRequestV1{
+func (commit *OffsetCommit) Exec(b *B) error {
+	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
 			{
@@ -232,9 +220,9 @@ func (b *B) Commit(commit *OffsetCommit) error {
 				},
 			},
 		},
-	}}
+	}
 	resp := OffsetCommitResponse{}
-	if err := b.Do(req, &resp); err != nil {
+	if err := b.Do(&req, &resp); err != nil {
 		return err
 	}
 	for i := range resp {

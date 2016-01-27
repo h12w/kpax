@@ -63,12 +63,14 @@ func (b *B) Addr() string {
 	return b.config.Connection.Addr
 }
 
-func (b *B) Do(req *Request, resp ResponseMessage) error {
-	req.CorrelationID = atomic.AddInt32(&b.cid, 1)
-	req.ClientID = b.config.ClientID
+func (b *B) Do(req RequestMessage, resp ResponseMessage) error {
 	errChan := make(chan error)
 	if err := b.sendJob(&brokerJob{
-		req:     req,
+		req: &Request{
+			CorrelationID:  atomic.AddInt32(&b.cid, 1),
+			ClientID:       b.config.ClientID,
+			RequestMessage: req,
+		},
 		resp:    &Response{ResponseMessage: resp},
 		errChan: errChan,
 	}); err != nil {
