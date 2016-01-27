@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type Doer interface {
+	Do(req RequestMessage, resp ResponseMessage) error
+}
+
 var (
 	Earliest = time.Time{}
 	Latest   = time.Date(9999, 12, 31, 23, 59, 59, 999999999, time.UTC)
@@ -39,7 +43,7 @@ type Produce struct {
 	AckTimeout   time.Duration
 }
 
-func (p *Produce) Exec(b *B) error {
+func (p *Produce) Exec(b Doer) error {
 	req := ProduceRequest{
 		RequiredAcks: p.RequiredAcks,
 		Timeout:      int32(p.AckTimeout / time.Millisecond),
@@ -204,7 +208,7 @@ type OffsetCommit struct {
 	Retention time.Duration
 }
 
-func (commit *OffsetCommit) Exec(b *B) error {
+func (commit *OffsetCommit) Exec(b Doer) error {
 	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{

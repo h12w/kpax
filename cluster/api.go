@@ -25,5 +25,12 @@ func (c *C) SegmentOffset(topic string, partition int32, t time.Time) (int64, er
 	if err != nil {
 		return -1, err
 	}
-	return leader.SegmentOffset(topic, partition, t)
+	offset, err := leader.SegmentOffset(topic, partition, t)
+	if err != nil {
+		if broker.IsNotLeader(err) {
+			c.LeaderIsDown(topic, partition)
+		}
+		return -1, err
+	}
+	return offset, nil
 }

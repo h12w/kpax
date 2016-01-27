@@ -192,81 +192,32 @@ func (c *C) Consume(topic string, partition int32, offset int64) (messages []Mes
 }
 
 func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes int) (messages []Message, err error) {
-	req := broker.FetchRequest{
-		ReplicaID:   -1,
-		MaxWaitTime: int32(c.config.MaxWaitTime / time.Millisecond),
-		MinBytes:    int32(c.config.MinBytes),
-		FetchOffsetInTopics: []broker.FetchOffsetInTopic{
-			{
-				TopicName: topic,
-				FetchOffsetInPartitions: []broker.FetchOffsetInPartition{
-					{
-						Partition:   partition,
-						FetchOffset: offset,
-						MaxBytes:    int32(maxBytes),
-					},
-				},
-			},
-		},
-	}
-	resp := broker.FetchResponse{}
 	leader, err := c.cluster.Leader(topic, partition)
 	if err != nil {
 		log.Debugf("fail to get leader %v", err)
 		return nil, err
 	}
-	if err := leader.Do(&req, &resp); err != nil {
+	ms, err := (&broker.Consume{
+		Topic:       topic,
+		Partition:   partition,
+		Offset:      offset,
+		MinBytes:    c.config.MinBytes,
+		MaxBytes:    maxBytes,
+		MaxWaitTime: c.config.MaxWaitTime,
+	}).Exec(leader)
+	if err != nil {
 		if broker.IsNotLeader(err) {
 			c.cluster.LeaderIsDown(topic, partition)
 		}
-		log.Debugf("fail to consume %v", err)
 		return nil, err
 	}
-	for i := range resp {
-		t := &resp[i]
-		if t.TopicName != topic {
-			continue
-		}
-		for j := range t.FetchMessageSetInPartitions {
-			p := &t.FetchMessageSetInPartitions[j]
-			if p.Partition != partition {
-				continue
-			}
-			if p.ErrorCode.HasError() {
-				if broker.IsNotLeader(p.ErrorCode) {
-					c.cluster.LeaderIsDown(topic, partition)
-				}
-				log.Debugf("fail to consume %v", p.ErrorCode)
-				return nil, p.ErrorCode
-			}
-			ms := p.MessageSet
-			ms, err := ms.Flatten()
-			if err != nil {
-				return nil, err
-			}
-			for k := range ms {
-				m := &ms[k]
-				if m.Offset == offset {
-					ms = ms[k:]
-					break
-				}
-			}
-			if len(ms) == 0 {
-				continue
-			}
-			if ms[0].Offset != offset {
-				log.Debugf("offset mismatch")
-				return nil, fmt.Errorf("2: OFFSET MISMATCH %d %d", ms[0].Offset, offset)
-			}
-			for i := range ms {
-				m := &ms[i].SizedMessage.CRCMessage.Message
-				messages = append(messages, Message{
-					Key:    m.Key,
-					Value:  m.Value,
-					Offset: ms[i].Offset,
-				})
-			}
-		}
+	for i := range ms {
+		m := &ms[i].SizedMessage.CRCMessage.Message
+		messages = append(messages, Message{
+			Key:    m.Key,
+			Value:  m.Value,
+			Offset: ms[i].Offset,
+		})
 	}
 	return
 }
