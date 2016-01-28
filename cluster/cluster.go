@@ -106,7 +106,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		m, err := proto.Metadata{topic}.Fetch(broker)
+		m, err := proto.Metadata(topic).Fetch(broker)
 		if err != nil {
 			merr = append(merr, err)
 			continue
@@ -117,22 +117,10 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
-			if t.HasError() {
-				merr = append(merr, t.ErrorCode)
-				continue
-			}
 			if t.TopicName == topic {
 				partitions := make([]int32, len(t.PartitionMetadatas))
-				if t.HasError() {
-					merr = append(merr, t.ErrorCode)
-					continue
-				}
 				for i := range t.PartitionMetadatas {
 					partition := &t.PartitionMetadatas[i]
-					if partition.HasError() {
-						merr = append(merr, partition.ErrorCode)
-						continue
-					}
 					partitions[i] = partition.PartitionID
 					if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
 						merr = append(merr, err)

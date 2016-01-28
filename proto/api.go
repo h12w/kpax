@@ -35,13 +35,28 @@ func (c client) Do(req RequestMessage, resp ResponseMessage) error {
 
 const clientID = "h12.me/kafka"
 
-type Metadata []string
+type Metadata string
 
 func (m Metadata) Fetch(b common.Broker) (*TopicMetadataResponse, error) {
-	req := TopicMetadataRequest([]string(m))
+	topic := string(m)
+	req := TopicMetadataRequest([]string{topic})
 	resp := TopicMetadataResponse{}
 	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return nil, err
+	}
+	for i := range resp.TopicMetadatas {
+		t := &resp.TopicMetadatas[i]
+		if t.TopicName == topic {
+			if t.HasError() {
+				return nil, t.ErrorCode
+			}
+			for i := range t.PartitionMetadatas {
+				partition := &t.PartitionMetadatas[i]
+				if partition.HasError() {
+					return nil, partition.ErrorCode
+				}
+			}
+		}
 	}
 	return &resp, nil
 }
