@@ -19,31 +19,21 @@ type Message struct {
 	Offset int64
 }
 
-type Config struct {
+type C struct {
 	MaxWaitTime     time.Duration
 	MinBytes        int
 	MaxBytes        int
 	OffsetRetention time.Duration
+	cluster         common.Cluster
 }
 
-func DefaultConfig(brokers ...string) *Config {
-	return &Config{
+func New(cluster common.Cluster) *C {
+	return &C{
+		cluster:         cluster,
 		MaxWaitTime:     100 * time.Millisecond,
 		MinBytes:        1,
 		MaxBytes:        1024 * 1024,
 		OffsetRetention: 7 * 24 * time.Hour,
-	}
-}
-
-type C struct {
-	cluster common.Cluster
-	config  *Config
-}
-
-func New(cluster common.Cluster, config *Config) *C {
-	return &C{
-		cluster: cluster,
-		config:  config,
 	}
 }
 
@@ -64,9 +54,9 @@ func (c *C) Consume(topic string, partition int32, offset int64) (messages []Mes
 		Topic:       topic,
 		Partition:   partition,
 		Offset:      offset,
-		MinBytes:    c.config.MinBytes,
-		MaxBytes:    c.config.MaxBytes,
-		MaxWaitTime: c.config.MaxWaitTime,
+		MinBytes:    c.MinBytes,
+		MaxBytes:    c.MaxBytes,
+		MaxWaitTime: c.MaxWaitTime,
 	}).Consume(c.cluster)
 	if err != nil {
 		return nil, err

@@ -120,7 +120,7 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	if err != nil {
 		return err
 	}
-	cr := consumer.New(cl, consumer.DefaultConfig())
+	cr := consumer.New(cl)
 	var wg sync.WaitGroup
 	wg.Add(len(partitions))
 	var cnt int64

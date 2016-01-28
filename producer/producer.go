@@ -3,7 +3,6 @@ package producer
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"h12.me/kafka/common"
@@ -15,35 +14,21 @@ var (
 	ErrNoValidPartition = errors.New("no valid partition")
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
-
-type Config struct {
+type P struct {
 	LeaderRecoveryTime time.Duration
 	RequiredAcks       int16
 	AckTimeout         time.Duration
+	cluster            common.Cluster
+	topicPartitioner   *topicPartitioner
 }
 
-func DefaultConfig(brokers ...string) *Config {
-	return &Config{
+func New(cluster common.Cluster) *P {
+	return &P{
+		cluster:            cluster,
+		topicPartitioner:   newTopicPartitioner(),
 		LeaderRecoveryTime: 60 * time.Second,
 		RequiredAcks:       proto.AckLocal,
 		AckTimeout:         10 * time.Second,
-	}
-}
-
-type P struct {
-	cluster          common.Cluster
-	config           *Config
-	topicPartitioner *topicPartitioner
-}
-
-func New(cluster common.Cluster, config *Config) *P {
-	return &P{
-		cluster:          cluster,
-		config:           config,
-		topicPartitioner: newTopicPartitioner(),
 	}
 }
 
@@ -68,8 +53,8 @@ nextPartition:
 			Topic:        topic,
 			Partition:    partition,
 			MessageSet:   messageSet,
-			RequiredAcks: p.config.RequiredAcks,
-			AckTimeout:   p.config.AckTimeout,
+			RequiredAcks: p.RequiredAcks,
+			AckTimeout:   p.AckTimeout,
 		}).Produce(p.cluster); err != nil {
 			partitioner.Skip(partition)
 			continue nextPartition
@@ -85,8 +70,8 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 		Topic:        topic,
 		Partition:    partition,
 		MessageSet:   messageSet,
-		RequiredAcks: p.config.RequiredAcks,
-		AckTimeout:   p.config.AckTimeout,
+		RequiredAcks: p.RequiredAcks,
+		AckTimeout:   p.AckTimeout,
 	}).Produce(p.cluster)
 }
 

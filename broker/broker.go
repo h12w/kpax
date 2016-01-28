@@ -15,31 +15,13 @@ var (
 	ErrBrokerClosed          = errors.New("broker is closed")
 )
 
-type Config struct {
-	QueueLen   int
-	Connection ConnectionConfig
-}
-
-type ConnectionConfig struct {
-	Addr    string
-	Timeout time.Duration
-}
-
-func DefaultConfig(addr string) *Config {
-	return &Config{
-		QueueLen: 1000,
-		Connection: ConnectionConfig{
-			Addr:    addr,
-			Timeout: 30 * time.Second,
-		},
-	}
-}
-
 type B struct {
-	config *Config
-	cid    int32
-	conn   *connection
-	mu     sync.Mutex
+	Addr     string
+	Timeout  time.Duration
+	QueueLen int
+	cid      int32
+	conn     *connection
+	mu       sync.Mutex
 }
 
 type brokerJob struct {
@@ -48,12 +30,12 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func New(config *Config) *B {
-	return &B{config: config}
-}
-
-func (b *B) Addr() string {
-	return b.config.Connection.Addr
+func New(addr string) common.Broker {
+	return &B{
+		Addr:     addr,
+		Timeout:  30 * time.Second,
+		QueueLen: 1000,
+	}
 }
 
 func (b *B) Do(req common.Request, resp common.Response) error {
@@ -85,16 +67,15 @@ func (b *B) sendJob(job *brokerJob) error {
 }
 
 func (b *B) newConn() (*connection, error) {
-	cfg := &b.config.Connection
-	conn, err := net.Dial("tcp", cfg.Addr)
+	conn, err := net.Dial("tcp", b.Addr)
 	if err != nil {
 		return nil, err
 	}
 	c := &connection{
 		conn:     conn,
 		sendChan: make(chan *brokerJob),
-		recvChan: make(chan *brokerJob, b.config.QueueLen),
-		timeout:  cfg.Timeout,
+		recvChan: make(chan *brokerJob, b.QueueLen),
+		timeout:  b.Timeout,
 	}
 	go c.sendLoop()
 	go c.receiveLoop()

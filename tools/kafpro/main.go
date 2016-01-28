@@ -9,7 +9,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
-	"h12.me/kafka/common"
 )
 
 const (
@@ -45,7 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	c, err := cluster.New(func(addr string) common.Broker { return broker.New(broker.DefaultConfig(addr)) }, cfg.Brokers)
+	c, err := cluster.New(broker.New, cfg.Brokers)
 	if err != nil {
 		log.Fatal(err)
 	}
