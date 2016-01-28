@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"h12.me/kafka/cluster"
+	"h12.me/kafka/common"
 	"h12.me/kafka/proto"
 )
 
@@ -20,7 +20,6 @@ type Message struct {
 }
 
 type Config struct {
-	Cluster         cluster.Config
 	MaxWaitTime     time.Duration
 	MinBytes        int
 	MaxBytes        int
@@ -29,7 +28,6 @@ type Config struct {
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Cluster:         *cluster.DefaultConfig(brokers...),
 		MaxWaitTime:     100 * time.Millisecond,
 		MinBytes:        1,
 		MaxBytes:        1024 * 1024,
@@ -38,23 +36,15 @@ func DefaultConfig(brokers ...string) *Config {
 }
 
 type C struct {
-	cluster *cluster.C
+	cluster common.Cluster
 	config  *Config
 }
 
-func New(config *Config, cl *cluster.C) (*C, error) {
-	if cl == nil {
-		var err error
-		cl, err = cluster.New(&config.Cluster)
-		if err != nil {
-			return nil, err
-		}
-	}
-	config.Cluster = *cl.Config
+func New(cluster common.Cluster, config *Config) *C {
 	return &C{
-		cluster: cl,
+		cluster: cluster,
 		config:  config,
-	}, nil
+	}
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime proto.GetTimeFunc) (int64, error) {

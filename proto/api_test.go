@@ -54,7 +54,7 @@ func TestProduceFetch(t *testing.T) {
 	}
 	defer k.DeleteTopic(topic)
 	leaderAddr := getLeader(t, k, topic, partition)
-	b := New(DefaultConfig().WithAddr(leaderAddr))
+	b := New(DefaultConfig(leaderAddr))
 	defer b.Close()
 	key, value := "test key", "test value"
 	produceMessage(t, b, topic, partition, key, value)
@@ -83,7 +83,7 @@ func TestProduceSnappy(t *testing.T) {
 	defer k.DeleteTopic(topic)
 	leaderAddr := getLeader(t, k, topic, partition)
 
-	b := New(DefaultConfig().WithAddr(leaderAddr))
+	b := New(DefaultConfig(leaderAddr))
 	defer b.Close()
 	var w wipro.Writer
 	ms := MessageSet{
@@ -126,7 +126,7 @@ func TestGroupCoordinator(t *testing.T) {
 }
 
 func getTopicMetadata(t *testing.T, k *kafka.Cluster, topic string) *TopicMetadataResponse {
-	b := New(DefaultConfig().WithAddr(k.AnyBroker()))
+	b := New(DefaultConfig(k.AnyBroker()))
 	defer b.Close()
 	respMsg, err := Metadata{topic}.Fetch(b)
 	if err != nil {
@@ -182,7 +182,7 @@ func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
 		t.Fatal(err)
 	}
 	sendReceive(t, conn, req, resp)
-	if respMsg.ErrorCode.HasError() {
+	if respMsg.HasError() {
 		t.Fatal(respMsg.ErrorCode)
 	}
 	return respMsg.Broker.Addr()

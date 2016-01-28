@@ -85,7 +85,7 @@ func (o *OffsetByTime) searchOffsetBefore(cl common.Cluster, min, mid, max int64
 			return -1, fmt.Errorf("fail to search offset: zero message count")
 		}
 		for _, message := range messages {
-			t, err := getter.getTime(message.Value())
+			t, err := getter.getTime(message.Value)
 			if err != nil {
 				return -1, err
 			}
@@ -116,5 +116,5 @@ func (g *timeGetter) get(offset int64) (time.Time, error) {
 	if messages[0].Offset != offset {
 		return time.Time{}, fmt.Errorf("OFFSET MISMATCH!!! %d, %d", messages[0].Offset, offset)
 	}
-	return g.getTime(messages[0].Value())
+	return g.getTime(messages[0].Value)
 }

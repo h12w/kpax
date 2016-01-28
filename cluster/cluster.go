@@ -117,19 +117,19 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 		}
 		for i := range m.TopicMetadatas {
 			t := &m.TopicMetadatas[i]
-			if t.ErrorCode.HasError() {
+			if t.HasError() {
 				merr = append(merr, t.ErrorCode)
 				continue
 			}
 			if t.TopicName == topic {
 				partitions := make([]int32, len(t.PartitionMetadatas))
-				if t.ErrorCode.HasError() {
+				if t.HasError() {
 					merr = append(merr, t.ErrorCode)
 					continue
 				}
 				for i := range t.PartitionMetadatas {
 					partition := &t.PartitionMetadatas[i]
-					if partition.ErrorCode.HasError() {
+					if partition.HasError() {
 						merr = append(merr, partition.ErrorCode)
 						continue
 					}

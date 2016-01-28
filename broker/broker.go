@@ -25,22 +25,14 @@ type ConnectionConfig struct {
 	Timeout time.Duration
 }
 
-func DefaultConfig() *Config {
+func DefaultConfig(addr string) *Config {
 	return &Config{
 		QueueLen: 1000,
 		Connection: ConnectionConfig{
+			Addr:    addr,
 			Timeout: 30 * time.Second,
 		},
-		// Producer: ProducerConfig{
-		// 	RequiredAcks: AckLocal,
-		// 	Timeout:      10 * time.Second,
-		// },
 	}
-}
-
-func (c *Config) WithAddr(addr string) *Config {
-	c.Connection.Addr = addr
-	return c
 }
 
 type B struct {

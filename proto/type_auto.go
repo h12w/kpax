@@ -7,29 +7,29 @@ type RequestOrResponse struct {
 	wipro.M
 }
 type Request struct {
-	APIKey         int16
-	APIVersion     int16
-	CorrelationID  int32
-	ClientID       string
-	RequestMessage RequestMessage
+	APIKey        int16
+	APIVersion    int16
+	CorrelationID int32
+	ClientID      string
+	RequestMessage
 }
 type Response struct {
-	CorrelationID   int32
-	ResponseMessage ResponseMessage
+	CorrelationID int32
+	ResponseMessage
 }
 type ResponseMessage wipro.M
 type MessageSet []OffsetMessage
 type OffsetMessage struct {
-	Offset       int64
-	SizedMessage SizedMessage
+	Offset int64
+	SizedMessage
 }
 type SizedMessage struct {
-	Size       int32
-	CRCMessage CRCMessage
+	Size int32
+	CRCMessage
 }
 type CRCMessage struct {
-	CRC     uint32
-	Message Message
+	CRC uint32
+	Message
 }
 type Message struct {
 	MagicByte  int8
@@ -48,12 +48,12 @@ type Broker struct {
 	Port   int32
 }
 type TopicMetadata struct {
-	ErrorCode          ErrorCode
+	ErrorCode
 	TopicName          string
 	PartitionMetadatas []PartitionMetadata
 }
 type PartitionMetadata struct {
-	ErrorCode   ErrorCode
+	ErrorCode
 	PartitionID int32
 	Leader      int32
 	Replicas    []int32
@@ -69,8 +69,8 @@ type MessageSetInTopic struct {
 	MessageSetInPartitions []MessageSetInPartition
 }
 type MessageSetInPartition struct {
-	Partition  int32
-	MessageSet MessageSet
+	Partition int32
+	MessageSet
 }
 type ProduceResponse []OffsetInTopic
 type OffsetInTopic struct {
@@ -79,8 +79,8 @@ type OffsetInTopic struct {
 }
 type OffsetInPartition struct {
 	Partition int32
-	ErrorCode ErrorCode
-	Offset    int64
+	ErrorCode
+	Offset int64
 }
 type FetchRequest struct {
 	ReplicaID           int32
@@ -103,10 +103,10 @@ type FetchMessageSetInTopic struct {
 	FetchMessageSetInPartitions []FetchMessageSetInPartition
 }
 type FetchMessageSetInPartition struct {
-	Partition           int32
-	ErrorCode           ErrorCode
+	Partition int32
+	ErrorCode
 	HighwaterMarkOffset int64
-	MessageSet          MessageSet
+	MessageSet
 }
 type OffsetRequest struct {
 	ReplicaID    int32
@@ -128,13 +128,13 @@ type OffsetsInTopic struct {
 }
 type OffsetsInPartition struct {
 	Partition int32
-	ErrorCode ErrorCode
-	Offsets   []int64
+	ErrorCode
+	Offsets []int64
 }
 type GroupCoordinatorRequest string
 type GroupCoordinatorResponse struct {
-	ErrorCode ErrorCode
-	Broker    Broker
+	ErrorCode
+	Broker
 }
 type OffsetCommitRequestV0 struct {
 	ConsumerGroupID        string
@@ -188,7 +188,7 @@ type ErrorInTopic struct {
 }
 type ErrorInPartition struct {
 	Partition int32
-	ErrorCode ErrorCode
+	ErrorCode
 }
 type OffsetFetchRequestV0 struct {
 	ConsumerGroup     string
@@ -211,33 +211,33 @@ type OffsetMetadataInPartition struct {
 	Partition int32
 	Offset    int64
 	Metadata  string
-	ErrorCode ErrorCode
+	ErrorCode
 }
 type JoinGroupRequest struct {
 	GroupID        string
 	SessionTimeout int32
 	MemberID       string
 	ProtocolType   string
-	GroupProtocols GroupProtocols
+	GroupProtocols
 }
 type GroupProtocols []GroupProtocol
 type GroupProtocol struct {
-	ProtocolName     string
-	ProtocolMetadata ProtocolMetadata
+	ProtocolName string
+	ProtocolMetadata
 }
 type ProtocolMetadata struct {
-	Version      int16
-	Subscription Subscription
-	UserData     []byte
+	Version int16
+	Subscription
+	UserData []byte
 }
 type Subscription []string
 type JoinGroupResponse struct {
-	ErrorCode         ErrorCode
+	ErrorCode
 	GenerationID      int32
 	GroupProtocolName string
 	LeaderID          string
 	MemberID          string
-	MemberWithMetas   MemberWithMetas
+	MemberWithMetas
 }
 type MemberWithMetas []MemberWithMeta
 type MemberWithMeta struct {
@@ -245,19 +245,19 @@ type MemberWithMeta struct {
 	MemberMetadata []byte
 }
 type SyncGroupRequest struct {
-	GroupID          string
-	GenerationID     int32
-	MemberID         string
-	GroupAssignments GroupAssignments
+	GroupID      string
+	GenerationID int32
+	MemberID     string
+	GroupAssignments
 }
 type GroupAssignments []GroupAssignment
 type GroupAssignment struct {
-	MemberID         string
-	MemberAssignment MemberAssignment
+	MemberID string
+	MemberAssignment
 }
 type MemberAssignment struct {
-	Version              int16
-	PartitionAssignments PartitionAssignments
+	Version int16
+	PartitionAssignments
 }
 type PartitionAssignments []PartitionAssignment
 type PartitionAssignment struct {
@@ -265,8 +265,8 @@ type PartitionAssignment struct {
 	Partitions []int32
 }
 type SyncGroupResponse struct {
-	ErrorCode        ErrorCode
-	MemberAssignment MemberAssignment
+	ErrorCode
+	MemberAssignment
 }
 type HeartbeatRequest struct {
 	GroupID      string
@@ -282,8 +282,8 @@ type LeaveGroupResponse ErrorCode
 type ListGroupsRequest struct {
 }
 type ListGroupsResponse struct {
-	ErrorCode ErrorCode
-	Groups    Groups
+	ErrorCode
+	Groups
 }
 type Groups []Group
 type Group struct {
@@ -293,19 +293,19 @@ type Group struct {
 type DescribeGroupsRequest []string
 type DescribeGroupsResponse []GroupDescription
 type GroupDescription struct {
-	ErrorCode    ErrorCode
+	ErrorCode
 	GroupID      string
 	State        string
 	ProtocolType string
 	Protocol     string
-	Members      Members
+	Members
 }
 type Members []Member
 type Member struct {
-	MemberID         string
-	ClientID         string
-	ClientHost       string
-	MemberMetadata   []byte
-	MemberAssignment MemberAssignment
+	MemberID       string
+	ClientID       string
+	ClientHost     string
+	MemberMetadata []byte
+	MemberAssignment
 }
 type ErrorCode int16

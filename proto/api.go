@@ -54,7 +54,7 @@ func (group GroupCoordinator) Fetch(b common.Broker) (*Broker, error) {
 	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
 		return nil, err
 	}
-	if resp.ErrorCode.HasError() {
+	if resp.HasError() {
 		return nil, resp.ErrorCode
 	}
 	return &resp.Broker, nil
@@ -113,7 +113,7 @@ func (p *Payload) DoProduce(b common.Broker) error {
 			if pres.Partition != p.Partition {
 				continue
 			}
-			if pres.ErrorCode.HasError() {
+			if pres.HasError() {
 				return pres.ErrorCode
 			}
 			return nil
@@ -178,7 +178,7 @@ func (fr *Messages) DoConsume(c common.Broker) (messages MessageSet, err error) 
 			if p.Partition != fr.Partition {
 				continue
 			}
-			if p.ErrorCode.HasError() {
+			if p.HasError() {
 				return nil, p.ErrorCode
 			}
 			ms := p.MessageSet
@@ -254,7 +254,7 @@ func (commit *Offset) DoCommit(b common.Broker) error {
 			for j := range t.ErrorInPartitions {
 				p := &t.ErrorInPartitions[j]
 				if p.Partition == commit.Partition {
-					if p.ErrorCode.HasError() {
+					if p.HasError() {
 						return p.ErrorCode
 					}
 					return nil
@@ -299,7 +299,7 @@ func (o *Offset) DoFetch(b common.Broker) (int64, error) {
 		if t.TopicName == o.Topic {
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
-				if p.ErrorCode.HasError() {
+				if p.HasError() {
 					return -1, fmt.Errorf("fail to get offset for (%s, %d): %v", o.Topic, o.Partition, p.ErrorCode)
 				}
 				return p.Offset, nil
@@ -368,7 +368,7 @@ func (o *OffsetByTime) DoFetch(b common.Broker) (int64, error) {
 			if p.Partition != o.Partition {
 				continue
 			}
-			if p.ErrorCode.HasError() {
+			if p.HasError() {
 				return -1, p.ErrorCode
 			}
 			if len(p.Offsets) == 0 {

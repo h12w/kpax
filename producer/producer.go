@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"h12.me/kafka/cluster"
+	"h12.me/kafka/common"
 	"h12.me/kafka/proto"
 )
 
@@ -20,7 +20,6 @@ func init() {
 }
 
 type Config struct {
-	Cluster            cluster.Config
 	LeaderRecoveryTime time.Duration
 	RequiredAcks       int16
 	AckTimeout         time.Duration
@@ -28,7 +27,6 @@ type Config struct {
 
 func DefaultConfig(brokers ...string) *Config {
 	return &Config{
-		Cluster:            *cluster.DefaultConfig(brokers...),
 		LeaderRecoveryTime: 60 * time.Second,
 		RequiredAcks:       proto.AckLocal,
 		AckTimeout:         10 * time.Second,
@@ -36,21 +34,17 @@ func DefaultConfig(brokers ...string) *Config {
 }
 
 type P struct {
-	cluster          *cluster.C
+	cluster          common.Cluster
 	config           *Config
 	topicPartitioner *topicPartitioner
 }
 
-func New(config *Config) (*P, error) {
-	cluster, err := cluster.New(&config.Cluster)
-	if err != nil {
-		return nil, err
-	}
+func New(cluster common.Cluster, config *Config) *P {
 	return &P{
 		cluster:          cluster,
 		config:           config,
 		topicPartitioner: newTopicPartitioner(),
-	}, nil
+	}
 }
 
 func (p *P) Produce(topic string, key, value []byte) error {

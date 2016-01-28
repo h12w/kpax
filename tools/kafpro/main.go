@@ -7,7 +7,9 @@ import (
 	"runtime"
 
 	"github.com/jessevdk/go-flags"
+	"h12.me/kafka/broker"
 	"h12.me/kafka/cluster"
+	"h12.me/kafka/common"
 )
 
 const (
@@ -43,9 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	kafkaConfig := cluster.DefaultConfig(cfg.Brokers...)
-	kafkaConfig.BrokerConfig.ClientID = clientID
-	c, err := cluster.New(kafkaConfig)
+	c, err := cluster.New(func(addr string) common.Broker { return broker.New(broker.DefaultConfig(addr)) }, cfg.Brokers)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func offset(br *broker.B, cfg *OffsetConfig) error {
 			for j := range resp[i].OffsetMetadataInPartitions {
 				p := &t.OffsetMetadataInPartitions[j]
 				if p.Partition == int32(cfg.Partition) {
-					if p.ErrorCode.HasError() {
+					if p.HasError() {
 						return p.ErrorCode
 					}
 				}

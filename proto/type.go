@@ -82,7 +82,3 @@ func (ms MessageSet) Flatten() (res MessageSet, _ error) {
 	}
 	return res, nil
 }
-
-func (m *OffsetMessage) Value() []byte {
-	return m.SizedMessage.CRCMessage.Message.Value
-}

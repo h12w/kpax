@@ -120,10 +120,7 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	if err != nil {
 		return err
 	}
-	cr, err := consumer.New(consumer.DefaultConfig(), cl)
-	if err != nil {
-		return err
-	}
+	cr := consumer.New(cl, consumer.DefaultConfig())
 	var wg sync.WaitGroup
 	wg.Add(len(partitions))
 	var cnt int64
@@ -237,7 +234,7 @@ func (cmd *CommitCommand) Exec(cl *cluster.C) error {
 				for j := range t.ErrorInPartitions {
 					p := &t.ErrorInPartitions[j]
 					if int(p.Partition) == cfg.Partition {
-						if p.ErrorCode.HasError() {
+						if p.HasError() {
 							return p.ErrorCode
 						}
 					}

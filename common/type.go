@@ -13,6 +13,7 @@ type Cluster interface {
 	CoordinatorIsDown(group string)
 	Leader(topic string, partition int32) (Broker, error)
 	LeaderIsDown(topic string, partition int32)
+	Partitions(topic string) ([]int32, error)
 }
 
 type Request interface {
