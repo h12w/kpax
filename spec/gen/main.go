@@ -7,6 +7,8 @@ import (
 	"h12.me/wipro/gen"
 )
 
+const packageName = "proto"
+
 func main() {
 	if len(os.Args) != 3 {
 		fmt.Println("gen (bnf | bnfj | goj | go | gof)")
@@ -31,12 +33,12 @@ func main() {
 	case "go":
 		bnf := gen.ParseBNF(file)
 		goTypes := bnf.GoTypes().RemoveDecl("RequestMessage")
-		goTypes.PackageName = "broker"
+		goTypes.PackageName = packageName
 		goTypes.Marshal(os.Stdout)
 	case "gof":
 		bnf := gen.ParseBNF(file)
 		goTypes := bnf.GoTypes()
-		goTypes.GoFuncs(os.Stdout, "broker")
+		goTypes.GoFuncs(os.Stdout, packageName)
 	case "goe":
 		genErrorCodes(file, os.Stdout)
 	}

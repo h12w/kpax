@@ -57,7 +57,7 @@ func genErrorCodes(htmlFile string, w io.Writer) {
 			msg:  cleanMsg(*cols[2].PlainText()),
 		})
 	})
-	fpl(w, "package broker")
+	fpl(w, "package "+packageName)
 	fpl(w, "const (")
 	for _, e := range errors {
 		if e.code != "0" {
