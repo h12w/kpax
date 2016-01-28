@@ -147,7 +147,7 @@ func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
 	return nil
 }
 
-func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, timeFunc consumer.GetTimeFunc) (int64, error) {
+func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, timeFunc proto.GetTimeFunc) (int64, error) {
 	offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
 	if err != nil {
 		return 0, err

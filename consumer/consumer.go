@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"h12.me/kafka/cluster"
@@ -58,97 +57,12 @@ func New(config *Config, cl *cluster.C) (*C, error) {
 	}, nil
 }
 
-type GetTimeFunc func([]byte) (time.Time, error)
-
-func (c *C) getTime(topic string, partition int32, offset int64, getTime GetTimeFunc) (time.Time, error) {
-	const maxMessageSize = 10000
-	messages, err := c.consumeBytes(topic, partition, offset, maxMessageSize)
-	if err != nil {
-		return time.Time{}, err
-	}
-	if len(messages) == 0 {
-		return time.Time{}, fmt.Errorf("no messages at topic %s, partition %d, offset %d", topic, partition, offset)
-	}
-	if messages[0].Offset != offset {
-		return time.Time{}, fmt.Errorf("OFFSET MISMATCH!!! %d, %d", messages[0].Offset, offset)
-	}
-	return getTime(messages[0].Value)
-}
-
-func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime GetTimeFunc) (int64, error) {
-	earliest, err := (&proto.OffsetByTime{
+func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime proto.GetTimeFunc) (int64, error) {
+	return (&proto.OffsetByTime{
 		Topic:     topic,
 		Partition: partition,
-		Time:      proto.Earliest,
-	}).Fetch(c.cluster)
-	if err != nil {
-		return -1, err
-	}
-	if keyTime == proto.Earliest {
-		return earliest, nil
-	}
-	latest, err := (&proto.OffsetByTime{
-		Topic:     topic,
-		Partition: partition,
-		Time:      proto.Latest,
-	}).Fetch(c.cluster)
-	if err != nil {
-		return -1, err
-	}
-
-	min, max := earliest, latest
-	mid := min + (max-min)/2
-	for min <= max {
-		mid = min + (max-min)/2
-		midTime, err := c.getTime(topic, partition, mid, getTime)
-		if err != nil {
-			return -1, err
-		}
-		if midTime.Equal(keyTime) {
-			break
-		} else if midTime.Before(keyTime) {
-			min = mid + 1
-		} else {
-			max = mid - 1
-		}
-	}
-	return c.searchOffsetBefore(topic, partition, earliest, mid, latest, keyTime, getTime)
-}
-
-func (c *C) searchOffsetBefore(topic string, partition int32, min, mid, max int64, keyTime time.Time, getTime func([]byte) (time.Time, error)) (int64, error) {
-	const maxJitter = 1000 // time may be interleaved in a small range
-	midTime, err := c.getTime(topic, partition, mid, getTime)
-	if err != nil {
-		return -1, err
-	}
-	if midTime.Before(keyTime) {
-		mid -= maxJitter
-	} else {
-		mid -= 2 * maxJitter // we have passed the point, go back with double jitter
-	}
-	if mid < min {
-		mid = min
-	}
-	for offset := mid; offset <= max; offset++ {
-		messages, err := c.Consume(topic, partition, offset)
-		if err != nil {
-			return -1, err
-		}
-		if len(messages) == 0 {
-			return -1, fmt.Errorf("fail to search offset: zero message count")
-		}
-		for _, message := range messages {
-			t, err := getTime(message.Value)
-			if err != nil {
-				return -1, err
-			}
-			if t.After(keyTime) || t.Equal(keyTime) {
-				return offset, nil
-			}
-			offset = message.Offset
-		}
-	}
-	return mid, nil
+		Time:      keyTime,
+	}).Search(c.cluster, getTime)
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
@@ -156,16 +70,12 @@ func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, 
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (messages []Message, err error) {
-	return c.consumeBytes(topic, partition, offset, c.config.MaxBytes)
-}
-
-func (c *C) consumeBytes(topic string, partition int32, offset int64, maxBytes int) (messages []Message, err error) {
 	ms, err := (&proto.Messages{
 		Topic:       topic,
 		Partition:   partition,
 		Offset:      offset,
 		MinBytes:    c.config.MinBytes,
-		MaxBytes:    maxBytes,
+		MaxBytes:    c.config.MaxBytes,
 		MaxWaitTime: c.config.MaxWaitTime,
 	}).Consume(c.cluster)
 	if err != nil {
