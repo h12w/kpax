@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"h12.me/kafka/broker"
 	"h12.me/kafka/common"
 	"h12.me/kafka/log"
 	"h12.me/kafka/proto"
@@ -17,36 +16,21 @@ var (
 	ErrNoBrokerFound  = errors.New("no broker found")
 )
 
-type Config struct {
-	Brokers      []string
-	BrokerConfig broker.Config
-}
-
-func DefaultConfig(brokers ...string) *Config {
-	return &Config{
-		Brokers:      brokers,
-		BrokerConfig: *broker.DefaultConfig(),
+type (
+	C struct {
+		topics *topicPartitions
+		pool   *brokerPool
+		mu     sync.Mutex
 	}
-}
+	NewBrokerFunc func(addr string) common.Broker
+)
 
-type C struct {
-	*Config
-	topics *topicPartitions
-	pool   *brokerPool
-	mu     sync.Mutex
-}
-
-func New(config *Config) (*C, error) {
+func New(newBroker NewBrokerFunc, brokers []string) (*C, error) {
 	c := &C{
-		Config: config,
 		topics: newTopicPartitions(),
-		pool: newBrokerPool(func(addr string) *broker.B {
-			cfg := config.BrokerConfig
-			cfg.Connection.Addr = addr
-			return broker.New(&cfg)
-		}),
+		pool:   newBrokerPool(newBroker),
 	}
-	for _, addr := range config.Brokers {
+	for _, addr := range brokers {
 		c.pool.AddAddr(addr)
 	}
 	return c, nil

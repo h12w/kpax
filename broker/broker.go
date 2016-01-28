@@ -17,7 +17,6 @@ var (
 
 type Config struct {
 	QueueLen   int
-	ClientID   string
 	Connection ConnectionConfig
 }
 
