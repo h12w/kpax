@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"h12.me/kafka/common"
+	"h12.me/kafka/model"
 	"h12.me/kafka/proto"
 )
 
@@ -24,10 +24,10 @@ type C struct {
 	MinBytes        int
 	MaxBytes        int
 	OffsetRetention time.Duration
-	cluster         common.Cluster
+	cluster         model.Cluster
 }
 
-func New(cluster common.Cluster) *C {
+func New(cluster model.Cluster) *C {
 	return &C{
 		cluster:         cluster,
 		MaxWaitTime:     100 * time.Millisecond,

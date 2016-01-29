@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"h12.me/kafka/common"
 	"h12.me/kafka/log"
+	"h12.me/kafka/model"
 	"h12.me/kafka/proto"
 )
 
@@ -22,10 +22,10 @@ type (
 		pool   *brokerPool
 		mu     sync.Mutex
 	}
-	NewBrokerFunc func(addr string) common.Broker
+	NewBrokerFunc func(addr string) model.Broker
 )
 
-func New(newBroker NewBrokerFunc, brokers []string) common.Cluster {
+func New(newBroker NewBrokerFunc, brokers []string) model.Cluster {
 	c := &C{
 		topics: newTopicPartitions(),
 		pool:   newBrokerPool(newBroker),
@@ -51,7 +51,7 @@ func (c *C) Partitions(topic string) ([]int32, error) {
 	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
-func (c *C) Coordinator(group string) (common.Broker, error) {
+func (c *C) Coordinator(group string) (model.Broker, error) {
 	if coord, err := c.pool.GetCoordinator(group); err == nil {
 		return coord, nil
 	}
@@ -61,7 +61,7 @@ func (c *C) Coordinator(group string) (common.Broker, error) {
 	return c.pool.GetCoordinator(group)
 }
 
-func (c *C) Leader(topic string, partition int32) (common.Broker, error) {
+func (c *C) Leader(topic string, partition int32) (model.Broker, error) {
 	if leader, err := c.pool.GetLeader(topic, partition); err == nil {
 		return leader, nil
 	}

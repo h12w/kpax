@@ -44,10 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	c, err := cluster.New(broker.New, cfg.Brokers)
-	if err != nil {
-		log.Fatal(err)
-	}
+	c := cluster.New(broker.New, cfg.Brokers)
 	//fmt.Println(toJSON(cfg))
 	switch parser.Active.Name {
 	case "consume":

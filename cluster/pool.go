@@ -3,16 +3,16 @@ package cluster
 import (
 	"sync"
 
-	"h12.me/kafka/common"
+	"h12.me/kafka/model"
 	"h12.me/kafka/log"
 )
 
 type brokerPool struct {
-	addrBroker           map[string]common.Broker
+	addrBroker           map[string]model.Broker
 	idAddr               map[int32]string
-	topicPartitionLeader map[topicPartition]common.Broker
-	groupCoordinator     map[string]common.Broker
-	newBroker            func(string) common.Broker
+	topicPartitionLeader map[topicPartition]model.Broker
+	groupCoordinator     map[string]model.Broker
+	newBroker            func(string) model.Broker
 	mu                   sync.Mutex
 }
 
@@ -21,30 +21,30 @@ type topicPartition struct {
 	partition int32
 }
 
-func newBrokerPool(newBroker func(string) common.Broker) *brokerPool {
+func newBrokerPool(newBroker func(string) model.Broker) *brokerPool {
 	return &brokerPool{
-		addrBroker:           make(map[string]common.Broker),
+		addrBroker:           make(map[string]model.Broker),
 		idAddr:               make(map[int32]string),
-		topicPartitionLeader: make(map[topicPartition]common.Broker),
-		groupCoordinator:     make(map[string]common.Broker),
+		topicPartitionLeader: make(map[topicPartition]model.Broker),
+		groupCoordinator:     make(map[string]model.Broker),
 		newBroker:            newBroker,
 	}
 }
 
-func (p *brokerPool) Brokers() (map[string]common.Broker, error) {
+func (p *brokerPool) Brokers() (map[string]model.Broker, error) {
 	if len(p.addrBroker) > 0 {
 		return p.addrBroker, nil
 	}
 	return nil, ErrNoBrokerFound
 }
 
-func (p *brokerPool) AddAddr(addr string) common.Broker {
+func (p *brokerPool) AddAddr(addr string) model.Broker {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.addAddr(addr)
 }
 
-func (p *brokerPool) addAddr(addr string) common.Broker {
+func (p *brokerPool) addAddr(addr string) model.Broker {
 	if broker, ok := p.addrBroker[addr]; ok {
 		return broker
 	}
@@ -53,12 +53,12 @@ func (p *brokerPool) addAddr(addr string) common.Broker {
 	return broker
 }
 
-func (p *brokerPool) add(brokerID int32, addr string) common.Broker {
+func (p *brokerPool) add(brokerID int32, addr string) model.Broker {
 	p.idAddr[brokerID] = addr
 	return p.addAddr(addr)
 }
 
-func (p *brokerPool) Add(brokerID int32, addr string) common.Broker {
+func (p *brokerPool) Add(brokerID int32, addr string) model.Broker {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.add(brokerID, addr)
@@ -75,7 +75,7 @@ func (p *brokerPool) SetLeader(topic string, partition int32, brokerID int32) er
 	return nil
 }
 
-func (p *brokerPool) GetLeader(topic string, partition int32) (common.Broker, error) {
+func (p *brokerPool) GetLeader(topic string, partition int32) (model.Broker, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	broker, ok := p.topicPartitionLeader[topicPartition{topic, partition}]
@@ -104,7 +104,7 @@ func (p *brokerPool) SetCoordinator(consumerGroup string, brokerID int32, addr s
 	p.groupCoordinator[consumerGroup] = broker
 }
 
-func (p *brokerPool) GetCoordinator(consumerGroup string) (common.Broker, error) {
+func (p *brokerPool) GetCoordinator(consumerGroup string) (model.Broker, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	broker, ok := p.groupCoordinator[consumerGroup]
@@ -114,7 +114,7 @@ func (p *brokerPool) GetCoordinator(consumerGroup string) (common.Broker, error)
 	return broker, nil
 }
 
-func (p *brokerPool) find(brokerID int32) (common.Broker, error) {
+func (p *brokerPool) find(brokerID int32) (model.Broker, error) {
 	if addr, ok := p.idAddr[brokerID]; ok {
 		if broker, ok := p.addrBroker[addr]; ok {
 			return broker, nil

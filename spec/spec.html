@@ -44,7 +44,7 @@
                     <li><span class="toc-item-body" data-outline="4.2"><span class="toc-outline">4.2</span><a href="#AGuideToTheKafkaProtocol-Notesonreadingtherequestformatgrammars" class="toc-link">Notes on reading the request format grammars</a>
                         </span>
                     </li>
-                    <li><span class="toc-item-body" data-outline="4.3"><span class="toc-outline">4.3</span><a href="#AGuideToTheKafkaProtocol-CommonRequestandResponseStructure" class="toc-link">Common Request and Response Structure</a>
+                    <li><span class="toc-item-body" data-outline="4.3"><span class="toc-outline">4.3</span><a href="#AGuideToTheKafkaProtocol-modelRequestandResponseStructure" class="toc-link">model Request and Response Structure</a>
                         </span>
                         <ul style="">
                             <li><span class="toc-item-body" data-outline="4.3.1"><span class="toc-outline">4.3.1</span><a href="#AGuideToTheKafkaProtocol-Requests" class="toc-link">Requests</a>
@@ -192,7 +192,7 @@
                     </li>
                 </ul>
             </li>
-            <li><span class="toc-item-body" data-outline="5"><span class="toc-outline">5</span><a href="#AGuideToTheKafkaProtocol-SomeCommonPhilosophicalQuestions" class="toc-link">Some Common Philosophical Questions</a>
+            <li><span class="toc-item-body" data-outline="5"><span class="toc-outline">5</span><a href="#AGuideToTheKafkaProtocol-SomemodelPhilosophicalQuestions" class="toc-link">Some model Philosophical Questions</a>
                 </span>
             </li>
         </ul>
@@ -275,7 +275,7 @@
     <p>This is a notation for handling repeated structures. These will always be encoded as an int32 size containing the length N followed by N repetitions of the structure which can itself be made up of other primitive types. In the BNF grammars below we will show an array of a structure foo as [foo].</p>
     <h4 id="AGuideToTheKafkaProtocol-Notesonreadingtherequestformatgrammars">Notes on reading the request format grammars</h4>
     <p>The&nbsp;<a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form" class="external-link" rel="nofollow">BNF</a>s below give an exact context free grammar for the request and response binary format. For each API I will give the request and response together followed by all the sub-definitions. The BNF is intentionally not compact in order to give human-readable name (for example I define a production for ErrorCode even though it is just an int16 in order to give it a symbolic name). As always in a BNF a sequence of productions indicates concatenation, so the MetadataRequest given below would be a sequence of bytes containing first a VersionId, then a ClientId, and then an array of TopicNames (each of which has its own definition). Productions are always given in camel case and primitive types in lower case. When there are multiple possible productions these are&nbsp;separated&nbsp;with '|' and may be enclosed in parenthesis for grouping. The top-level definition is always given first and subsequent sub-parts are indented.</p>
-    <h4 id="AGuideToTheKafkaProtocol-CommonRequestandResponseStructure">Common Request and Response Structure</h4>
+    <h4 id="AGuideToTheKafkaProtocol-modelRequestandResponseStructure">model Request and Response Structure</h4>
     <p>All requests and responses originate from the following grammar which will be incrementally describe through the rest of this document:</p>
     <div class="code panel pdl" style="border-width: 1px;">
         <div class="codeContent panelContent pdl">
@@ -515,7 +515,7 @@
     </div>
     <p>The response will always match the paired request (e.g. we will send a MetadataResponse in return to a MetadataRequest).</p>
     <h6 id="AGuideToTheKafkaProtocol-Messagesets">Message sets</h6>
-    <p>One structure common to both the produce and fetch requests is the message set format. A message in kafka is a key-value pair with a small amount of associated metadata. A message set is just a sequence of messages with offset and size information. This format happens to be used both for the on-disk storage on the broker and the on-the-wire format.</p>
+    <p>One structure model to both the produce and fetch requests is the message set format. A message in kafka is a key-value pair with a small amount of associated metadata. A message set is just a sequence of messages with offset and size information. This format happens to be used both for the on-disk storage on the broker and the on-the-wire format.</p>
     <p>A message set is also the unit of compression in Kafka, and we allow messages to recursively contain compressed message sets to allow batch compression.</p>
     <p>N.B., MessageSets are not preceded by an int32 like other array elements in the protocol.</p>
     <div class="code panel pdl" style="border-width: 1px;">
@@ -2594,7 +2594,7 @@
             </tbody>
         </table>
     </div>
-    <h3 id="AGuideToTheKafkaProtocol-SomeCommonPhilosophicalQuestions">Some Common Philosophical Questions</h3>
+    <h3 id="AGuideToTheKafkaProtocol-SomemodelPhilosophicalQuestions">Some model Philosophical Questions</h3>
     <p>Some people have asked why we don't use HTTP. There are a number of reasons, the best is that client implementors can make use of some of the more advanced TCP features--the ability to multiplex requests, the ability to simultaneously poll many connections, etc. We have also found HTTP libraries in many languages to be surprisingly shabby.</p>
     <p>Others have asked if maybe we shouldn't support many different protocols. Prior experience with this was that it makes it very hard to add and test new features if they have to be ported across many protocol implementations. Our feeling is that most users don't really see multiple protocols as a feature, they just want a good reliable client in the language of their choice.</p>
     <p>Another question is why we don't adopt XMPP, STOMP, AMQP or an existing protocol. The answer to this varies by protocol, but in general the problem is that the protocol does determine large parts of the implementation and we couldn't do what we are doing if we didn't have control over the protocol. Our belief is that it is possible to do better than existing messaging systems have in providing a truly distributed messaging system, and to do this we need to build something that works differently.</p>

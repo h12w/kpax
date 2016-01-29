@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/common"
+	"h12.me/kafka/model"
 	"h12.me/kafka/proto"
 )
 
@@ -18,11 +18,11 @@ type P struct {
 	LeaderRecoveryTime time.Duration
 	RequiredAcks       int16
 	AckTimeout         time.Duration
-	cluster            common.Cluster
+	cluster            model.Cluster
 	topicPartitioner   *topicPartitioner
 }
 
-func New(cluster common.Cluster) *P {
+func New(cluster model.Cluster) *P {
 	return &P{
 		cluster:            cluster,
 		topicPartitioner:   newTopicPartitioner(),

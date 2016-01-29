@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/common"
+	"h12.me/kafka/model"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 
 type client struct {
 	id   string
-	doer common.Broker
+	doer model.Broker
 }
 
 func (r *Response) ID() int32     { return r.CorrelationID }
@@ -37,7 +37,7 @@ const clientID = "h12.me/kafka"
 
 type Metadata string
 
-func (m Metadata) Fetch(b common.Broker) (*TopicMetadataResponse, error) {
+func (m Metadata) Fetch(b model.Broker) (*TopicMetadataResponse, error) {
 	topic := string(m)
 	req := TopicMetadataRequest([]string{topic})
 	resp := TopicMetadataResponse{}
@@ -63,7 +63,7 @@ func (m Metadata) Fetch(b common.Broker) (*TopicMetadataResponse, error) {
 
 type GroupCoordinator string
 
-func (group GroupCoordinator) Fetch(b common.Broker) (*Broker, error) {
+func (group GroupCoordinator) Fetch(b model.Broker) (*Broker, error) {
 	req := GroupCoordinatorRequest(group)
 	resp := GroupCoordinatorResponse{}
 	if err := (client{clientID, b}).Do(&req, &resp); err != nil {
@@ -83,7 +83,7 @@ type Payload struct {
 	AckTimeout   time.Duration
 }
 
-func (p *Payload) Produce(c common.Cluster) error {
+func (p *Payload) Produce(c model.Cluster) error {
 	leader, err := c.Leader(p.Topic, p.Partition)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (p *Payload) Produce(c common.Cluster) error {
 	return nil
 }
 
-func (p *Payload) DoProduce(b common.Broker) error {
+func (p *Payload) DoProduce(b model.Broker) error {
 	req := ProduceRequest{
 		RequiredAcks: p.RequiredAcks,
 		Timeout:      int32(p.AckTimeout / time.Millisecond),
@@ -146,7 +146,7 @@ type Messages struct {
 	MaxWaitTime time.Duration
 }
 
-func (m *Messages) Consume(c common.Cluster) (MessageSet, error) {
+func (m *Messages) Consume(c model.Cluster) (MessageSet, error) {
 	leader, err := c.Leader(m.Topic, m.Partition)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (m *Messages) Consume(c common.Cluster) (MessageSet, error) {
 	return ms, nil
 }
 
-func (fr *Messages) DoConsume(c common.Broker) (messages MessageSet, err error) {
+func (fr *Messages) DoConsume(c model.Broker) (messages MessageSet, err error) {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(fr.MaxWaitTime / time.Millisecond),
@@ -228,7 +228,7 @@ type Offset struct {
 	Retention time.Duration
 }
 
-func (o *Offset) Commit(c common.Cluster) error {
+func (o *Offset) Commit(c model.Cluster) error {
 	coord, err := c.Coordinator(o.Group)
 	if err != nil {
 		return err
@@ -242,7 +242,7 @@ func (o *Offset) Commit(c common.Cluster) error {
 	return nil
 }
 
-func (commit *Offset) DoCommit(b common.Broker) error {
+func (commit *Offset) DoCommit(b model.Broker) error {
 	req := OffsetCommitRequestV1{
 		ConsumerGroupID: commit.Group,
 		OffsetCommitInTopicV1s: []OffsetCommitInTopicV1{
@@ -280,7 +280,7 @@ func (commit *Offset) DoCommit(b common.Broker) error {
 	return fmt.Errorf("fail to commit offset: %v", commit)
 }
 
-func (o *Offset) Fetch(c common.Cluster) (int64, error) {
+func (o *Offset) Fetch(c model.Cluster) (int64, error) {
 	coord, err := c.Coordinator(o.Group)
 	if err != nil {
 		return -1, err
@@ -295,7 +295,7 @@ func (o *Offset) Fetch(c common.Cluster) (int64, error) {
 	return offset, nil
 }
 
-func (o *Offset) DoFetch(b common.Broker) (int64, error) {
+func (o *Offset) DoFetch(b model.Broker) (int64, error) {
 	req := OffsetFetchRequestV1{
 		ConsumerGroup: o.Group,
 		PartitionInTopics: []PartitionInTopic{
@@ -331,7 +331,7 @@ type OffsetByTime struct {
 	Time      time.Time
 }
 
-func (o *OffsetByTime) Fetch(c common.Cluster) (int64, error) {
+func (o *OffsetByTime) Fetch(c model.Cluster) (int64, error) {
 	leader, err := c.Leader(o.Topic, o.Partition)
 	if err != nil {
 		return -1, err
@@ -346,7 +346,7 @@ func (o *OffsetByTime) Fetch(c common.Cluster) (int64, error) {
 	return offset, nil
 }
 
-func (o *OffsetByTime) DoFetch(b common.Broker) (int64, error) {
+func (o *OffsetByTime) DoFetch(b model.Broker) (int64, error) {
 	var milliSec int64
 	switch o.Time {
 	case Latest:

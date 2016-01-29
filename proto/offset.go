@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/common"
+	"h12.me/kafka/model"
 )
 
 type GetTimeFunc func([]byte) (time.Time, error)
 
-func (o *OffsetByTime) Search(cl common.Cluster, getTime GetTimeFunc) (int64, error) {
+func (o *OffsetByTime) Search(cl model.Cluster, getTime GetTimeFunc) (int64, error) {
 	earliest, err := (&OffsetByTime{
 		Topic:     o.Topic,
 		Partition: o.Partition,
@@ -61,7 +61,7 @@ func (o *OffsetByTime) Search(cl common.Cluster, getTime GetTimeFunc) (int64, er
 	return o.searchOffsetBefore(cl, earliest, mid, latest, getter)
 }
 
-func (o *OffsetByTime) searchOffsetBefore(cl common.Cluster, min, mid, max int64, getter timeGetter) (int64, error) {
+func (o *OffsetByTime) searchOffsetBefore(cl model.Cluster, min, mid, max int64, getter timeGetter) (int64, error) {
 	const maxJitter = 1000 // time may be interleaved in a small range
 	midTime, err := getter.get(mid)
 	if err != nil {
@@ -100,7 +100,7 @@ func (o *OffsetByTime) searchOffsetBefore(cl common.Cluster, min, mid, max int64
 
 type timeGetter struct {
 	Messages
-	cl      common.Cluster
+	cl      model.Cluster
 	getTime GetTimeFunc
 }
 

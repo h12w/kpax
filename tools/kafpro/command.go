@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"h12.me/kafka/cluster"
 	"h12.me/kafka/consumer"
+	"h12.me/kafka/model"
 	"h12.me/kafka/proto"
 )
 
@@ -114,7 +114,7 @@ type ConsumeCommand struct {
 	Count     bool      `long:"count"`
 }
 
-func (cmd *ConsumeCommand) Exec(cl *cluster.C) error {
+func (cmd *ConsumeCommand) Exec(cl model.Cluster) error {
 	// TODO: detect format
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
@@ -203,7 +203,7 @@ type CommitCommand struct {
 	Retention int       `long:"retention"` // millisecond
 }
 
-func (cmd *CommitCommand) Exec(cl *cluster.C) error {
+func (cmd *CommitCommand) Exec(cl model.Cluster) error {
 	/*
 		req := &broker.Request{
 			ClientID: clientID,

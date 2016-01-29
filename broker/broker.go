@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"h12.me/kafka/common"
+	"h12.me/kafka/model"
 )
 
 var (
@@ -25,12 +25,12 @@ type B struct {
 }
 
 type brokerJob struct {
-	req     common.Request
-	resp    common.Response
+	req     model.Request
+	resp    model.Response
 	errChan chan error
 }
 
-func New(addr string) common.Broker {
+func New(addr string) model.Broker {
 	return &B{
 		Addr:     addr,
 		Timeout:  30 * time.Second,
@@ -38,7 +38,7 @@ func New(addr string) common.Broker {
 	}
 }
 
-func (b *B) Do(req common.Request, resp common.Response) error {
+func (b *B) Do(req model.Request, resp model.Response) error {
 	req.SetID(atomic.AddInt32(&b.cid, 1))
 	errChan := make(chan error)
 	if err := b.sendJob(&brokerJob{
