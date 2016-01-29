@@ -25,7 +25,7 @@ type (
 	NewBrokerFunc func(addr string) common.Broker
 )
 
-func New(newBroker NewBrokerFunc, brokers []string) (*C, error) {
+func New(newBroker NewBrokerFunc, brokers []string) common.Cluster {
 	c := &C{
 		topics: newTopicPartitions(),
 		pool:   newBrokerPool(newBroker),
@@ -33,7 +33,7 @@ func New(newBroker NewBrokerFunc, brokers []string) (*C, error) {
 	for _, addr := range brokers {
 		c.pool.AddAddr(addr)
 	}
-	return c, nil
+	return c
 }
 
 func (c *C) Partitions(topic string) ([]int32, error) {
