@@ -37,6 +37,14 @@ func New(cluster common.Cluster) *C {
 	}
 }
 
+func (c *C) FetchOffsetByTime(topic string, partition int32, keyTime time.Time) (int64, error) {
+	return (&proto.OffsetByTime{
+		Topic:     topic,
+		Partition: partition,
+		Time:      keyTime,
+	}).Fetch(c.cluster)
+}
+
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime proto.GetTimeFunc) (int64, error) {
 	return (&proto.OffsetByTime{
 		Topic:     topic,
