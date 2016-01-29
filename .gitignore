@@ -1,4 +1,4 @@
-tools/kafpro/kafpro
-tools/counter/counter
-tools/filler/filler
+cmd/kpax/kpax
+cmd/counter/counter
+cmd/filler/filler
 spec/gen/gen
