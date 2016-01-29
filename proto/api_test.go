@@ -6,14 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"h12.me/kafka/broker"
+	"h12.me/kpax/broker"
+	"h12.me/kpax/model"
 	"h12.me/realtest/kafka"
 	"h12.me/wipro"
-)
-
-var (
-	New           = broker.New
-	DefaultConfig = broker.DefaultConfig
 )
 
 func TestTopicMetadata(t *testing.T) {
@@ -54,7 +50,7 @@ func TestProduceFetch(t *testing.T) {
 	}
 	defer k.DeleteTopic(topic)
 	leaderAddr := getLeader(t, k, topic, partition)
-	b := New(DefaultConfig(leaderAddr))
+	b := broker.New(leaderAddr)
 	defer b.Close()
 	key, value := "test key", "test value"
 	produceMessage(t, b, topic, partition, key, value)
@@ -83,7 +79,7 @@ func TestProduceSnappy(t *testing.T) {
 	defer k.DeleteTopic(topic)
 	leaderAddr := getLeader(t, k, topic, partition)
 
-	b := New(DefaultConfig(leaderAddr))
+	b := broker.New(leaderAddr)
 	defer b.Close()
 	var w wipro.Writer
 	ms := MessageSet{
@@ -126,9 +122,9 @@ func TestGroupCoordinator(t *testing.T) {
 }
 
 func getTopicMetadata(t *testing.T, k *kafka.Cluster, topic string) *TopicMetadataResponse {
-	b := New(DefaultConfig(k.AnyBroker()))
+	b := broker.New(k.AnyBroker())
 	defer b.Close()
-	respMsg, err := Metadata{topic}.Fetch(b)
+	respMsg, err := Metadata(topic).Fetch(b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +184,7 @@ func getCoord(t *testing.T, k *kafka.Cluster, group string) string {
 	return respMsg.Broker.Addr()
 }
 
-func produceMessage(t *testing.T, b *broker.B, topic string, partition int32, key, value string) {
+func produceMessage(t *testing.T, b model.Broker, topic string, partition int32, key, value string) {
 	if err := (&Payload{
 		Topic:     topic,
 		Partition: partition,
@@ -207,7 +203,7 @@ func produceMessage(t *testing.T, b *broker.B, topic string, partition int32, ke
 	}
 }
 
-func fetchMessage(t *testing.T, b *broker.B, topic string, partition int32, offset int64) [][2]string {
+func fetchMessage(t *testing.T, b model.Broker, topic string, partition int32, offset int64) [][2]string {
 	req := FetchRequest{
 		ReplicaID:   -1,
 		MaxWaitTime: int32(time.Second / time.Millisecond),

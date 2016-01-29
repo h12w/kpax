@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/model"
+	"h12.me/kpax/model"
 )
 
 type GetTimeFunc func([]byte) (time.Time, error)

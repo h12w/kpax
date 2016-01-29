@@ -1,16 +1,13 @@
-h12.me/kafka
-============
+kpax: a modular & idiomatic Kafka client in Go
+==============================================
 
-[![GoDoc](https://godoc.org/h12.me/kafka?status.svg)](https://godoc.org/h12.me/kafka)
-
-A modular & idiomatic Kafka client in Go
-----------------------------------------
+[![GoDoc](https://godoc.org/h12.me/kpax?status.svg)](https://godoc.org/h12.me/kpax)
 
 Install
 -------
 
 ```
-go get -u h12.me/kafka
+go get -u h12.me/kpax
 ```
 
 Design

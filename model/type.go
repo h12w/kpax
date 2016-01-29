@@ -6,6 +6,7 @@ import (
 
 type Broker interface {
 	Do(Request, Response) error
+	Close()
 }
 
 type Cluster interface {

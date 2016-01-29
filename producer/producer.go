@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/model"
-	"h12.me/kafka/proto"
+	"h12.me/kpax/model"
+	"h12.me/kpax/proto"
 )
 
 var (

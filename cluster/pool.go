@@ -3,8 +3,8 @@ package cluster
 import (
 	"sync"
 
-	"h12.me/kafka/model"
-	"h12.me/kafka/log"
+	"h12.me/kpax/model"
+	"h12.me/kpax/log"
 )
 
 type brokerPool struct {

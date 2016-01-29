@@ -1,1 +1,1 @@
-package kafka // import "h12.me/kafka"
+package kafka // import "h12.me/kpax"

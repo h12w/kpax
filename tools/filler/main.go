@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"h12.me/kafka/producer"
+	"h12.me/kpax/producer"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kafka/model"
+	"h12.me/kpax/model"
 )
 
 var (
@@ -33,7 +33,7 @@ func (c client) Do(req RequestMessage, resp ResponseMessage) error {
 	)
 }
 
-const clientID = "h12.me/kafka"
+const clientID = "h12.me/kpax"
 
 type Metadata string
 

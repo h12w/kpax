@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"h12.me/kafka/broker"
-	"h12.me/kafka/consumer"
+	"h12.me/kpax/broker"
+	"h12.me/kpax/consumer"
 )
 
 func main() {

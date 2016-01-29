@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"h12.me/kafka/log"
+	"h12.me/kpax/log"
 )
 
 type topicPartitioner struct {

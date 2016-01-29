@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"h12.me/kafka/model"
+	"h12.me/kpax/model"
 )
 
 var (

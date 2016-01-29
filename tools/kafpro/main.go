@@ -7,12 +7,12 @@ import (
 	"runtime"
 
 	"github.com/jessevdk/go-flags"
-	"h12.me/kafka/broker"
-	"h12.me/kafka/cluster"
+	"h12.me/kpax/broker"
+	"h12.me/kpax/cluster"
 )
 
 const (
-	clientID = "h12.me/kafka/kafpro"
+	clientID = "h12.me/kpax/kafpro"
 )
 
 func parseJSON(cfg interface{}) error {
