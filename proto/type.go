@@ -51,6 +51,10 @@ func (b *Broker) Addr() string {
 	return b.Host + ":" + strconv.Itoa(int(b.Port))
 }
 
+func (r *Response) ID() int32     { return r.CorrelationID }
+func (r *Request) ID() int32      { return r.CorrelationID }
+func (r *Request) SetID(id int32) { r.CorrelationID = id }
+
 func (req *Request) Send(conn io.Writer) error {
 	req.APIKey = req.RequestMessage.APIKey()
 	req.APIVersion = req.RequestMessage.APIVersion()

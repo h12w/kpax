@@ -8,20 +8,28 @@ import (
 	"time"
 
 	"h12.me/kpax/model"
+	"h12.me/wipro"
 )
 
 var (
 	ErrCorrelationIDMismatch = errors.New("correlationID mismatch")
-	ErrBrokerClosed          = errors.New("broker is closed")
 )
 
 type B struct {
 	Addr     string
 	Timeout  time.Duration
 	QueueLen int
+
+	connection
 	cid      int32
-	conn     *connection
+	recvChan chan *brokerJob
 	mu       sync.Mutex
+}
+
+type connection struct {
+	conn net.Conn
+	mu   sync.Mutex
+	*B
 }
 
 type brokerJob struct {
@@ -31,62 +39,100 @@ type brokerJob struct {
 }
 
 func New(addr string) model.Broker {
-	return &B{
+	b := &B{
 		Addr:     addr,
 		Timeout:  30 * time.Second,
 		QueueLen: 1000,
 	}
+	b.connection.B = b
+	return b
 }
 
 func (b *B) Do(req model.Request, resp model.Response) error {
-	req.SetID(atomic.AddInt32(&b.cid, 1))
-	errChan := make(chan error)
-	if err := b.sendJob(&brokerJob{
+	job := &brokerJob{
 		req:     req,
 		resp:    resp,
-		errChan: errChan,
-	}); err != nil {
+		errChan: make(chan error),
+	}
+	if err := b.send(job); err != nil {
 		return err
 	}
-	return <-errChan
+	return <-job.errChan
 }
 
-func (b *B) sendJob(job *brokerJob) error {
-	b.mu.Lock()
-	if b.conn == nil || b.conn.Closed() {
-		conn, err := b.newConn()
-		if err != nil {
-			b.mu.Unlock()
-			return err
-		}
-		b.conn = conn
+func (b *B) send(job *brokerJob) error {
+	conn, err := b.getConn()
+	if err != nil {
+		return err
 	}
-	b.mu.Unlock()
-	b.conn.sendChan <- job
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	job.req.SetID(atomic.AddInt32(&b.cid, 1))
+	if err := job.req.Send(conn); err != nil {
+		if err == wipro.ErrConn {
+			b.closeConn()
+		}
+		return err
+	}
+	if b.recvChan == nil {
+		b.recvChan = make(chan *brokerJob, b.QueueLen)
+		go b.receiveLoop()
+	}
+	b.recvChan <- job
 	return nil
 }
 
-func (b *B) newConn() (*connection, error) {
-	conn, err := net.Dial("tcp", b.Addr)
-	if err != nil {
-		return nil, err
+func (c *B) receiveLoop() {
+	for job := range c.recvChan {
+		conn, err := c.getConn()
+		if err != nil {
+			job.errChan <- err
+			continue
+		}
+		if err := job.resp.Receive(conn); err != nil {
+			if err == wipro.ErrConn {
+				c.closeConn()
+			}
+			job.errChan <- err
+			continue
+		}
+		if job.resp.ID() != job.req.ID() {
+			job.errChan <- ErrCorrelationIDMismatch
+			continue
+		}
+		job.errChan <- nil
 	}
-	c := &connection{
-		conn:     conn,
-		sendChan: make(chan *brokerJob),
-		recvChan: make(chan *brokerJob, b.QueueLen),
-		timeout:  b.Timeout,
-	}
-	go c.sendLoop()
-	go c.receiveLoop()
-	return c, nil
+	c.closeConn()
 }
 
 func (b *B) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.conn != nil && !b.conn.Closed() {
-		b.conn.Close()
-		b.conn = nil
+	if b.recvChan != nil {
+		close(b.recvChan)
+		b.recvChan = nil
+	}
+}
+
+func (c *connection) getConn() (net.Conn, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.conn == nil {
+		conn, err := net.DialTimeout("tcp", c.Addr, c.Timeout)
+		if err != nil {
+			return nil, err
+		}
+		c.conn = conn
+	}
+	return c.conn, c.conn.SetDeadline(time.Now().Add(c.Timeout))
+}
+
+func (c *connection) closeConn() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.conn != nil {
+		c.conn.Close()
+		c.conn = nil
 	}
 }

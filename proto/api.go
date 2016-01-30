@@ -7,19 +7,10 @@ import (
 	"h12.me/kpax/model"
 )
 
-var (
-	Earliest = time.Time{}
-	Latest   = time.Date(9999, 12, 31, 23, 59, 59, 999999999, time.UTC)
-)
-
 type client struct {
 	id   string
 	doer model.Broker
 }
-
-func (r *Response) ID() int32     { return r.CorrelationID }
-func (r *Request) ID() int32      { return r.CorrelationID }
-func (r *Request) SetID(id int32) { r.CorrelationID = id }
 
 func (c client) Do(req RequestMessage, resp ResponseMessage) error {
 	return c.doer.Do(

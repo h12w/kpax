@@ -74,6 +74,7 @@ func TestProduceSnappy(t *testing.T) {
 	topic := "topic1"
 	err = k.NewTopic(topic, partitionCount)
 	if err != nil {
+		k.DeleteTopic(topic)
 		t.Fatal(err)
 	}
 	defer k.DeleteTopic(topic)

@@ -20,7 +20,7 @@ The client is built on top of Kafka Wire Protocol (i.e. low-level API). The prot
 ### Sub packages
 
 * **model** is an abstraction model for request, response, broker and cluster
-* **broker** is a lazy asynchronous round tripper that talks to a single Kafka broker
+* **broker** is a lazy, asynchronous and recoverable round tripper that talks to a single Kafka broker
 * **cluster** is a metadata manager that talks to a Kafka cluster
 * **proto** contains both low level API and a "middle" level facade
 * **producer**: fault tolerant high-level producer (batching and partitioning strategy)
