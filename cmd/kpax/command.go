@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"gopkg.in/vmihailenco/msgpack.v2"
 	"h12.me/kpax/consumer"
 	"h12.me/kpax/model"
 	"h12.me/kpax/proto"
@@ -81,6 +82,15 @@ func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
 				return time.Time{}, err
 			}
 			return parseTime(values.Get(field))
+		}
+	case "msgpack":
+		return func(msg []byte) (time.Time, error) {
+			m := make(map[string]interface{})
+			if err := msgpack.Unmarshal(msg, &m); err != nil {
+				return time.Time{}, err
+			}
+			timeField, _ := m[field].(string)
+			return parseTime(timeField)
 		}
 	}
 	return nil
