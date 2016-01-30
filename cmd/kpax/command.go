@@ -20,12 +20,12 @@ type Config struct {
 	ConfigFile string  `long:"config" default:"config.json"`
 	Brokers    Brokers `long:"brokers" json:"brokers"`
 
-	Consume ConsumeCommand `command:"consume"`
-	Commit  CommitCommand  `command:"commit"`
+	Consume  ConsumeCommand  `command:"consume" description:"print or count messages in a time range"`
+	Offset   OffsetCommand   `command:"offset" description:"print stored offset"`
+	Rollback RollbackCommand `command:"rollback" description:"commit older offset of a specific time"`
 
-	Meta   MetaConfig   `command:"meta"`
-	Coord  CoordConfig  `command:"coord"`
-	Offset OffsetConfig `command:"offset"`
+	Meta  MetaConfig  `command:"meta"`
+	Coord CoordConfig `command:"coord"`
 }
 
 type Brokers []string
@@ -36,13 +36,7 @@ func (t *Brokers) UnmarshalFlag(value string) error {
 }
 
 type CoordConfig struct {
-	GroupName string `long:"group"`
-}
-
-type OffsetConfig struct {
-	GroupName string `long:"group"`
-	Topic     string `long:"topic"`
-	Partition int    `long:"partition"`
+	Group string `long:"group"`
 }
 
 type Timestamp time.Time
@@ -193,8 +187,30 @@ func (ts *Topics) Set(s string) error {
 	return nil
 }
 
-type CommitCommand struct {
-	GroupName string    `long:"group"`
+type OffsetCommand struct {
+	Group string `long:"group"`
+	Topic string `long:"topic"`
+}
+
+func (cmd *OffsetCommand) Exec(cl model.Cluster) error {
+	partitions, err := cl.Partitions(cmd.Topic)
+	if err != nil {
+		return err
+	}
+	cr := consumer.New(cl)
+	fmt.Printf("topic: %s, group: %s\n", cmd.Topic, cmd.Group)
+	for _, partition := range partitions {
+		offset, err := cr.Offset(cmd.Topic, partition, cmd.Group)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\t%d:%d\n", partition, offset)
+	}
+	return nil
+}
+
+type RollbackCommand struct {
+	Group     string    `long:"group"`
 	Topic     string    `long:"topic"`
 	Start     Timestamp `long:"start"`
 	Format    string    `long:"format" default:"json"`
@@ -202,7 +218,7 @@ type CommitCommand struct {
 	Retention int       `long:"retention"` // millisecond
 }
 
-func (cmd *CommitCommand) Exec(cl model.Cluster) error {
+func (cmd *RollbackCommand) Exec(cl model.Cluster) error {
 	// TODO: detect format
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
@@ -220,9 +236,10 @@ func (cmd *CommitCommand) Exec(cl model.Cluster) error {
 				log.Println(err)
 				return
 			}
-			if err := cr.Commit(cmd.Topic, partition, cmd.GroupName, offset); err != nil {
+			if err := cr.Commit(cmd.Topic, partition, cmd.Group, offset); err != nil {
 				log.Println(err)
 			}
+			fmt.Printf("\t%d:%d\n", partition, offset)
 		}(partition)
 	}
 	wg.Wait()

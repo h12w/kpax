@@ -51,8 +51,12 @@ func main() {
 		if err := cfg.Consume.Exec(c); err != nil {
 			log.Fatal(err)
 		}
-	case "commit":
-		if err := cfg.Commit.Exec(c); err != nil {
+	case "offset":
+		if err := cfg.Offset.Exec(c); err != nil {
+			log.Fatal(err)
+		}
+	case "rollback":
+		if err := cfg.Rollback.Exec(c); err != nil {
 			log.Fatal(err)
 		}
 	}
