@@ -19,16 +19,15 @@ The client is built on top of Kafka Wire Protocol (i.e. low-level API). The prot
 
 ### Sub packages
 
-* **broker**: client that talks to a single Kafka broker (concurrent,
-  synchronous API wraps inside asynchronous request/response IO)
-* **cluster**: client that talks to a Kafka cluster (leader/coordinator management)
+* **model** is an abstraction model for request, response, broker and cluster
+* **broker** is a lazy asynchronous round tripper that talks to a single Kafka broker
+* **cluster** is a metadata manager that talks to a Kafka cluster
+* **proto** contains both low level API and a "middle" level facade
 * **producer**: fault tolerant high-level producer (batching and partitioning strategy)
 * **consumer**: fault tolerant high-level consumer (consumer group and offset commit)
 * **log**: replaceable global logger
-* **tools**
-    - **kafpro**: command line tool to query Kafka wire API
-    - **counter**: command line tool to count messages
-    - **filler**: command line tool to fill messages into a topic
+* **cmd**
+    - **kpax**: command line tool to help with Kafka programming
 
 ### Compatibility
 
@@ -75,4 +74,3 @@ Contributors
 ------------
 
 * [Tao Huang](https://github.com/AnotherGoogleFans)
-
