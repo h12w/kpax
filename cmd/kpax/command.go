@@ -126,15 +126,14 @@ func (cmd *ConsumeCommand) Exec(cl model.Cluster) error {
 	var cnt int64
 	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
 	for _, partition := range partitions {
-		go func(partition int32) error {
+		go func(partition int32) {
 			defer wg.Done()
 			partCnt, err := cmd.consumePartition(cr, partition, timeFunc)
 			if err != nil {
 				log.Println(err)
-				return nil
+				return
 			}
 			atomic.AddInt64(&cnt, partCnt)
-			return nil
 		}(partition)
 	}
 	wg.Wait()
@@ -204,44 +203,29 @@ type CommitCommand struct {
 }
 
 func (cmd *CommitCommand) Exec(cl model.Cluster) error {
-	/*
-		req := &broker.Request{
-			ClientID: clientID,
-			RequestMessage: &broker.OffsetCommitRequestV1{
-				ConsumerGroupID: cfg.GroupName,
-				OffsetCommitInTopicV1s: []broker.OffsetCommitInTopicV1{
-					{
-						TopicName: cfg.Topic,
-						OffsetCommitInPartitionV1s: []broker.OffsetCommitInPartitionV1{
-							{
-								Partition: int32(cfg.Partition),
-								Offset:    int64(cfg.Offset),
-								// TimeStamp in milliseconds
-								TimeStamp: time.Now().Add(time.Duration(cfg.Retention)*time.Millisecond).Unix() * 1000,
-							},
-						},
-					},
-				},
-			},
-		}
-		resp := broker.OffsetCommitResponse{}
-		if err := br.Do(req, &resp); err != nil {
-			return err
-		}
-		for i := range resp {
-			t := &resp[i]
-			if t.TopicName == cfg.Topic {
-				for j := range t.ErrorInPartitions {
-					p := &t.ErrorInPartitions[j]
-					if int(p.Partition) == cfg.Partition {
-						if p.HasError() {
-							return p.ErrorCode
-						}
-					}
-				}
+	// TODO: detect format
+	partitions, err := cl.Partitions(cmd.Topic)
+	if err != nil {
+		return err
+	}
+	cr := consumer.New(cl)
+	var wg sync.WaitGroup
+	wg.Add(len(partitions))
+	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
+	for _, partition := range partitions {
+		go func(partition int32) {
+			defer wg.Done()
+			offset, err := cr.SearchOffsetByTime(cmd.Topic, partition, time.Time(cmd.Start), timeFunc)
+			if err != nil {
+				log.Println(err)
+				return
 			}
-		}
-	*/
+			if err := cr.Commit(cmd.Topic, partition, cmd.GroupName, offset); err != nil {
+				log.Println(err)
+			}
+		}(partition)
+	}
+	wg.Wait()
 	return nil
 
 }

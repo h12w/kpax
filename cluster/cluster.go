@@ -36,21 +36,6 @@ func New(newBroker NewBrokerFunc, brokers []string) model.Cluster {
 	return c
 }
 
-func (c *C) Partitions(topic string) ([]int32, error) {
-	partitions := c.topics.getPartitions(topic)
-	if len(partitions) > 0 {
-		return partitions, nil
-	}
-	if err := c.updateFromTopicMetadata(topic); err != nil {
-		return nil, err
-	}
-	partitions = c.topics.getPartitions(topic)
-	if len(partitions) > 0 {
-		return partitions, nil
-	}
-	return nil, fmt.Errorf("topic %s not found", topic)
-}
-
 func (c *C) Coordinator(group string) (model.Broker, error) {
 	if coord, err := c.pool.GetCoordinator(group); err == nil {
 		return coord, nil
@@ -59,6 +44,11 @@ func (c *C) Coordinator(group string) (model.Broker, error) {
 		return nil, err
 	}
 	return c.pool.GetCoordinator(group)
+}
+
+func (c *C) CoordinatorIsDown(group string) {
+	log.Warnf("coordinator (%s) is down", group)
+	c.pool.DeleteCoordinator(group)
 }
 
 func (c *C) Leader(topic string, partition int32) (model.Broker, error) {
@@ -76,9 +66,19 @@ func (c *C) LeaderIsDown(topic string, partition int32) {
 	c.pool.DeleteLeader(topic, partition)
 }
 
-func (c *C) CoordinatorIsDown(group string) {
-	log.Warnf("coordinator (%s) is down", group)
-	c.pool.DeleteCoordinator(group)
+func (c *C) Partitions(topic string) ([]int32, error) {
+	partitions := c.topics.getPartitions(topic)
+	if len(partitions) > 0 {
+		return partitions, nil
+	}
+	if err := c.updateFromTopicMetadata(topic); err != nil {
+		return nil, err
+	}
+	partitions = c.topics.getPartitions(topic)
+	if len(partitions) > 0 {
+		return partitions, nil
+	}
+	return nil, fmt.Errorf("topic %s not found", topic)
 }
 
 func (c *C) updateCoordinator(group string) error {

@@ -51,6 +51,10 @@ func main() {
 		if err := cfg.Consume.Exec(c); err != nil {
 			log.Fatal(err)
 		}
+	case "commit":
+		if err := cfg.Commit.Exec(c); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	/*
