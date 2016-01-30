@@ -21,9 +21,9 @@ type Config struct {
 	ConfigFile string  `long:"config" default:"config.json"`
 	Brokers    Brokers `long:"brokers" json:"brokers"`
 
-	Consume  ConsumeCommand  `command:"consume" description:"print or count messages in a time range"`
-	Offset   OffsetCommand   `command:"offset" description:"print stored offset"`
-	Rollback RollbackCommand `command:"rollback" description:"commit older offset of a specific time"`
+	Consume  ConsumeCommand  `command:"consume"  description:"print or count messages wthin a time range"`
+	Offset   OffsetCommand   `command:"offset"   description:"print stored offsets of a topic and group"`
+	Rollback RollbackCommand `command:"rollback" description:"commit offsets of a specific time for a topic"`
 
 	Meta  MetaConfig  `command:"meta"`
 	Coord CoordConfig `command:"coord"`
