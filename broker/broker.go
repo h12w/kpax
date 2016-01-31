@@ -79,9 +79,12 @@ func (b *B) send(job *brokerJob) error {
 		b.recvChan = make(chan *brokerJob, b.QueueLen)
 		go b.receiveLoop()
 	}
-	b.recvChan <- job
+	if job.requireAck() {
+		b.recvChan <- job
+	}
 	return nil
 }
+func (j *brokerJob) requireAck() bool { return j.resp != nil }
 
 func (c *B) receiveLoop() {
 	for job := range c.recvChan {

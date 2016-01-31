@@ -70,7 +70,7 @@ type Payload struct {
 	Topic        string
 	Partition    int32
 	MessageSet   MessageSet
-	RequiredAcks int16
+	RequiredAcks ProduceAckType
 	AckTimeout   time.Duration
 }
 
@@ -90,7 +90,7 @@ func (p *Payload) Produce(c model.Cluster) error {
 
 func (p *Payload) DoProduce(b model.Broker) error {
 	req := ProduceRequest{
-		RequiredAcks: p.RequiredAcks,
+		RequiredAcks: int16(p.RequiredAcks),
 		Timeout:      int32(p.AckTimeout / time.Millisecond),
 		MessageSetInTopics: []MessageSetInTopic{
 			{
@@ -103,6 +103,10 @@ func (p *Payload) DoProduce(b model.Broker) error {
 				},
 			},
 		},
+	}
+
+	if p.RequiredAcks == AckNone {
+		return (client{clientID, b}).Do(&req, nil)
 	}
 
 	resp := ProduceResponse{}

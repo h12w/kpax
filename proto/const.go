@@ -4,10 +4,12 @@ import (
 	"time"
 )
 
+type ProduceAckType int16
+
 const (
-	AckNone  = 0
-	AckLocal = 1
-	AckAll   = -1
+	AckNone  ProduceAckType = 0
+	AckLocal ProduceAckType = 1
+	AckAll   ProduceAckType = -1
 )
 
 var (
