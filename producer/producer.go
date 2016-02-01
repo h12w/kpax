@@ -16,7 +16,7 @@ var (
 
 type P struct {
 	LeaderRecoveryTime time.Duration
-	RequiredAcks       int16
+	RequiredAcks       proto.ProduceAckType
 	AckTimeout         time.Duration
 	cluster            model.Cluster
 	topicPartitioner   *topicPartitioner
@@ -32,7 +32,11 @@ func New(cluster model.Cluster) *P {
 	}
 }
 
-func (p *P) Produce(topic string, key, value []byte) error {
+func (p *P) ProduceMessageSet(topic string, messageSet proto.MessageSet) error {
+	if len(messageSet) == 0 {
+		panic("empty message set")
+	}
+	key := messageSet[0].Key
 	partitioner := p.topicPartitioner.Get(topic)
 	if partitioner == nil {
 		partitions, err := p.cluster.Partitions(topic)
@@ -41,7 +45,6 @@ func (p *P) Produce(topic string, key, value []byte) error {
 		}
 		partitioner = p.topicPartitioner.Add(topic, partitions)
 	}
-	messageSet := getMessageSet(key, value)
 nextPartition:
 	for i := 0; i < partitioner.Count(); i++ {
 		partition, err := partitioner.Partition(key)
@@ -62,6 +65,10 @@ nextPartition:
 		return nil
 	}
 	return fmt.Errorf("fail to produce to all partitions in %s", topic)
+}
+
+func (p *P) Produce(topic string, key, value []byte) error {
+	return p.ProduceMessageSet(topic, getMessageSet(key, value))
 }
 
 func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byte) error {
