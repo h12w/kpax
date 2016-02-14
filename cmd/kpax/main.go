@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/jessevdk/go-flags"
+	"h12.me/config"
 	"h12.me/kpax/broker"
 	"h12.me/kpax/cluster"
 )
@@ -37,16 +38,13 @@ func init() {
 
 func main() {
 	var cfg Config
-	if err := parseJSON(&cfg); err != nil {
-	}
-	parser := flags.NewParser(&cfg, flags.HelpFlag|flags.PassDoubleDash)
-	_, err := parser.Parse()
+	cmd, err := config.ParseCommand(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 	c := cluster.New(broker.New, cfg.Brokers)
 	//fmt.Println(toJSON(cfg))
-	switch parser.Active.Name {
+	switch cmd.Name {
 	case "consume":
 		if err := cfg.Consume.Exec(c); err != nil {
 			log.Fatal(err)

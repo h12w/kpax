@@ -19,7 +19,7 @@ import (
 
 type Config struct {
 	ConfigFile string  `long:"config" default:"config.json"`
-	Brokers    Brokers `long:"brokers" json:"brokers"`
+	Brokers    Brokers `long:"brokers" yaml:"brokers"`
 
 	Consume  ConsumeCommand  `command:"consume"  description:"print or count messages wthin a time range"`
 	Offset   OffsetCommand   `command:"offset"   description:"print stored offsets of a topic and group"`
