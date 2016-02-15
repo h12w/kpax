@@ -90,7 +90,7 @@ func (c *C) updateCoordinator(group string) error {
 	for _, broker := range brokers {
 		coord, err := proto.GroupCoordinator(group).Fetch(broker)
 		if err != nil {
-			merr = append(merr, err)
+			merr.Add(err)
 			continue
 		}
 		c.pool.SetCoordinator(group, coord.NodeID, coord.Addr())
@@ -108,8 +108,14 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	for _, broker := range brokers {
 		m, err := proto.Metadata(topic).Fetch(broker)
 		if err != nil {
-			merr = append(merr, err)
-			continue
+			if err == proto.ErrLeaderNotAvailable {
+				// try twice for automatic topic creation
+				m, err = proto.Metadata(topic).Fetch(broker)
+				if err != nil {
+					merr.Add(err)
+					continue
+				}
+			}
 		}
 		for i := range m.Brokers {
 			b := &m.Brokers[i]
@@ -123,7 +129,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 					partition := &t.PartitionMetadatas[i]
 					partitions[i] = partition.PartitionID
 					if err := c.pool.SetLeader(topic, partition.PartitionID, partition.Leader); err != nil {
-						merr = append(merr, err)
+						merr.Add(err)
 						continue
 					}
 				}

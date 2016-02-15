@@ -13,3 +13,10 @@ func (es MultiError) Error() string {
 	}
 	return strings.Join(ss, ", ")
 }
+
+func (es *MultiError) Add(err error) {
+	if len(*es) > 0 && (*es)[len(*es)-1] == err {
+		return
+	}
+	*es = append(*es, err)
+}
