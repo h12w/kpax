@@ -57,6 +57,12 @@ func main() {
 		if err := cfg.Rollback.Exec(c); err != nil {
 			log.Fatal(err)
 		}
+	case "tail":
+		if err := cfg.Tail.Exec(c); err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal("unkown command " + cmd.Name)
 	}
 
 	/*

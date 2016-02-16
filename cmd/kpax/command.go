@@ -22,6 +22,7 @@ type Config struct {
 	Brokers    Brokers `long:"brokers" yaml:"brokers"`
 
 	Consume  ConsumeCommand  `command:"consume"  description:"print or count messages wthin a time range"`
+	Tail     TailCommand     `command:"tail" description:"print latest messages"`
 	Offset   OffsetCommand   `command:"offset"   description:"print stored offsets of a topic and group"`
 	Rollback RollbackCommand `command:"rollback" description:"commit offsets of a specific time for a topic"`
 
@@ -107,6 +108,56 @@ func parseTime(timeText string) (time.Time, error) {
 		return time.Unix(int64(unix), 0), err
 	}
 	return t, err
+}
+
+type TailCommand struct {
+	Topic  string `long:"topic"`
+	Format string `long:"format" default:"json"`
+	Count  int    `long:"count" short:"n" default:"10"`
+}
+
+func (cmd *TailCommand) Exec(cl model.Cluster) error {
+	// TODO: detect format
+	partitions, err := cl.Partitions(cmd.Topic)
+	if err != nil {
+		return err
+	}
+	cr := consumer.New(cl)
+	var wg sync.WaitGroup
+	wg.Add(len(partitions))
+	for _, partition := range partitions {
+		start, err := cr.FetchOffsetByTime(cmd.Topic, partition, proto.Earliest)
+		if err != nil {
+			return err
+		}
+		end, err := cr.FetchOffsetByTime(cmd.Topic, partition, proto.Latest)
+		if err != nil {
+			return err
+		}
+		if start < end-int64(cmd.Count) {
+			start = end - int64(cmd.Count)
+		}
+		go func(partition int32, start, end int64) {
+			defer wg.Done()
+			offset := start
+			for offset < end {
+				messages, err := cr.Consume(cmd.Topic, partition, offset)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if len(messages) == 0 {
+					break
+				}
+				for _, msg := range messages {
+					fmt.Println(string(msg.Value))
+				}
+				offset = messages[len(messages)-1].Offset + 1
+			}
+		}(partition, start, end)
+	}
+	wg.Wait()
+	return nil
 }
 
 type ConsumeCommand struct {
