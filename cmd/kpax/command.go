@@ -117,7 +117,10 @@ type TailCommand struct {
 }
 
 func (cmd *TailCommand) Exec(cl model.Cluster) error {
-	// TODO: detect format
+	format, err := formatDetector{cl, cmd.Topic}.detect()
+	if err != nil {
+		return err
+	}
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
 		return err
@@ -150,7 +153,7 @@ func (cmd *TailCommand) Exec(cl model.Cluster) error {
 					break
 				}
 				for _, msg := range messages {
-					fmt.Println(string(msg.Value))
+					fmt.Println(format.Sprint(msg.Value))
 				}
 				offset = messages[len(messages)-1].Offset + 1
 			}
