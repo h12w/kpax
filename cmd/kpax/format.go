@@ -8,6 +8,7 @@ import (
 	"h12.me/kpax/consumer"
 	"h12.me/kpax/model"
 	"h12.me/kpax/proto"
+	"h12.me/uuid/hexid"
 )
 
 type Format int
@@ -62,8 +63,13 @@ func (format Format) Sprint(value []byte) string {
 	switch format {
 	case MsgPackFormat:
 		m := make(map[string]interface{})
-		_ = msgpack.Unmarshal(value, &m)
-		buf, _ := json.Marshal(m)
+		if err := msgpack.Unmarshal(value, &m); err != nil {
+			break
+		}
+		buf, err := json.Marshal(hexid.Restore(m))
+		if err != nil {
+			break
+		}
 		return string(buf)
 	}
 	return string(value)
