@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -11,13 +12,13 @@ import (
 	"h12.me/uuid/hexid"
 )
 
-type Format int
+type Format string
 
 const (
-	UnknownFormat Format = iota
-	MsgPackFormat
-	JSONFormat
-	URLFormat
+	UnknownFormat Format = ""
+	MsgPackFormat Format = "msgpack"
+	JSONFormat    Format = "json"
+	URLFormat     Format = "url"
 )
 
 type formatDetector struct {
@@ -29,7 +30,7 @@ func (d formatDetector) detect() (Format, error) {
 	cl, topic := d.cl, d.topic
 	partitions, err := cl.Partitions(topic)
 	if err != nil {
-		return 0, err
+		return UnknownFormat, err
 	}
 	cr := consumer.New(cl)
 	for _, partition := range partitions {
@@ -59,7 +60,7 @@ func detectFormat(value []byte) (Format, error) {
 	return UnknownFormat, nil
 }
 
-func (format Format) Sprint(value []byte) string {
+func (format Format) Sprint(value []byte) (string, error) {
 	switch format {
 	case MsgPackFormat:
 		m := make(map[string]interface{})
@@ -68,9 +69,9 @@ func (format Format) Sprint(value []byte) string {
 		}
 		buf, err := json.Marshal(hexid.Restore(m))
 		if err != nil {
-			break
+			return "", fmt.Errorf("fail to marshal %#v: %s", m, err.Error())
 		}
-		return string(buf)
+		return string(buf), nil
 	}
-	return string(value)
+	return string(value), nil
 }

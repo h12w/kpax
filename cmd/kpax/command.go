@@ -15,6 +15,11 @@ import (
 	"h12.me/kpax/consumer"
 	"h12.me/kpax/model"
 	"h12.me/kpax/proto"
+	"h12.me/uuid/hexid"
+)
+
+const (
+	timeFormat = "2006-01-02T15:04:05"
 )
 
 type Config struct {
@@ -54,7 +59,7 @@ func (t *Timestamp) UnmarshalFlag(value string) error {
 	case "earliest":
 		*t = Timestamp(proto.Earliest)
 	default:
-		tm, err := time.Parse("2006-01-02T15:04:05", value)
+		tm, err := time.Parse(timeFormat, value)
 		if err != nil {
 			return fmt.Errorf("error parsing %s: %s", value, err.Error())
 		}
@@ -90,36 +95,47 @@ func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
 			if err := msgpack.Unmarshal(msg, &m); err != nil {
 				return time.Time{}, err
 			}
-			timeField, _ := m[field].(string)
-			return parseTime(timeField)
+			m = hexid.Restore(m).(map[string]interface{})
+			return parseTime(m[field])
 		}
 	}
 	return nil
 }
 
 // parseTime parses time as RFC3339 or unix timestamp
-func parseTime(timeText string) (time.Time, error) {
+func parseTime(v interface{}) (time.Time, error) {
+	if t, ok := v.(time.Time); ok {
+		return t, nil
+	}
+	timeText, ok := v.(string)
+	if !ok {
+		return time.Time{}, fmt.Errorf("fail to parse time %v", v)
+	}
 	t, err := time.Parse(time.RFC3339Nano, timeText)
 	if err != nil {
 		unix, err := strconv.Atoi(timeText)
 		if err != nil {
-			return time.Time{}, err
+			return time.Time{}, fmt.Errorf("fail to parse %s: %s", timeText, err.Error())
 		}
-		return time.Unix(int64(unix), 0), err
+		return time.Unix(int64(unix), 0), nil
 	}
-	return t, err
+	return t, nil
 }
 
 type TailCommand struct {
 	Topic  string `long:"topic"`
-	Format string `long:"format" default:"json"`
+	Format string `long:"format"`
 	Count  int    `long:"count" short:"n" default:"10"`
 }
 
 func (cmd *TailCommand) Exec(cl model.Cluster) error {
-	format, err := formatDetector{cl, cmd.Topic}.detect()
-	if err != nil {
-		return err
+	format := Format(cmd.Format)
+	if format == "" {
+		var err error
+		format, err = formatDetector{cl, cmd.Topic}.detect()
+		if err != nil {
+			return err
+		}
 	}
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
@@ -153,7 +169,12 @@ func (cmd *TailCommand) Exec(cl model.Cluster) error {
 					break
 				}
 				for _, msg := range messages {
-					fmt.Println(format.Sprint(msg.Value))
+					line, err := format.Sprint(msg.Value)
+					if err != nil {
+						log.Println(err)
+						break
+					}
+					fmt.Println(line)
 				}
 				offset = messages[len(messages)-1].Offset + 1
 			}
