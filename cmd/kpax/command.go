@@ -14,6 +14,7 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"h12.me/kpax/consumer"
 	"h12.me/kpax/model"
+	"h12.me/kpax/producer"
 	"h12.me/kpax/proto"
 	"h12.me/uuid/hexid"
 )
@@ -27,6 +28,7 @@ type Config struct {
 	Brokers    Brokers `long:"brokers" yaml:"brokers"`
 
 	Consume  ConsumeCommand  `command:"consume"  description:"print or count messages wthin a time range"`
+	Produce  ProduceCommand  `command:"produce"  description:"produce one message to the topic"`
 	Tail     TailCommand     `command:"tail" description:"print latest messages"`
 	Offset   OffsetCommand   `command:"offset"   description:"print stored offsets of a topic and group"`
 	Rollback RollbackCommand `command:"rollback" description:"commit offsets of a specific time for a topic"`
@@ -255,6 +257,31 @@ func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, tim
 		offset = messages[len(messages)-1].Offset + 1
 	}
 	return cnt, nil
+}
+
+type ProduceCommand struct {
+	File   string `long:"file"`
+	Msg    string `long:"msg"`
+	Format Format `long:"format"`
+	Topic  string `long:"topic"`
+}
+
+func (cmd *ProduceCommand) Exec(cl model.Cluster) error {
+	pr := producer.New(cl)
+	var msg []byte
+	if cmd.Msg != "" {
+		msg = []byte(cmd.Msg)
+	}
+	v := make(map[string]interface{})
+	if err := json.Unmarshal(msg, &v); err != nil {
+		return err
+	}
+	fmt.Printf("%#v\n", v)
+	value, err := cmd.Format.marshal(v)
+	if err != nil {
+		return err
+	}
+	return pr.Produce(cmd.Topic, nil, value)
 }
 
 type MetaConfig struct {

@@ -75,3 +75,13 @@ func (format Format) Sprint(value []byte) (string, error) {
 	}
 	return string(value), nil
 }
+
+func (format Format) marshal(v interface{}) ([]byte, error) {
+	switch format {
+	case MsgPackFormat:
+		return msgpack.Marshal(v)
+	case JSONFormat:
+		return json.Marshal(v)
+	}
+	return []byte(fmt.Sprint(v)), nil
+}

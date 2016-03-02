@@ -61,6 +61,10 @@ func main() {
 		if err := cfg.Tail.Exec(c); err != nil {
 			log.Fatal(err)
 		}
+	case "produce":
+		if err := cfg.Produce.Exec(c); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		log.Fatal("unkown command " + cmd.Name)
 	}
