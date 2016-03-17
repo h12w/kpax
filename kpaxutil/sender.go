@@ -8,15 +8,19 @@ import (
 	"h12.me/kpax/producer"
 )
 
-type Sender struct {
+type Sender interface {
+	Send(topic string, value encoding.BinaryMarshaler) error
+}
+
+type simpleSender struct {
 	p *producer.P
 }
 
-func NewSender(brokers []string) *Sender {
-	return &Sender{p: producer.New(cluster.New(broker.New, brokers))}
+func NewSender(brokers []string) Sender {
+	return &simpleSender{p: producer.New(cluster.New(broker.New, brokers))}
 }
 
-func (s *Sender) Send(topic string, value encoding.BinaryMarshaler) error {
+func (s *simpleSender) Send(topic string, value encoding.BinaryMarshaler) error {
 	buf, err := value.MarshalBinary()
 	if err != nil {
 		return err
