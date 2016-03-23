@@ -4,19 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"gopkg.in/vmihailenco/msgpack.v2"
 	"h12.me/kpax/consumer"
 	"h12.me/kpax/model"
 	"h12.me/kpax/producer"
 	"h12.me/kpax/proto"
-	"h12.me/uuid/hexid"
 )
 
 const (
@@ -70,40 +67,6 @@ func (t *Timestamp) UnmarshalFlag(value string) error {
 	return nil
 }
 
-type TimeUnmarshalFunc func([]byte) (time.Time, error)
-
-func unmarshalTime(format, field string) func([]byte) (time.Time, error) {
-	switch format {
-	case "json":
-		return func(msg []byte) (time.Time, error) {
-			m := make(map[string]interface{})
-			if err := json.Unmarshal(msg, &m); err != nil {
-				return time.Time{}, err
-			}
-			timeField, _ := m[field].(string)
-			return parseTime(timeField)
-		}
-	case "url":
-		return func(msg []byte) (time.Time, error) {
-			values, err := url.ParseQuery(string(msg))
-			if err != nil {
-				return time.Time{}, err
-			}
-			return parseTime(values.Get(field))
-		}
-	case "msgpack":
-		return func(msg []byte) (time.Time, error) {
-			m := make(map[string]interface{})
-			if err := msgpack.Unmarshal(msg, &m); err != nil {
-				return time.Time{}, err
-			}
-			m = hexid.Restore(m).(map[string]interface{})
-			return parseTime(m[field])
-		}
-	}
-	return nil
-}
-
 // parseTime parses time as RFC3339 or unix timestamp
 func parseTime(v interface{}) (time.Time, error) {
 	if t, ok := v.(time.Time); ok {
@@ -126,15 +89,14 @@ func parseTime(v interface{}) (time.Time, error) {
 
 type TailCommand struct {
 	Topic  string `long:"topic"`
-	Format string `long:"format"`
+	Format Format `long:"format"`
 	Count  int    `long:"count" short:"n" default:"10"`
 }
 
 func (cmd *TailCommand) Exec(cl model.Cluster) error {
-	format := Format(cmd.Format)
-	if format == "" {
+	if cmd.Format == "" {
 		var err error
-		format, err = formatDetector{cl, cmd.Topic}.detect()
+		cmd.Format, err = formatDetector{cl, cmd.Topic}.detect()
 		if err != nil {
 			return err
 		}
@@ -171,7 +133,7 @@ func (cmd *TailCommand) Exec(cl model.Cluster) error {
 					break
 				}
 				for _, msg := range messages {
-					line, err := format.Sprint(msg.Value)
+					line, err := cmd.Format.Sprint(msg.Value)
 					if err != nil {
 						log.Println(err)
 						break
@@ -190,13 +152,19 @@ type ConsumeCommand struct {
 	Topic     string    `long:"topic"`
 	Start     Timestamp `long:"start"`
 	End       Timestamp `long:"end"`
-	Format    string    `long:"format" default:"json"`
+	Format    Format    `long:"format" default:"json"`
 	TimeField string    `long:"time-field"`
 	Count     bool      `long:"count"`
 }
 
 func (cmd *ConsumeCommand) Exec(cl model.Cluster) error {
-	// TODO: detect format
+	if cmd.Format == "" {
+		var err error
+		cmd.Format, err = formatDetector{cl, cmd.Topic}.detect()
+		if err != nil {
+			return err
+		}
+	}
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
 		return err
@@ -205,7 +173,7 @@ func (cmd *ConsumeCommand) Exec(cl model.Cluster) error {
 	var wg sync.WaitGroup
 	wg.Add(len(partitions))
 	var cnt int64
-	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
+	timeFunc := cmd.Format.unmarshalTime(cmd.TimeField)
 	for _, partition := range partitions {
 		go func(partition int32) {
 			defer wg.Done()
@@ -246,7 +214,12 @@ func (cmd *ConsumeCommand) consumePartition(cr *consumer.C, partition int32, tim
 			}
 			if !t.Before(time.Time(cmd.Start)) && t.Before(time.Time(cmd.End)) {
 				if !cmd.Count {
-					fmt.Println(string(msg.Value))
+					line, err := cmd.Format.Sprint(msg.Value)
+					if err != nil {
+						log.Println(err)
+						break
+					}
+					fmt.Println(line)
 				}
 				cnt++
 			}
@@ -325,13 +298,19 @@ type RollbackCommand struct {
 	Group     string    `long:"group"`
 	Topic     string    `long:"topic"`
 	Start     Timestamp `long:"start"`
-	Format    string    `long:"format" default:"json"`
+	Format    Format    `long:"format" default:"json"`
 	TimeField string    `long:"time-field"`
 	Retention int       `long:"retention"` // millisecond
 }
 
 func (cmd *RollbackCommand) Exec(cl model.Cluster) error {
-	// TODO: detect format
+	if cmd.Format == "" {
+		var err error
+		cmd.Format, err = formatDetector{cl, cmd.Topic}.detect()
+		if err != nil {
+			return err
+		}
+	}
 	partitions, err := cl.Partitions(cmd.Topic)
 	if err != nil {
 		return err
@@ -339,7 +318,7 @@ func (cmd *RollbackCommand) Exec(cl model.Cluster) error {
 	cr := consumer.New(cl)
 	var wg sync.WaitGroup
 	wg.Add(len(partitions))
-	timeFunc := unmarshalTime(cmd.Format, cmd.TimeField)
+	timeFunc := cmd.Format.unmarshalTime(cmd.TimeField)
 	for _, partition := range partitions {
 		go func(partition int32) {
 			defer wg.Done()

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"h12.me/kpax/consumer"
@@ -84,4 +85,38 @@ func (format Format) marshal(v interface{}) ([]byte, error) {
 		return json.Marshal(v)
 	}
 	return []byte(fmt.Sprint(v)), nil
+}
+
+type TimeUnmarshalFunc func([]byte) (time.Time, error)
+
+func (format Format) unmarshalTime(field string) func([]byte) (time.Time, error) {
+	switch format {
+	case "json":
+		return func(msg []byte) (time.Time, error) {
+			m := make(map[string]interface{})
+			if err := json.Unmarshal(msg, &m); err != nil {
+				return time.Time{}, err
+			}
+			timeField, _ := m[field].(string)
+			return parseTime(timeField)
+		}
+	case "url":
+		return func(msg []byte) (time.Time, error) {
+			values, err := url.ParseQuery(string(msg))
+			if err != nil {
+				return time.Time{}, err
+			}
+			return parseTime(values.Get(field))
+		}
+	case "msgpack":
+		return func(msg []byte) (time.Time, error) {
+			m := make(map[string]interface{})
+			if err := msgpack.Unmarshal(msg, &m); err != nil {
+				return time.Time{}, err
+			}
+			m = hexid.Restore(m).(map[string]interface{})
+			return parseTime(m[field])
+		}
+	}
+	return nil
 }
