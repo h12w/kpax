@@ -88,9 +88,10 @@ func parseTime(v interface{}) (time.Time, error) {
 }
 
 type TailCommand struct {
-	Topic  string `long:"topic"`
-	Format Format `long:"format"`
-	Count  int    `long:"count" short:"n" default:"10"`
+	Topic     string `long:"topic"`
+	Partition int    `long:"partition" default:"-1"`
+	Format    Format `long:"format"`
+	Count     int    `long:"count" short:"n" default:"10"`
 }
 
 func (cmd *TailCommand) Exec(cl model.Cluster) error {
@@ -101,9 +102,15 @@ func (cmd *TailCommand) Exec(cl model.Cluster) error {
 			return err
 		}
 	}
-	partitions, err := cl.Partitions(cmd.Topic)
-	if err != nil {
-		return err
+	var partitions []int32
+	if cmd.Partition == -1 {
+		var err error
+		partitions, err = cl.Partitions(cmd.Topic)
+		if err != nil {
+			return err
+		}
+	} else {
+		partitions = []int32{int32(cmd.Partition)}
 	}
 	cr := consumer.New(cl)
 	var wg sync.WaitGroup
