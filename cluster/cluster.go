@@ -107,15 +107,13 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	var merr MultiError
 	for _, broker := range brokers {
 		m, err := proto.Metadata(topic).Fetch(broker)
+		if err == proto.ErrLeaderNotAvailable {
+			// try twice for automatic topic creation
+			m, err = proto.Metadata(topic).Fetch(broker)
+		}
 		if err != nil {
-			if err == proto.ErrLeaderNotAvailable {
-				// try twice for automatic topic creation
-				m, err = proto.Metadata(topic).Fetch(broker)
-				if err != nil {
-					merr.Add(err)
-					continue
-				}
-			}
+			merr.Add(err)
+			continue
 		}
 		for i := range m.Brokers {
 			b := &m.Brokers[i]
