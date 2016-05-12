@@ -65,6 +65,10 @@ func main() {
 		if err := cfg.Produce.Exec(c); err != nil {
 			log.Fatal(err)
 		}
+	case "meta":
+		if err := cfg.Meta.Exec(c); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		log.Fatal("unkown command " + cmd.Name)
 	}

@@ -30,7 +30,7 @@ type Config struct {
 	Offset   OffsetCommand   `command:"offset"   description:"print stored offsets of a topic and group"`
 	Rollback RollbackCommand `command:"rollback" description:"commit offsets of a specific time for a topic"`
 
-	Meta  MetaConfig  `command:"meta"`
+	Meta  MetaCommand `command:"meta"`
 	Coord CoordConfig `command:"coord"`
 }
 
@@ -264,8 +264,22 @@ func (cmd *ProduceCommand) Exec(cl model.Cluster) error {
 	return pr.Produce(cmd.Topic, nil, value)
 }
 
-type MetaConfig struct {
-	Topics Topics `long:"topics"`
+type MetaCommand struct {
+	Topic     string `long:"topic"`
+	Partition int    `long:"partition"`
+}
+
+func (cmd *MetaCommand) Exec(cl model.Cluster) error {
+	b, err := cl.Leader(cmd.Topic, int32(cmd.Partition))
+	if err != nil {
+		return err
+	}
+	res, err := proto.Metadata(cmd.Topic).Fetch(b)
+	if err != nil {
+		return err
+	}
+	fmt.Println(toJSON(res))
+	return nil
 }
 
 type Topics []string
