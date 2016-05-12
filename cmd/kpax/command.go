@@ -294,8 +294,10 @@ func (ts *Topics) Set(s string) error {
 }
 
 type OffsetCommand struct {
-	Group string `long:"group"`
-	Topic string `long:"topic"`
+	Group    string `long:"group"`
+	Topic    string `long:"topic"`
+	Earliest bool   `long:"earliest"`
+	Latest   bool   `long:"latest"`
 }
 
 func (cmd *OffsetCommand) Exec(cl model.Cluster) error {
@@ -306,7 +308,15 @@ func (cmd *OffsetCommand) Exec(cl model.Cluster) error {
 	cr := consumer.New(cl)
 	fmt.Printf("topic: %s, group: %s\n", cmd.Topic, cmd.Group)
 	for _, partition := range partitions {
-		offset, err := cr.Offset(cmd.Topic, partition, cmd.Group)
+		offset := int64(-1)
+		var err error
+		if cmd.Latest {
+			offset, err = cr.FetchOffsetByTime(cmd.Topic, partition, proto.Latest)
+		} else if cmd.Earliest {
+			offset, err = cr.FetchOffsetByTime(cmd.Topic, partition, proto.Earliest)
+		} else {
+			offset, err = cr.Offset(cmd.Topic, partition, cmd.Group)
+		}
 		if err != nil {
 			return err
 		}

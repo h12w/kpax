@@ -46,31 +46,22 @@ func main() {
 	//fmt.Println(toJSON(cfg))
 	switch cmd.Name {
 	case "consume":
-		if err := cfg.Consume.Exec(c); err != nil {
-			log.Fatal(err)
-		}
+		err = cfg.Consume.Exec(c)
 	case "offset":
-		if err := cfg.Offset.Exec(c); err != nil {
-			log.Fatal(err)
-		}
+		err = cfg.Offset.Exec(c)
 	case "rollback":
-		if err := cfg.Rollback.Exec(c); err != nil {
-			log.Fatal(err)
-		}
+		err = cfg.Rollback.Exec(c)
 	case "tail":
-		if err := cfg.Tail.Exec(c); err != nil {
-			log.Fatal(err)
-		}
+		err = cfg.Tail.Exec(c)
 	case "produce":
-		if err := cfg.Produce.Exec(c); err != nil {
-			log.Fatal(err)
-		}
+		err = cfg.Produce.Exec(c)
 	case "meta":
-		if err := cfg.Meta.Exec(c); err != nil {
-			log.Fatal(err)
-		}
+		err = cfg.Meta.Exec(c)
 	default:
 		log.Fatal("unkown command " + cmd.Name)
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	/*
