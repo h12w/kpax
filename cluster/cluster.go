@@ -109,20 +109,14 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	for _, broker := range brokers {
 		var err error
 		var m *proto.TopicMetadataResponse
-		startTime := time.Now()
-		timeout := 10 * time.Second
-		for {
+		for i := 0; i < 10; i++ {
+			// retry for automatic topic creation
 			m, err = proto.Metadata(topic).Fetch(broker)
 			if err == proto.ErrLeaderNotAvailable {
-				if time.Now().Sub(startTime) > timeout {
-					log.Errorf("waiting leader election timeout")
-					break
-				} else {
-					time.Sleep(time.Second)
-				}
-			} else {
-				break
+				time.Sleep(time.Second)
+				continue
 			}
+			break
 		}
 		if err != nil {
 			merr.Add(err)
