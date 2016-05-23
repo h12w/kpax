@@ -109,7 +109,7 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	for _, broker := range brokers {
 		var err error
 		var m *proto.TopicMetadataResponse
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 3; i++ {
 			// retry for automatic topic creation
 			m, err = proto.Metadata(topic).Fetch(broker)
 			if err == proto.ErrLeaderNotAvailable {
