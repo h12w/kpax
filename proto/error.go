@@ -32,16 +32,15 @@ func (code ErrorCode) HasError() bool {
 
 func IsNotLeader(err error) bool {
 	switch err {
-	case ErrConn, ErrUnknown, ErrNotLeaderForPartition:
-		return true
+	case ErrOffsetOutOfRange, ErrInvalidMessage, ErrInvalidMessageSize, ErrMessageSizeTooLarge,
+		ErrStaleControllerEpochCode, ErrOffsetMetadataTooLargeCode, ErrRecordListTooLargeCode,
+		ErrInvalidRequiredAcksCode, ErrIllegalGenerationCode, ErrInconsistentGroupProtocolCode,
+		ErrTopicAuthorizationFailedCode, ErrGroupAuthorizationFailedCode, ErrClusterAuthorizationFailedCode:
+		return false
 	}
-	return false
+	return true
 }
 
 func IsNotCoordinator(err error) bool {
-	switch err {
-	case ErrConn, ErrUnknown, ErrNotCoordinatorForGroupCode:
-		return true
-	}
-	return false
+	return IsNotLeader(err)
 }
