@@ -101,6 +101,9 @@ func (c *B) receiveLoop() {
 			continue
 		}
 		if job.resp.ID() != job.req.ID() {
+			if err == wipro.ErrConn {
+				c.closeConn()
+			}
 			job.errChan <- ErrCorrelationIDMismatch
 			continue
 		}
