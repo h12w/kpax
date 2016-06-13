@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"h12.me/kpax/model"
-	"h12.me/wipro"
 )
 
 var (
@@ -70,9 +69,7 @@ func (b *B) send(job *brokerJob) error {
 	defer b.mu.Unlock()
 	job.req.SetID(atomic.AddInt32(&b.cid, 1))
 	if err := job.req.Send(conn); err != nil {
-		if err == wipro.ErrConn {
-			b.closeConn()
-		}
+		b.closeConn()
 		return err
 	}
 	if b.recvChan == nil {
@@ -94,16 +91,12 @@ func (c *B) receiveLoop() {
 			continue
 		}
 		if err := job.resp.Receive(conn); err != nil {
-			if err == wipro.ErrConn {
-				c.closeConn()
-			}
+			c.closeConn()
 			job.errChan <- err
 			continue
 		}
 		if job.resp.ID() != job.req.ID() {
-			if err == wipro.ErrConn {
-				c.closeConn()
-			}
+			c.closeConn()
 			job.errChan <- ErrCorrelationIDMismatch
 			continue
 		}
