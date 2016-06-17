@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"h12.me/kpax/log"
 	"h12.me/kpax/model"
@@ -107,17 +106,8 @@ func (c *C) updateFromTopicMetadata(topic string) error {
 	}
 	var merr MultiError
 	for _, broker := range brokers {
-		var err error
-		var m *proto.TopicMetadataResponse
-		for i := 0; i < 3; i++ {
-			// retry for automatic topic creation
-			m, err = proto.Metadata(topic).Fetch(broker)
-			if err == proto.ErrLeaderNotAvailable {
-				time.Sleep(time.Second)
-				continue
-			}
-			break
-		}
+		// no retry, fail fast
+		m, err := proto.Metadata(topic).Fetch(broker)
 		if err != nil {
 			merr.Add(err)
 			continue
