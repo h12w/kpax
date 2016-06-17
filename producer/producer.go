@@ -59,7 +59,6 @@ nextPartition:
 			RequiredAcks: p.RequiredAcks,
 			AckTimeout:   p.AckTimeout,
 		}).Produce(p.cluster); err != nil {
-			partitioner.Skip(partition)
 			continue nextPartition
 		}
 		return nil

@@ -1,11 +1,6 @@
 package producer
 
-import (
-	"sync"
-	"time"
-
-	"h12.me/kpax/log"
-)
+import "sync"
 
 type topicPartitioner struct {
 	m  map[string]*partitioner
@@ -42,25 +37,15 @@ func (tp *topicPartitioner) Delete(topic string) {
 }
 
 type partitioner struct {
-	partitions   []int32
-	skipList     map[int32]time.Time
-	recoveryTime time.Duration
-	i            int
-	mu           sync.Mutex
+	partitions []int32
+	i          int
+	mu         sync.Mutex
 }
 
 func newPartitioner(partitions []int32) *partitioner {
 	return &partitioner{
 		partitions: partitions,
-		skipList:   make(map[int32]time.Time),
 	}
-}
-
-func (p *partitioner) Skip(partition int32) {
-	p.mu.Lock()
-	log.Warnf("partition %d skipped", partition)
-	p.skipList[partition] = time.Now().Add(p.recoveryTime)
-	p.mu.Unlock()
 }
 
 func (p *partitioner) Count() int {
@@ -75,12 +60,6 @@ func (p *partitioner) Partition([]byte) (int32, error) {
 		p.i++
 		if p.i == len(p.partitions) {
 			p.i = 0
-		}
-		if expireTime, ok := p.skipList[partition]; ok {
-			if time.Now().Before(expireTime) {
-				continue
-			}
-			delete(p.skipList, partition)
 		}
 		return partition, nil
 	}
