@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"h12.me/kpax/log"
 	"h12.me/kpax/model"
 	"h12.me/kpax/proto"
 )
@@ -47,7 +46,9 @@ func (c *C) Coordinator(group string) (model.Broker, error) {
 }
 
 func (c *C) CoordinatorIsDown(group string) {
-	log.Warnf("coordinator (%s) is down", group)
+	if broker, err := c.Coordinator(group); err == nil {
+		broker.Close()
+	}
 	c.pool.DeleteCoordinator(group)
 }
 
@@ -62,7 +63,9 @@ func (c *C) Leader(topic string, partition int32) (model.Broker, error) {
 }
 
 func (c *C) LeaderIsDown(topic string, partition int32) {
-	log.Warnf("leader (%s,%d) is down", topic, partition)
+	if broker, err := c.Leader(topic, partition); err == nil {
+		broker.Close()
+	}
 	c.pool.DeleteLeader(topic, partition)
 }
 

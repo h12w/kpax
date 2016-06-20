@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"h12.me/kpax/log"
 	"h12.me/kpax/model"
 	"h12.me/kpax/proto"
 )
@@ -59,6 +60,7 @@ nextPartition:
 			RequiredAcks: p.RequiredAcks,
 			AckTimeout:   p.AckTimeout,
 		}).Produce(p.cluster); err != nil {
+			log.Warnf("fail to produce to one partition %d in %s", partition, topic)
 			continue nextPartition
 		}
 		return nil
