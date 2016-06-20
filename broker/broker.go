@@ -37,7 +37,7 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func New(addr string) model.Broker {
+func New(addr string) *B {
 	b := &B{
 		Addr:     addr,
 		Timeout:  30 * time.Second,
@@ -46,6 +46,8 @@ func New(addr string) model.Broker {
 	b.connection.B = b
 	return b
 }
+
+func NewDefault(addr string) model.Broker { return New(addr) }
 
 func (b *B) Do(req model.Request, resp model.Response) error {
 	job := &brokerJob{
