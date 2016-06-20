@@ -81,6 +81,7 @@ func (p *Payload) Produce(c model.Cluster) error {
 	}
 	if err := p.DoProduce(leader); err != nil {
 		if IsNotLeader(err) {
+			leader.Close()
 			c.LeaderIsDown(p.Topic, p.Partition)
 		}
 		return err
@@ -149,6 +150,7 @@ func (m *Messages) Consume(c model.Cluster) (MessageSet, error) {
 	ms, err := m.DoConsume(leader)
 	if err != nil {
 		if IsNotLeader(err) {
+			leader.Close()
 			c.LeaderIsDown(m.Topic, m.Partition)
 		}
 		return nil, err
@@ -230,6 +232,7 @@ func (o *Offset) Commit(c model.Cluster) error {
 	}
 	if err := o.DoCommit(coord); err != nil {
 		if IsNotCoordinator(err) {
+			coord.Close()
 			c.CoordinatorIsDown(o.Group)
 		}
 		return err
@@ -283,6 +286,7 @@ func (o *Offset) Fetch(c model.Cluster) (int64, error) {
 	offset, err := o.DoFetch(coord)
 	if err != nil {
 		if IsNotCoordinator(err) {
+			coord.Close()
 			c.CoordinatorIsDown(o.Group)
 		}
 		return -1, err
@@ -334,6 +338,7 @@ func (o *OffsetByTime) Fetch(c model.Cluster) (int64, error) {
 	offset, err := o.DoFetch(leader)
 	if err != nil {
 		if IsNotLeader(err) {
+			leader.Close()
 			c.LeaderIsDown(o.Topic, o.Partition)
 		}
 		return -1, err
