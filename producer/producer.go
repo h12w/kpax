@@ -16,20 +16,18 @@ var (
 )
 
 type P struct {
-	LeaderRecoveryTime time.Duration
-	RequiredAcks       proto.ProduceAckType
-	AckTimeout         time.Duration
-	cluster            model.Cluster
-	topicPartitioner   *topicPartitioner
+	RequiredAcks     proto.ProduceAckType
+	AckTimeout       time.Duration
+	cluster          model.Cluster
+	topicPartitioner *topicPartitioner
 }
 
 func New(cluster model.Cluster) *P {
 	return &P{
-		cluster:            cluster,
-		topicPartitioner:   newTopicPartitioner(),
-		LeaderRecoveryTime: 60 * time.Second,
-		RequiredAcks:       proto.AckLocal,
-		AckTimeout:         10 * time.Second,
+		cluster:          cluster,
+		topicPartitioner: newTopicPartitioner(),
+		RequiredAcks:     proto.AckLocal,
+		AckTimeout:       10 * time.Second,
 	}
 }
 
