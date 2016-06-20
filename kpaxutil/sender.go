@@ -17,7 +17,7 @@ type simpleSender struct {
 }
 
 func NewSender(brokers []string) Sender {
-	return &simpleSender{p: producer.New(cluster.New(broker.New, brokers))}
+	return &simpleSender{p: producer.New(cluster.New(broker.NewDefault, brokers))}
 }
 
 func (s *simpleSender) Send(topic string, value encoding.BinaryMarshaler) error {
