@@ -46,9 +46,6 @@ func (c *C) Coordinator(group string) (model.Broker, error) {
 }
 
 func (c *C) CoordinatorIsDown(group string) {
-	if broker, err := c.Coordinator(group); err == nil {
-		broker.Close()
-	}
 	c.pool.DeleteCoordinator(group)
 }
 
@@ -63,9 +60,6 @@ func (c *C) Leader(topic string, partition int32) (model.Broker, error) {
 }
 
 func (c *C) LeaderIsDown(topic string, partition int32) {
-	if broker, err := c.Leader(topic, partition); err == nil {
-		broker.Close()
-	}
 	c.pool.DeleteLeader(topic, partition)
 }
 

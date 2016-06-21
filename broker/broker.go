@@ -114,6 +114,7 @@ func (b *B) Close() {
 		close(b.recvChan)
 		b.recvChan = nil
 	}
+	b.closeConn()
 }
 
 func (c *connection) getConn() (net.Conn, error) {
