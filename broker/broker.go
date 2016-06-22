@@ -31,16 +31,15 @@ func New(addr string) *B {
 func NewDefault(addr string) model.Broker { return New(addr) }
 
 func (b *B) Do(req model.Request, resp model.Response) error {
+	var err error
 	b.mu.Lock()
 	if b.br == nil {
-		var err error
 		b.br, err = b.newBroker()
-		if err != nil {
-			b.mu.Unlock()
-			return err
-		}
 	}
 	b.mu.Unlock()
+	if err != nil {
+		return err
+	}
 
 	if err := b.br.do(req, resp); err != nil {
 		b.Close()
