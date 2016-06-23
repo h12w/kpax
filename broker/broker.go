@@ -45,7 +45,7 @@ func (b *B) Do(req model.Request, resp model.Response) error {
 		return err
 	}
 
-	if err := br.do(req, resp); err != nil {
+	if err := <-br.do(req, resp); err != nil {
 		b.mu.Lock()
 		if b.br == br {
 			b.br = nil
@@ -93,28 +93,18 @@ func (b *B) newBroker() (*broker, error) {
 	return br, nil
 }
 
-func (b *broker) do(req model.Request, resp model.Response) error {
+func (b *broker) do(req model.Request, resp model.Response) chan error {
 	job := &brokerJob{
 		req:     req,
 		resp:    resp,
 		errChan: make(chan error),
 	}
 	if err := b.send(job); err != nil {
-		return err
+		go func() {
+			job.errChan <- err
+		}()
 	}
-	if job.requireAck() {
-		return <-job.errChan
-	}
-	return nil
-}
-
-func (b *broker) close() {
-	b.mu.Lock()
-	if b.recvChan != nil {
-		close(b.recvChan)
-		b.recvChan = nil
-	}
-	b.mu.Unlock()
+	return job.errChan
 }
 
 func (b *broker) send(job *brokerJob) error {
@@ -134,6 +124,15 @@ func (b *broker) send(job *brokerJob) error {
 		b.recvChan <- job
 	}
 	return nil
+}
+
+func (b *broker) close() {
+	b.mu.Lock()
+	if b.recvChan != nil {
+		close(b.recvChan)
+		b.recvChan = nil
+	}
+	b.mu.Unlock()
 }
 
 var (
