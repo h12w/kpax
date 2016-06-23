@@ -15,8 +15,8 @@ type B struct {
 	Timeout  time.Duration
 	QueueLen int
 
-	br *broker
 	mu sync.Mutex
+	br *broker
 }
 
 func New(addr string) *B {
@@ -31,18 +31,27 @@ func New(addr string) *B {
 func NewDefault(addr string) model.Broker { return New(addr) }
 
 func (b *B) Do(req model.Request, resp model.Response) error {
-	var err error
+	var (
+		br  *broker
+		err error
+	)
 	b.mu.Lock()
 	if b.br == nil {
 		b.br, err = b.newBroker()
 	}
+	br = b.br
 	b.mu.Unlock()
 	if err != nil {
 		return err
 	}
 
-	if err := b.br.do(req, resp); err != nil {
-		b.Close()
+	if err := br.do(req, resp); err != nil {
+		b.mu.Lock()
+		if b.br == br {
+			b.br = nil
+		}
+		b.mu.Unlock()
+		br.close()
 		return err
 	}
 	return nil
@@ -56,11 +65,12 @@ func (b *B) Close() {
 }
 
 type broker struct {
-	timeout  time.Duration
-	conn     net.Conn
-	recvChan chan *brokerJob
-	cid      int32
+	timeout time.Duration
+	conn    net.Conn
+	cid     int32
+
 	mu       sync.Mutex
+	recvChan chan *brokerJob
 }
 
 type brokerJob struct {
@@ -98,9 +108,21 @@ func (b *broker) do(req model.Request, resp model.Response) error {
 	return nil
 }
 
+func (b *broker) close() {
+	b.mu.Lock()
+	if b.recvChan != nil {
+		close(b.recvChan)
+		b.recvChan = nil
+	}
+	b.mu.Unlock()
+}
+
 func (b *broker) send(job *brokerJob) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if b.recvChan == nil {
+		return errChannelAlreadyClosed
+	}
 	job.req.SetID(atomic.AddInt32(&b.cid, 1))
 	if err := b.conn.SetWriteDeadline(time.Now().Add(b.timeout)); err != nil {
 		return err
@@ -116,6 +138,7 @@ func (b *broker) send(job *brokerJob) error {
 
 var (
 	errCorrelationIDMismatch = errors.New("correlationID mismatch")
+	errChannelAlreadyClosed  = errors.New("channel already closed")
 )
 
 func (b *broker) receiveLoop() {
@@ -137,11 +160,6 @@ func (b *broker) receiveLoop() {
 	// no need to closeConn here because when recvChan closed, the receiveLoop will do it.
 	b.conn.Close()
 	b.conn = nil
-}
-
-func (b *broker) close() {
-	close(b.recvChan)
-	b.recvChan = nil
 }
 
 func (j *brokerJob) requireAck() bool { return j.resp != nil }
