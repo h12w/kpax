@@ -59,8 +59,10 @@ func (b *B) Do(req model.Request, resp model.Response) error {
 
 func (b *B) Close() {
 	b.mu.Lock()
-	b.br.close()
-	b.br = nil
+	if b.br != nil {
+		b.br.close()
+		b.br = nil
+	}
 	b.mu.Unlock()
 }
 
