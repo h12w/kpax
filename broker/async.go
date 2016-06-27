@@ -10,27 +10,27 @@ import (
 	"h12.me/kpax/model"
 )
 
-type B struct {
-	Addr     string
+type AsyncBroker struct {
 	Timeout  time.Duration
 	QueueLen int
+	addr     string
 
 	br *broker
 	mu sync.Mutex
 }
 
-func New(addr string) *B {
-	b := &B{
-		Addr:     addr,
+func NewAsyncBroker(addr string) *AsyncBroker {
+	b := &AsyncBroker{
+		addr:     addr,
 		Timeout:  30 * time.Second,
 		QueueLen: 1000,
 	}
 	return b
 }
 
-func NewDefault(addr string) model.Broker { return New(addr) }
+func NewDefault(addr string) model.Broker { return NewAsyncBroker(addr) }
 
-func (b *B) Do(req model.Request, resp model.Response) error {
+func (b *AsyncBroker) Do(req model.Request, resp model.Response) error {
 	b.mu.Lock()
 	if b.br == nil {
 		var err error
@@ -49,7 +49,7 @@ func (b *B) Do(req model.Request, resp model.Response) error {
 	return nil
 }
 
-func (b *B) Close() {
+func (b *AsyncBroker) Close() {
 	b.mu.Lock()
 	b.br.close()
 	b.br = nil
@@ -70,8 +70,8 @@ type brokerJob struct {
 	errChan chan error
 }
 
-func (b *B) newBroker() (*broker, error) {
-	conn, err := net.DialTimeout("tcp", b.Addr, b.Timeout)
+func (b *AsyncBroker) newBroker() (*broker, error) {
+	conn, err := net.DialTimeout("tcp", b.addr, b.Timeout)
 	if err != nil {
 		return nil, err
 	}
