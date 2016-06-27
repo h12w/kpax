@@ -22,7 +22,7 @@ type PoolBroker struct {
 	mu sync.Mutex
 }
 
-func NewPoolBroker(addr string) model.Broker {
+func NewPoolBroker(addr string) *PoolBroker {
 	return &PoolBroker{
 		addr:    addr,
 		MaxCap:  10,
