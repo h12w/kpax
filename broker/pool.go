@@ -1,5 +1,6 @@
 package broker
 
+/*
 import (
 	"net"
 	"sync"
@@ -97,3 +98,4 @@ func (b *PoolBroker) Close() {
 	}
 	b.mu.Unlock()
 }
+*/
