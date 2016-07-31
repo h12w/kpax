@@ -12,7 +12,7 @@ var (
 
 func (code ErrorCode) Error() string {
 	if code == -1 {
-		return "proto: an unexpected server error"
+		return "proto(-1): an unexpected server error"
 	} else if code >= 0 && int(code) < len(errTexts) {
 		return errTexts[code]
 	}

@@ -85,13 +85,12 @@ func TestProduceSnappy(t *testing.T) {
 	var w wipro.Writer
 	ms := MessageSet{
 		{SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
-			Attributes: 0,
-			Key:        nil,
-			Value:      []byte("hello"),
+			Value: []byte("hello"),
 		}}}},
 	}
 	ms.Marshal(&w)
-	compressedValue := encodeSnappy(w.B[4:])
+	rawMsg := w.B[4:] // size must be excluded
+	compressedValue := encodeSnappy(rawMsg)
 	fmt.Println(w.B)
 	if err := (&Payload{
 		Topic:     topic,
@@ -100,7 +99,6 @@ func TestProduceSnappy(t *testing.T) {
 			{
 				SizedMessage: SizedMessage{CRCMessage: CRCMessage{Message: Message{
 					Attributes: 2,
-					Key:        nil,
 					Value:      compressedValue,
 				}}}},
 		},

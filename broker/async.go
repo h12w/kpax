@@ -28,7 +28,7 @@ func NewAsyncBroker(addr string) *AsyncBroker {
 	return b
 }
 
-func NewDefault(addr string) model.Broker { return NewAsyncBroker(addr) }
+func New(addr string) model.Broker { return NewAsyncBroker(addr) }
 
 func (b *AsyncBroker) Do(req model.Request, resp model.Response) error {
 	var (
