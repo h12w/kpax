@@ -13,7 +13,7 @@ import (
 type AsyncBroker struct {
 	Timeout  time.Duration
 	QueueLen int
-	addr     string
+	Addr     string
 
 	mu sync.Mutex
 	br *broker
@@ -21,7 +21,7 @@ type AsyncBroker struct {
 
 func NewAsyncBroker(addr string) *AsyncBroker {
 	b := &AsyncBroker{
-		addr:     addr,
+		Addr:     addr,
 		Timeout:  30 * time.Second,
 		QueueLen: 1000,
 	}
@@ -82,7 +82,7 @@ type brokerJob struct {
 }
 
 func (b *AsyncBroker) newBroker() (*broker, error) {
-	conn, err := net.DialTimeout("tcp", b.addr, b.Timeout)
+	conn, err := net.DialTimeout("tcp", b.Addr, b.Timeout)
 	if err != nil {
 		return nil, err
 	}
