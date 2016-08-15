@@ -24,12 +24,12 @@ type C struct {
 	MinBytes        int
 	MaxBytes        int
 	OffsetRetention time.Duration
-	cluster         model.Cluster
+	Cluster         model.Cluster
 }
 
 func New(cluster model.Cluster) *C {
 	return &C{
-		cluster:         cluster,
+		Cluster:         cluster,
 		MaxWaitTime:     100 * time.Millisecond,
 		MinBytes:        1,
 		MaxBytes:        1024 * 1024,
@@ -42,7 +42,7 @@ func (c *C) FetchOffsetByTime(topic string, partition int32, keyTime time.Time) 
 		Topic:     topic,
 		Partition: partition,
 		Time:      keyTime,
-	}).Fetch(c.cluster)
+	}).Fetch(c.Cluster)
 }
 
 func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time, getTime proto.GetTimeFunc) (int64, error) {
@@ -50,11 +50,11 @@ func (c *C) SearchOffsetByTime(topic string, partition int32, keyTime time.Time,
 		Topic:     topic,
 		Partition: partition,
 		Time:      keyTime,
-	}).Search(c.cluster, getTime)
+	}).Search(c.Cluster, getTime)
 }
 
 func (c *C) Offset(topic string, partition int32, consumerGroup string) (int64, error) {
-	return (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(c.cluster)
+	return (&proto.Offset{Topic: topic, Partition: partition, Group: consumerGroup}).Fetch(c.Cluster)
 }
 
 func (c *C) Consume(topic string, partition int32, offset int64) (messages []Message, err error) {
@@ -65,7 +65,7 @@ func (c *C) Consume(topic string, partition int32, offset int64) (messages []Mes
 		MinBytes:    c.MinBytes,
 		MaxBytes:    c.MaxBytes,
 		MaxWaitTime: c.MaxWaitTime,
-	}).Consume(c.cluster)
+	}).Consume(c.Cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -86,5 +86,5 @@ func (c *C) Commit(topic string, partition int32, consumerGroup string, offset i
 		Partition: partition,
 		Group:     consumerGroup,
 		Offset:    offset,
-	}).Commit(c.cluster)
+	}).Commit(c.Cluster)
 }

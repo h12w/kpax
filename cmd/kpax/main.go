@@ -42,7 +42,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	c := cluster.New(broker.NewDefault, cfg.Brokers)
+	c := cluster.New(broker.New, cfg.Brokers)
 	//fmt.Println(toJSON(cfg))
 	switch cmd.Name {
 	case "consume":

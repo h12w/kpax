@@ -18,13 +18,13 @@ var (
 type P struct {
 	RequiredAcks     proto.ProduceAckType
 	AckTimeout       time.Duration
-	cluster          model.Cluster
+	Cluster          model.Cluster
 	topicPartitioner *topicPartitioner
 }
 
 func New(cluster model.Cluster) *P {
 	return &P{
-		cluster:          cluster,
+		Cluster:          cluster,
 		topicPartitioner: newTopicPartitioner(),
 		RequiredAcks:     proto.AckLocal,
 		AckTimeout:       10 * time.Second,
@@ -38,7 +38,7 @@ func (p *P) ProduceMessageSet(topic string, messageSet proto.MessageSet) error {
 	key := messageSet[0].Key
 	partitioner := p.topicPartitioner.Get(topic)
 	if partitioner == nil {
-		partitions, err := p.cluster.Partitions(topic)
+		partitions, err := p.Cluster.Partitions(topic)
 		if err != nil {
 			return err
 		}
@@ -57,7 +57,7 @@ nextPartition:
 			MessageSet:   messageSet,
 			RequiredAcks: p.RequiredAcks,
 			AckTimeout:   p.AckTimeout,
-		}).Produce(p.cluster); err != nil {
+		}).Produce(p.Cluster); err != nil {
 			log.Warnf("fail to produce to one partition %d in %s", partition, topic)
 			continue nextPartition
 		}
@@ -78,7 +78,7 @@ func (p *P) ProduceWithPartition(topic string, partition int32, key, value []byt
 		MessageSet:   messageSet,
 		RequiredAcks: p.RequiredAcks,
 		AckTimeout:   p.AckTimeout,
-	}).Produce(p.cluster)
+	}).Produce(p.Cluster)
 }
 
 func getMessageSet(key, value []byte) []proto.OffsetMessage {
