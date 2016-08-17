@@ -368,3 +368,8 @@ func (cmd *RollbackCommand) Exec(cl model.Cluster) error {
 	return nil
 
 }
+
+func toJSON(v interface{}) string {
+	buf, _ := json.MarshalIndent(v, "", "\t")
+	return string(buf)
+}

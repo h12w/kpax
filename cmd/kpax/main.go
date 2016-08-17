@@ -1,12 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
-	"os"
-	"runtime"
 
-	"github.com/jessevdk/go-flags"
 	"h12.me/config"
 	"h12.me/kpax/broker"
 	"h12.me/kpax/cluster"
@@ -15,26 +11,6 @@ import (
 const (
 	clientID = "h12.me/kpax/kafpro"
 )
-
-func parseJSON(cfg interface{}) error {
-	var fileConfig struct {
-		ConfigFile string `long:"config" default:"config.json"`
-	}
-	parser := flags.NewParser(&fileConfig, flags.IgnoreUnknown)
-	if _, err := parser.Parse(); err != nil {
-		return err
-	}
-	f, err := os.Open(fileConfig.ConfigFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return json.NewDecoder(f).Decode(cfg)
-}
-
-func init() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-}
 
 func main() {
 	var cfg Config
@@ -62,9 +38,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func toJSON(v interface{}) string {
-	buf, _ := json.MarshalIndent(v, "", "\t")
-	return string(buf)
 }

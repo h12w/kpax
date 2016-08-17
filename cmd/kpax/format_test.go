@@ -19,7 +19,10 @@ func TestUnmarshalMsgPack(t *testing.T) {
 		t.Fatal(err)
 	}
 	expected := `{"T":{"I":1}}`
-	actual := MsgPackFormat.Sprint(buf)
+	actual, err := MsgPackFormat.Sprint(buf)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if actual != expected {
 		t.Fatalf("expect %s but got %s", expected, actual)
 	}
