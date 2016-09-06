@@ -7,8 +7,12 @@ Install
 -------
 
 ```
-go get -u h12.me/kpax
+go get -u h12.me/kpax.v1
 ```
+
+### Compatibility
+
+h12.me/kpax.v1 is compatible with Kafka Server 0.8.2.
 
 Design
 ------
@@ -28,10 +32,6 @@ The client is built on top of Kafka Wire Protocol (i.e. low-level API). The prot
 * **log**: replaceable global logger
 * **cmd**
     - **kpax**: command line tool to help with Kafka programming
-
-### Compatibility
-
-Compatible with Kafka Server 0.8.2.
 
 ### Error Handling
 
