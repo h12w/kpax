@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kpax/model"
+	"h12.io/kpax/model"
 )
 
 type client struct {
@@ -24,7 +24,7 @@ func (c client) Do(req RequestMessage, resp ResponseMessage) error {
 	)
 }
 
-const clientID = "h12.me/kpax"
+const clientID = "h12.io/kpax"
 
 type Metadata string
 

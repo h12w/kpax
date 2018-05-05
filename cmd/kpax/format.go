@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"h12.me/kpax/consumer"
-	"h12.me/kpax/model"
-	"h12.me/kpax/proto"
-	"h12.me/uuid/hexid"
+	"h12.io/kpax/consumer"
+	"h12.io/kpax/model"
+	"h12.io/kpax/proto"
+	"h12.io/uuid/hexid"
 )
 
 type Format string

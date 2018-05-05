@@ -1,6 +1,6 @@
 package proto
 
-import "h12.me/wipro"
+import "h12.io/wipro"
 
 type RequestOrResponse struct {
 	Size int32

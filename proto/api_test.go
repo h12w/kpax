@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"h12.me/kpax/broker"
-	"h12.me/kpax/model"
-	"h12.me/realtest/kafka"
-	"h12.me/wipro"
+	"h12.io/kpax/broker"
+	"h12.io/kpax/model"
+	"h12.io/realtest/kafka"
+	"h12.io/wipro"
 )
 
 func TestTopicMetadata(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"io"
 	"strconv"
 
-	"h12.me/wipro"
+	"h12.io/wipro"
 )
 
 type RequestMessage interface {

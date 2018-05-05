@@ -1,18 +1,18 @@
 kpax: a modular & idiomatic Kafka client in Go
 ==============================================
 
-[![GoDoc](https://godoc.org/h12.me/kpax?status.svg)](https://godoc.org/h12.me/kpax)
+[![GoDoc](https://godoc.org/h12.io/kpax?status.svg)](https://godoc.org/h12.io/kpax)
 
 Install
 -------
 
 ```
-go get -u h12.me/kpax.v1
+go get -u h12.io/kpax.v1
 ```
 
 ### Compatibility
 
-h12.me/kpax.v1 is compatible with Kafka Server 0.8.2.
+h12.io/kpax.v1 is compatible with Kafka Server 0.8.2.
 
 Design
 ------

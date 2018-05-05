@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"h12.me/wipro"
+	"h12.io/wipro"
 )
 
 func TestUnmarshal(t *testing.T) {

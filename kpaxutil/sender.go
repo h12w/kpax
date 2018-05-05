@@ -3,9 +3,9 @@ package kpaxutil
 import (
 	"encoding"
 
-	"h12.me/kpax/broker"
-	"h12.me/kpax/cluster"
-	"h12.me/kpax/producer"
+	"h12.io/kpax/broker"
+	"h12.io/kpax/cluster"
+	"h12.io/kpax/producer"
 )
 
 type Sender interface {

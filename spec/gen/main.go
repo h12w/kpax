@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"h12.me/wipro/gen"
+	"h12.io/wipro/gen"
 )
 
 const packageName = "proto"

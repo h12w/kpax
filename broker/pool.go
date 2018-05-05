@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"gopkg.in/fatih/pool.v2"
-	"h12.me/kpax/model"
+	"h12.io/kpax/model"
 )
 
 const defaultTimeout = 30 * time.Second

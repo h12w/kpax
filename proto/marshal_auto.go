@@ -1,7 +1,7 @@
 package proto
 
 import (
-	"h12.me/wipro"
+	"h12.io/wipro"
 	"hash/crc32"
 )
 

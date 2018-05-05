@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 
 	"github.com/golang/snappy"
-	"h12.me/wipro"
+	"h12.io/wipro"
 )
 
 func (m *Message) Compressed() bool {

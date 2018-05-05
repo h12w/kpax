@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"h12.me/kpax/model"
+	"h12.io/kpax/model"
 )
 
 type AsyncBroker struct {

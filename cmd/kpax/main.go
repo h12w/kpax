@@ -3,13 +3,13 @@ package main
 import (
 	"log"
 
-	"h12.me/config"
-	"h12.me/kpax/broker"
-	"h12.me/kpax/cluster"
+	"h12.io/config"
+	"h12.io/kpax/broker"
+	"h12.io/kpax/cluster"
 )
 
 const (
-	clientID = "h12.me/kpax/kafpro"
+	clientID = "h12.io/kpax/kafpro"
 )
 
 func main() {

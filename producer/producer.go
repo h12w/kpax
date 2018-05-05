@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"h12.me/kpax/log"
-	"h12.me/kpax/model"
-	"h12.me/kpax/proto"
+	"h12.io/kpax/log"
+	"h12.io/kpax/model"
+	"h12.io/kpax/proto"
 )
 
 var (
